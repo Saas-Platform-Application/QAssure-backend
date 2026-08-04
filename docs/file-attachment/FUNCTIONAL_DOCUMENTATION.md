@@ -25,7 +25,7 @@ Storing identical physical documents (such as SOPs, manuals, or standard certifi
 
 ### 2.2 Dynamic Hybrid Storage Provider Abstraction
 The service supports pluggable backend storage options via the `StorageProvider` interface, dynamically resolved on a per-request basis:
-- **Database-Driven Resolution**: Instead of static environment variables, the system queries the active storage assignment for the requesting tenant. If an active cloud storage bucket (Azure, S3, or GCP) is assigned, the system dynamically instantiates the appropriate provider and decrypts the credentials (such as SAS tokens, S3 secret keys, and GCP service account keys) using AES-256-GCM in-memory.
+- **Database-Driven Resolution**: Instead of static environment variables, the system queries the active storage assignment for the requesting tenant. If an active cloud storage bucket (Azure, S3, GCP, or E2E Networks Object Storage) is assigned, the system dynamically instantiates the appropriate provider and decrypts the credentials (such as SAS tokens, S3 secret keys, GCP service account keys, and EOS secret keys) using AES-256-GCM in-memory.
 - **Local Storage Provider**: Saves files locally to disk (either configured per-bucket or using the system fallback directory):
   ```
   uploads/{tenant_id}/{entity_type}/{YYYY}/{MM}/{uuid}_{sanitized_name}.ext
@@ -33,6 +33,7 @@ The service supports pluggable backend storage options via the `StorageProvider`
 - **Azure Storage Provider**: Interfaces with Azure Blob Storage. It uploads file streams, generates SAS signed URLs for downloads, and handles file deletion commands.
 - **S3 Storage Provider**: Interfaces with Amazon S3. It uploads file streams using `@aws-sdk/client-s3`, generates presigned download URLs, and handles object deletions.
 - **GCP Storage Provider**: Interfaces with Google Cloud Storage. It uploads file streams using `@google-cloud/storage`, generates signed download URLs, and handles bucket deletions.
+- **E2E Networks Object Storage (EOS) Provider**: Interfaces with E2E Networks Object Storage, an S3-compatible service. It shares the S3-compatible base class (`@aws-sdk/client-s3`) and differs only by pointing at an EOS endpoint (for example `https://objectstore.e2enetworks.net`) with path-style bucket addressing. See [E2E_OBJECT_STORAGE.md](./E2E_OBJECT_STORAGE.md).
 
 ### 2.3 Storage Quota and Guardrails
 Before writing file data to physical storage, the system checks quota restrictions:

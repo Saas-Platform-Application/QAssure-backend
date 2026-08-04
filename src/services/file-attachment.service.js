@@ -21,6 +21,12 @@ const { v4: uuidv4 } = require("uuid");
 const { getAuditService } = require("./audit.service");
 const { getNotificationService } = require("./notification.service");
 const { getTenantStorageBucketService } = require("./tenant-storage-bucket.service");
+const {
+  isCloudProviderType,
+  normalizeE2EEndpoint,
+  E2E_DEFAULT_ENDPOINT,
+  E2E_DEFAULT_REGION,
+} = require("../utils/object-storage");
 
 // ============================================================================
 // STORAGE PROVIDER ABSTRACTION
@@ -69,22 +75,40 @@ class LocalStorageProvider {
 }
 
 // ============================================================================
-// AMAZON S3 STORAGE PROVIDER
+// S3-COMPATIBLE STORAGE PROVIDER
+//
+// Shared base for every store that speaks the S3 API. Amazon S3 talks to the
+// AWS-resolved regional endpoint; third-party S3-compatible stores (E2E
+// Networks Object Storage / EOS) talk to their own endpoint and generally need
+// path-style bucket addressing. Everything else — object keys, SigV4 signing,
+// presigned URLs — is identical.
 // ============================================================================
 
-class S3StorageProvider {
-  constructor(s3Config) {
+class S3CompatibleStorageProvider {
+  constructor(cfg) {
     const { S3Client } = require("@aws-sdk/client-s3");
-    this.type = "s3";
-    this.bucketName = s3Config.bucket;
-    this.region = s3Config.region;
-    this.client = new S3Client({
+    this.type = cfg.type || "s3";
+    this.bucketName = cfg.bucket;
+    this.region = cfg.region;
+    this.endpoint = cfg.endpoint || null;
+    this.forcePathStyle = !!cfg.forcePathStyle;
+    this.signedUrlExpiresIn = cfg.signedUrlExpiresIn || 3600;
+
+    const clientConfig = {
       region: this.region,
       credentials: {
-        accessKeyId: s3Config.accessKeyId,
-        secretAccessKey: s3Config.secretAccessKey,
+        accessKeyId: cfg.accessKeyId,
+        secretAccessKey: cfg.secretAccessKey,
       },
-    });
+    };
+
+    // Custom endpoint => non-AWS S3-compatible store
+    if (this.endpoint) {
+      clientConfig.endpoint = this.endpoint;
+      clientConfig.forcePathStyle = this.forcePathStyle;
+    }
+
+    this.client = new S3Client(clientConfig);
   }
 
   _normalizePath(relativePath) {
@@ -146,7 +170,9 @@ class S3StorageProvider {
       Bucket: this.bucketName,
       Key: normalizedPath,
     });
-    return await getSignedUrl(this.client, command, { expiresIn: 3600 });
+    return await getSignedUrl(this.client, command, {
+      expiresIn: this.signedUrlExpiresIn,
+    });
   }
 
   async read(relativePath) {
@@ -173,12 +199,63 @@ class S3StorageProvider {
     return response.Body;
   }
 
+  /**
+   * Verify the credentials + endpoint actually reach the bucket.
+   * Throws with the underlying S3 error if it does not.
+   */
+  async testConnection() {
+    const { HeadBucketCommand } = require("@aws-sdk/client-s3");
+    await this.client.send(new HeadBucketCommand({ Bucket: this.bucketName }));
+    return true;
+  }
+
   _streamToBuffer(stream) {
     return new Promise((resolve, reject) => {
       const chunks = [];
       stream.on("data", (chunk) => chunks.push(chunk));
       stream.on("error", reject);
       stream.on("end", () => resolve(Buffer.concat(chunks)));
+    });
+  }
+}
+
+// ============================================================================
+// AMAZON S3 STORAGE PROVIDER
+// ============================================================================
+
+class S3StorageProvider extends S3CompatibleStorageProvider {
+  constructor(s3Config) {
+    super({ ...s3Config, type: "s3" });
+  }
+}
+
+// ============================================================================
+// E2E NETWORKS OBJECT STORAGE (EOS / Vyoma) PROVIDER
+//
+// EOS is S3-compatible, so it reuses the AWS SDK with a custom endpoint.
+// Docs: https://docs.e2enetworks.com/docs/myaccount/storage/object_storage/
+//
+//   S3 endpoint       objectstore.e2enetworks.net
+//   Region endpoints  <region>-objectstore.e2enetworks.net (e.g. mum-, ndl-)
+//   DNS-style bucket  %(bucket)s.objectstore.e2enetworks.net
+//   Credentials       Access Key + Secret Key from MyAccount → Object Storage
+//
+// Path-style addressing is the default here: virtual-hosted-style needs the
+// bucket name to resolve as a sub-domain, which is not always available for a
+// custom/region endpoint. Set force_path_style = false to opt into DNS-style.
+// ============================================================================
+
+class E2EObjectStorageProvider extends S3CompatibleStorageProvider {
+  constructor(e2eConfig) {
+    super({
+      type: "e2e",
+      bucket: e2eConfig.bucket,
+      region: e2eConfig.region || E2E_DEFAULT_REGION,
+      accessKeyId: e2eConfig.accessKey,
+      secretAccessKey: e2eConfig.secretKey,
+      endpoint: normalizeE2EEndpoint(e2eConfig.endpoint),
+      // default TRUE — only an explicit false switches to DNS-style
+      forcePathStyle: e2eConfig.forcePathStyle !== false,
     });
   }
 }
@@ -457,6 +534,18 @@ class FileAttachmentService {
       this.providers.azure = new AzureStorageProvider(config.upload.azure);
     }
 
+    // E2E Networks Object Storage (EOS) from env — used when STORAGE_TYPE=e2e
+    // and no tenant bucket applies (e.g. legacy blobs uploaded before
+    // per-tenant bucket configs existed).
+    if (
+      config.upload.e2e &&
+      config.upload.e2e.bucket &&
+      config.upload.e2e.accessKey &&
+      config.upload.e2e.secretKey
+    ) {
+      this.providers.e2e = new E2EObjectStorageProvider(config.upload.e2e);
+    }
+
     // Default provider for NEW uploads
     this.defaultProviderType = config.upload.storageType || "local";
     this.storageProvider =
@@ -510,6 +599,26 @@ class FileAttachmentService {
         secretAccessKey,
       });
     }
+    if (bucketRow.storage_type === 'e2e') {
+      let secretKey = null;
+      if (bucketRow.e2e_secret_key) {
+        try {
+          const { decrypt } = require('../utils/encryption');
+          secretKey = decrypt(bucketRow.e2e_secret_key);
+        } catch (e) {
+          console.error('[FileAttachment] Failed to decrypt E2E secret key for bucket', bucketRow.id);
+          return this.storageProvider;
+        }
+      }
+      return new E2EObjectStorageProvider({
+        bucket: bucketRow.e2e_bucket,
+        endpoint: bucketRow.e2e_endpoint,
+        region: bucketRow.e2e_region,
+        accessKey: bucketRow.e2e_access_key,
+        secretKey,
+        forcePathStyle: bucketRow.e2e_force_path_style,
+      });
+    }
     if (bucketRow.storage_type === 'gcp') {
       let serviceAccountKey = null;
       if (bucketRow.gcs_service_account_key) {
@@ -545,7 +654,9 @@ class FileAttachmentService {
           `SELECT fb.*, tsb.storage_type, tsb.azure_account, tsb.azure_container,
                   tsb.azure_sas_token, tsb.azure_url,
                   tsb.s3_bucket, tsb.s3_region, tsb.s3_access_key_id, tsb.s3_secret_access_key,
-                  tsb.gcs_bucket, tsb.gcs_project_id, tsb.gcs_service_account_key
+                  tsb.gcs_bucket, tsb.gcs_project_id, tsb.gcs_service_account_key,
+                  tsb.e2e_bucket, tsb.e2e_endpoint, tsb.e2e_region,
+                  tsb.e2e_access_key, tsb.e2e_secret_key, tsb.e2e_force_path_style
            FROM file_blobs fb
            LEFT JOIN tenant_storage_buckets tsb ON tsb.id = fb.bucket_config_id
            WHERE fb.id = $1`,
@@ -1786,8 +1897,9 @@ class FileAttachmentService {
         throw new Error("File not found on disk");
       }
       fullPath = path.resolve(fullPath);
-    } else if (provider.type === "azure" || provider.type === "s3" || provider.type === "gcp") {
-      // For cloud providers, we return the signed URL (awaited since S3/GCP signed URL generation is async)
+    } else if (isCloudProviderType(provider.type)) {
+      // For cloud providers we return a signed URL (awaited — S3/E2E/GCP
+      // signed-URL generation is async; Azure's is sync but await is harmless)
       fullPath = await provider.getSignedUrl(attachment.file_path);
     }
 
@@ -2166,7 +2278,7 @@ class FileAttachmentService {
     }
 
     const result = await this.pool.query(
-      `SELECT fs.*, fa.original_name, fa.file_path, fa.mime_type, fa.file_size, fa.tenant_id as file_tenant_id, fa.storage_provider
+      `SELECT fs.*, fa.original_name, fa.file_path, fa.mime_type, fa.file_size, fa.tenant_id as file_tenant_id, fa.storage_provider, fa.blob_id
        FROM file_shares fs
        JOIN file_attachments fa ON fs.file_id = fa.id
        WHERE fs.share_token = $1 AND fs.is_active = TRUE
@@ -2471,4 +2583,19 @@ const getFileAttachmentService = () => {
   return instance;
 };
 
-module.exports = { FileAttachmentService, getFileAttachmentService };
+module.exports = {
+  FileAttachmentService,
+  getFileAttachmentService,
+  // Storage providers — exported so other services (e.g. bucket connection
+  // tests) can build a provider without going through an upload.
+  LocalStorageProvider,
+  S3CompatibleStorageProvider,
+  S3StorageProvider,
+  E2EObjectStorageProvider,
+  GCSStorageProvider,
+  AzureStorageProvider,
+  isCloudProviderType,
+  normalizeE2EEndpoint,
+  E2E_DEFAULT_ENDPOINT,
+  E2E_DEFAULT_REGION,
+};

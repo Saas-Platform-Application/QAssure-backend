@@ -141,12 +141,27 @@ const config = {
     allowedMimeTypes: process.env.ALLOWED_MIME_TYPES ? process.env.ALLOWED_MIME_TYPES.split(',') : ['image/jpeg', 'image/png', 'application/pdf'],
     uploadDir: process.env.UPLOAD_DIR || process.env.FILE_STORAGE_PATH || './uploads',
     exportDir: process.env.REPORT_STORAGE_PATH || './exports',
-    storageType: process.env.STORAGE_TYPE || 'local', // 'local' or 'azure'
+    // 'local' | 'azure' | 'e2e' — the fallback backend used when no per-tenant
+    // storage bucket applies. Per-tenant buckets (tenant_storage_buckets) take
+    // precedence for all normal uploads and support 's3' and 'gcp' too.
+    storageType: process.env.STORAGE_TYPE || 'local',
     azure: {
       account: process.env.AZURE_STORAGE_ACCOUNT,
       container: process.env.AZURE_STORAGE_CONTAINER,
       sasToken: process.env.AZURE_STORAGE_SAS_TOKEN,
       url: process.env.AZURE_STORAGE_URL,
+    },
+    // E2E Networks Object Storage (EOS / Vyoma) — S3-compatible.
+    // https://docs.e2enetworks.com/docs/myaccount/storage/object_storage/
+    e2e: {
+      bucket: process.env.E2E_OBJECT_STORAGE_BUCKET,
+      endpoint: process.env.E2E_OBJECT_STORAGE_ENDPOINT || 'https://objectstore.e2enetworks.net',
+      region: process.env.E2E_OBJECT_STORAGE_REGION || 'us-east-1',
+      accessKey: process.env.E2E_OBJECT_STORAGE_ACCESS_KEY,
+      secretKey: process.env.E2E_OBJECT_STORAGE_SECRET_KEY,
+      // Path-style addressing by default; set to 'false' for DNS-style
+      // (bucket.objectstore.e2enetworks.net).
+      forcePathStyle: process.env.E2E_OBJECT_STORAGE_FORCE_PATH_STYLE !== 'false',
     }
   },
 

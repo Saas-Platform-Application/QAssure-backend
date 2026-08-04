@@ -8,6 +8,11 @@
  *   PUT    /storage-buckets/:id                    — update [superAdmin or storage_buckets:write]
  *   DELETE /storage-buckets/:id                    — soft-delete [superAdmin only]
  *
+ *   POST   /storage-buckets/test-connection        — probe an unsaved config [storage_buckets:write]
+ *                                                    body: full bucket config
+ *   POST   /storage-buckets/:id/test-connection    — probe a saved config [storage_buckets:write]
+ *                                                    body: optional field overrides
+ *
  *   POST   /storage-buckets/:id/assign             — assign bucket to a tenant [superAdmin]
  *                                                    body: { tenant_id }
  *   POST   /storage-buckets/:id/assign-self        — give own bucket to another tenant [superAdmin]
@@ -48,6 +53,14 @@ router.post(
   '/',
   requireSuperAdmin('storage_buckets', 'write'),
   (req, res) => controller.create(req, res),
+);
+
+// Test an unsaved bucket config before creating it
+// (must be registered before /:id so 'test-connection' is not read as an ID)
+router.post(
+  '/test-connection',
+  requireSuperAdmin('storage_buckets', 'write'),
+  (req, res) => controller.testConnection(req, res),
 );
 
 // ============================================================================
@@ -103,6 +116,14 @@ router.delete(
   requireSuperAdmin,
   validateUUID('id'),
   (req, res) => controller.delete(req, res),
+);
+
+// Test a saved bucket's connection (body may override individual fields)
+router.post(
+  '/:id/test-connection',
+  requireSuperAdmin('storage_buckets', 'write'),
+  validateUUID('id'),
+  (req, res) => controller.testConnection(req, res),
 );
 
 // Assign bucket to a tenant [superAdmin]
