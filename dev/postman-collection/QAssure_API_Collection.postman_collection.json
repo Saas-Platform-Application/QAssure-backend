@@ -1,0 +1,1492 @@
+{
+  "info": {
+    "_postman_id": "qassure-api-collection",
+    "name": "QAssure Platform API",
+    "description": "Complete API collection for QAssure Platform Backend.\n\n## Getting Started\n\n1. Set the `base_url` variable to your server URL\n2. Run the \"Login (Super Admin)\" request first\n3. The access token will be automatically saved\n4. Other requests will use the saved token\n\n## Test Credentials\n\n- **Super Admin**: superadmin@qassure.ai / Password123!\n- **Tenant Admin**: admin@qassure.ai / Password123!\n- **Viewer**: viewer@qassure.ai / Password123!",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "00000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "module_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "api_key_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "verification_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reset_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Monitoring",
+      "description": "Health check and monitoring endpoints (no authentication required)",
+      "item": [
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Basic health check endpoint. Returns server status."
+          },
+          "response": []
+        },
+        {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/detailed",
+              "host": ["{{base_url}}"],
+              "path": ["health", "detailed"]
+            },
+            "description": "Detailed health check including PostgreSQL and Redis status."
+          },
+          "response": []
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["metrics"]
+            },
+            "description": "Prometheus-format metrics for monitoring."
+          },
+          "response": []
+        },
+        {
+          "name": "API Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "API information and available endpoints."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "description": "User authentication endpoints",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "    console.log('User registered:', jsonData.data.user.email);",
+                  "    console.log('Check server logs for verification token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"newuser@example.com\",\n    \"password\": \"Password123!\",\n    \"first_name\": \"New\",\n    \"last_name\": \"User\",\n    \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user. Check server logs for verification token in development mode."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"{{verification_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/verify-email",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "verify-email"]
+            },
+            "description": "Verify email address with token from registration email."
+          },
+          "response": []
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"newuser@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/resend-verification",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "resend-verification"]
+            },
+            "description": "Resend verification email if the original expired."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Super Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.data.refresh_token);",
+                  "    pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "    pm.collectionVariables.set('tenant_id', jsonData.data.tenant_id);",
+                  "    console.log('Logged in as:', jsonData.data.user.email);",
+                  "    console.log('Roles:', jsonData.data.roles);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"superadmin@qassure.ai\",\n    \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login as super admin. Tokens are automatically saved to collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Tenant Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.data.refresh_token);",
+                  "    pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "    console.log('Logged in as:', jsonData.data.user.email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@qassure.ai\",\n    \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login as tenant admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Viewer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.data.refresh_token);",
+                  "    console.log('Logged in as:', jsonData.data.user.email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"viewer@qassure.ai\",\n    \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login as viewer (read-only user)."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.data.refresh_token);",
+                  "    console.log('Tokens refreshed');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token."
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@qassure.ai\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "description": "Request password reset. Check server logs for reset token in development."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"{{reset_token}}\",\n    \"password\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "description": "Reset password with token from email."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user's information."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "sessions"]
+            },
+            "description": "List all active sessions for current user."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"current_password\": \"Password123!\",\n    \"new_password\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "change-password"]
+            },
+            "description": "Change password for authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/validate",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "validate"]
+            },
+            "description": "Validate current session is still active."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout current session."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout All Sessions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout-all",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout-all"]
+            },
+            "description": "Logout from all active sessions."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User management endpoints",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List all users with pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Get user details by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('user_id', jsonData.data.id);",
+                  "    console.log('Created user:', jsonData.data.email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"created.user@example.com\",\n    \"password\": \"Password123!\",\n    \"first_name\": \"Created\",\n    \"last_name\": \"User\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "Create a new user (admin creates user directly, no email verification)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"first_name\": \"Updated\",\n    \"last_name\": \"Name\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Update user details."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Delete a user."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "description": "Tenant (organization) management endpoints",
+      "item": [
+        {
+          "name": "List Tenants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tenants",
+              "host": ["{{base_url}}"],
+              "path": ["tenants"]
+            },
+            "description": "List all tenants (super admin only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tenants/{{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tenants", "{{tenant_id}}"]
+            },
+            "description": "Get tenant details."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles & Permissions",
+      "description": "Role and permission management endpoints",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/roles",
+              "host": ["{{base_url}}"],
+              "path": ["roles"]
+            },
+            "description": "List all roles."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/roles/:id",
+              "host": ["{{base_url}}"],
+              "path": ["roles", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Get role details with permissions."
+          },
+          "response": []
+        },
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/permissions",
+              "host": ["{{base_url}}"],
+              "path": ["permissions"]
+            },
+            "description": "List all permissions."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "API Keys",
+      "description": "API key management for programmatic access",
+      "item": [
+        {
+          "name": "List API Keys",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api-keys",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys"]
+            },
+            "description": "List all API keys for current tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "Create API Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('api_key_id', jsonData.data.id);",
+                  "    pm.collectionVariables.set('api_key', jsonData.data.key);",
+                  "    console.log('API Key created:', jsonData.data.key);",
+                  "    console.log('SAVE THIS KEY - it will not be shown again!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Integration API Key\",\n    \"description\": \"API key for CI/CD integration\",\n    \"permissions\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api-keys",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys"]
+            },
+            "description": "Create a new API key. The key is only shown once!"
+          },
+          "response": []
+        },
+        {
+          "name": "Get API Key by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api-keys/{{api_key_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys", "{{api_key_id}}"]
+            },
+            "description": "Get API key details (without the actual key)."
+          },
+          "response": []
+        },
+        {
+          "name": "Validate API Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"key\": \"{{api_key}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api-keys/validate",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys", "validate"]
+            },
+            "description": "Validate if an API key is valid and active."
+          },
+          "response": []
+        },
+        {
+          "name": "Update API Key",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated API Key Name\",\n    \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api-keys/{{api_key_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys", "{{api_key_id}}"]
+            },
+            "description": "Update API key name or description."
+          },
+          "response": []
+        },
+        {
+          "name": "Regenerate API Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('api_key', jsonData.data.key);",
+                  "    console.log('New API Key:', jsonData.data.key);",
+                  "    console.log('SAVE THIS KEY - it will not be shown again!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api-keys/{{api_key_id}}/regenerate",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys", "{{api_key_id}}", "regenerate"]
+            },
+            "description": "Generate a new key value (invalidates the old key)."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke API Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api-keys/{{api_key_id}}/revoke",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys", "{{api_key_id}}", "revoke"]
+            },
+            "description": "Revoke an API key (soft delete)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete API Key",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api-keys/{{api_key_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api-keys", "{{api_key_id}}"]
+            },
+            "description": "Permanently delete an API key."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Modules",
+      "description": "Module registry and lifecycle management",
+      "item": [
+        {
+          "name": "List Modules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["modules"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "health_status",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all registered modules with optional filters."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Module Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules/stats",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "stats"]
+            },
+            "description": "Get module statistics (count by status, health)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Module States",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules/states",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "states"]
+            },
+            "description": "Get available module states and valid transitions."
+          },
+          "response": []
+        },
+        {
+          "name": "Register Module",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('module_id', jsonData.data.id);",
+                  "    console.log('Registered module:', jsonData.data.module_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"module_id\": \"test-module\",\n    \"name\": \"Test Module\",\n    \"description\": \"A test module for development\",\n    \"version\": \"1.0.0\",\n    \"runtime_language\": \"nodejs\",\n    \"framework\": \"express\",\n    \"base_url\": \"http://localhost:4000\",\n    \"health_endpoint\": \"/health\",\n    \"endpoints\": [\n        {\"path\": \"/process\", \"method\": \"POST\"},\n        {\"path\": \"/status\", \"method\": \"GET\"}\n    ],\n    \"kafka_topics\": [\"test.events\"],\n    \"min_replicas\": 1,\n    \"max_replicas\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/modules",
+              "host": ["{{base_url}}"],
+              "path": ["modules"]
+            },
+            "description": "Register a new module. Status will be 'pending'."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Module by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}"]
+            },
+            "description": "Get module details by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Module",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"description\": \"Updated description\",\n    \"min_replicas\": 2,\n    \"max_replicas\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}"]
+            },
+            "description": "Update module configuration."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Module Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"starting\",\n    \"reason\": \"Manual status update\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "status"]
+            },
+            "description": "Update module status (must be valid transition)."
+          },
+          "response": []
+        },
+        {
+          "name": "Start Module",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/start",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "start"]
+            },
+            "description": "Start a module (pending/stopped → starting → running)."
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Module",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reason\": \"Manual stop for maintenance\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/stop",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "stop"]
+            },
+            "description": "Stop a running module gracefully."
+          },
+          "response": []
+        },
+        {
+          "name": "Restart Module",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reason\": \"Applying configuration changes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/restart",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "restart"]
+            },
+            "description": "Restart a module (stop then start)."
+          },
+          "response": []
+        },
+        {
+          "name": "Set Module Maintenance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reason\": \"Scheduled database migration\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/maintenance",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "maintenance"]
+            },
+            "description": "Put module in maintenance mode."
+          },
+          "response": []
+        },
+        {
+          "name": "Deprecate Module",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reason\": \"Module replaced by v2\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/deprecate",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "deprecate"]
+            },
+            "description": "Mark module as deprecated."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Module Version",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"version\": \"1.1.0\",\n    \"changelog\": \"Added new features, bug fixes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/version",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "version"]
+            },
+            "description": "Update module version after deployment."
+          },
+          "response": []
+        },
+        {
+          "name": "Trigger Health Check",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/health-check",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "health-check"]
+            },
+            "description": "Trigger a health check on the module."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Health History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/health-history?limit=100",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "health-history"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            },
+            "description": "Get health check history for a module."
+          },
+          "response": []
+        },
+        {
+          "name": "Deregister Module",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}/deregister",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}", "deregister"]
+            },
+            "description": "Deregister a module (soft delete, sets status to deprecated)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Module",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules/{{module_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["modules", "{{module_id}}"]
+            },
+            "description": "Permanently delete a module."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "description": "Audit log viewing endpoints",
+      "item": [
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/audit-logs?page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["audit-logs"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "action",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "resource_type",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List audit logs with optional filters."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

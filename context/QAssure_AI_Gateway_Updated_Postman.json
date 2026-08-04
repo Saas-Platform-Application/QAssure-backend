@@ -1,0 +1,1699 @@
+{
+  "info": {
+    "name": "QAssure AI Gateway \u2014 Embedding Config Update",
+    "description": "Updated Postman collection with custom embedding model support. Branch: yasha_24thapril. Includes all 42+ AI endpoints with embedding config changes highlighted.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "prompt_id",
+      "value": ""
+    },
+    {
+      "key": "test_case_id",
+      "value": ""
+    },
+    {
+      "key": "collection_id",
+      "value": ""
+    },
+    {
+      "key": "document_id",
+      "value": ""
+    },
+    {
+      "key": "completion_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Setup \u2014 Login",
+      "item": [
+        {
+          "name": "Login (get JWT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Get access_token. Auto-saves to collection variable.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"superadmin@qassure.ai\",\n  \"password\": \"Password123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", function() { pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.collectionVariables.set(\"token\", pm.response.json().data.access_token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Tenant AI Config \u2014 Embedding Support (5+)",
+      "item": [
+        {
+          "name": "1.1 Configure Mistral7b WITH Embedding Models \u2605",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "config"
+              ]
+            },
+            "description": "NEW: Configure a custom provider with embedding model support.\ncustom_embedding_models and default_embedding_model are the new fields.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"Mistral7b\",\n  \"config_type\": \"direct\",\n  \"display_name\": \"Mistral small 7b\",\n  \"api_key\": \"9b4a9f1e-7e28-4c3c-88c7-4d2a8c6d1f3e\",\n  \"endpoint\": \"https://opensourcemodeldep.centralindia.cloudapp.azure.com/Mistral7b/v1\",\n  \"custom_models\": [\n    \"mistral:7b\"\n  ],\n  \"default_model\": \"mistral:7b\",\n  \"is_active\": true,\n  \"custom_embedding_models\": [\n    \"intfloat/e5-large-v2\"\n  ],\n  \"default_embedding_model\": \"intfloat/e5-large-v2\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", function() { pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.test(\"Embedding models stored\", function() {",
+                  "  var d = pm.response.json().data;",
+                  "  pm.expect(d.custom_embedding_models).to.include(\"intfloat/e5-large-v2\");",
+                  "  pm.expect(d.default_embedding_model).to.eql(\"intfloat/e5-large-v2\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 Configure OpenAI (no embedding override)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "config"
+              ]
+            },
+            "description": "Standard config without embedding fields \u2014 uses provider defaults.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"openai\",\n  \"config_type\": \"direct\",\n  \"api_key\": \"sk-your-openai-key-here\",\n  \"display_name\": \"OpenAI Direct\",\n  \"is_active\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "1.3 Configure Gemini WITH Embedding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "config"
+              ]
+            },
+            "description": "Configure Gemini with explicit embedding model.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"gemini\",\n  \"config_type\": \"direct\",\n  \"api_key\": \"AIzaSy-your-gemini-key\",\n  \"display_name\": \"Gemini Flash\",\n  \"custom_models\": [\n    \"gemini-2.0-flash\"\n  ],\n  \"default_model\": \"gemini-2.0-flash\",\n  \"is_active\": true,\n  \"custom_embedding_models\": [\n    \"gemini-embedding-001\"\n  ],\n  \"default_embedding_model\": \"gemini-embedding-001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "1.4 List All Configs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "config"
+              ]
+            },
+            "description": "Returns all configs with embedding fields visible."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", function() { pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.test(\"Has embedding fields\", function() {",
+                  "  var configs = pm.response.json().data;",
+                  "  configs.forEach(function(c) {",
+                  "    pm.expect(c).to.have.property(\"custom_embedding_models\");",
+                  "    pm.expect(c).to.have.property(\"default_embedding_model\");",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.5 Get Mistral7b Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/config/Mistral7b",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "config",
+                "Mistral7b"
+              ]
+            },
+            "description": "Get specific provider config \u2014 verify embedding fields."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Has embedding\", function() {",
+                  "  var d = pm.response.json().data;",
+                  "  pm.expect(d.custom_embedding_models).to.include(\"intfloat/e5-large-v2\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.6 Test Mistral7b Connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/config/Mistral7b/test",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "config",
+                "Mistral7b",
+                "test"
+              ]
+            },
+            "description": "Test connectivity to Mistral7b server."
+          }
+        },
+        {
+          "name": "1.7 Delete Mistral7b Config",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/config/Mistral7b",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "config",
+                "Mistral7b"
+              ]
+            },
+            "description": "Remove config \u2014 falls back to system providers."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Knowledge/RAG \u2014 Collection Embedding Info",
+      "item": [
+        {
+          "name": "2.1 Create Collection (auto-resolves embedding) \u2605",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/collections",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections"
+              ]
+            },
+            "description": "NEW: Response now includes embeddingModel, embeddingDimension, embeddingProvider.\nThese are auto-resolved from tenant's configured embedding provider.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"QA SOPs\",\n  \"description\": \"Quality Assurance Standard Operating Procedures\",\n  \"metadata\": {\n    \"department\": \"Quality\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201\", function() { pm.expect(pm.response.code).to.eql(201); });",
+                  "pm.test(\"Has embedding info\", function() {",
+                  "  var d = pm.response.json().data;",
+                  "  pm.expect(d).to.have.property(\"embeddingModel\");",
+                  "  pm.expect(d).to.have.property(\"embeddingDimension\");",
+                  "  pm.expect(d).to.have.property(\"embeddingProvider\");",
+                  "});",
+                  "pm.collectionVariables.set(\"collection_id\", pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 List Collections (shows embedding)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/collections",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections"
+              ]
+            },
+            "description": "Each collection now shows its embedding model and dimension."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Collections have embedding fields\", function() {",
+                  "  pm.response.json().data.forEach(function(c) {",
+                  "    pm.expect(c).to.have.property(\"embeddingModel\");",
+                  "    pm.expect(c).to.have.property(\"embeddingDimension\");",
+                  "    pm.expect(c).to.have.property(\"embeddingProvider\");",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 Get Collection",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/collections/{{collection_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections",
+                "{{collection_id}}"
+              ]
+            },
+            "description": "Get single collection with embedding info."
+          }
+        },
+        {
+          "name": "2.4 Update Collection",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/collections/{{collection_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections",
+                "{{collection_id}}"
+              ]
+            },
+            "description": "Update name/description. Embedding config does NOT change after creation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated: QA SOPs for GMP compliance\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2.5 Upload Document (TXT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/documents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "documents"
+              ]
+            },
+            "description": "Upload a document \u2014 uses collection's embedding model automatically.\nNo changes needed to upload code.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "collectionId",
+                  "value": "{{collection_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "src": "/tmp/test-sop.txt",
+                  "type": "file"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"202\", function() { pm.expect(pm.response.code).to.eql(202); });",
+                  "pm.collectionVariables.set(\"document_id\", pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.6 Check Document Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/documents/{{document_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "documents",
+                "{{document_id}}",
+                "status"
+              ]
+            },
+            "description": "Poll until status is completed or failed."
+          }
+        },
+        {
+          "name": "2.7 List Documents in Collection",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/collections/{{collection_id}}/documents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections",
+                "{{collection_id}}",
+                "documents"
+              ]
+            },
+            "description": "List documents within a collection."
+          }
+        },
+        {
+          "name": "2.8 Search (within collection)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/search",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "search"
+              ]
+            },
+            "description": "Search uses collection's embedding model for query vector.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"FDA quality records requirements\",\n  \"collectionId\": \"{{collection_id}}\",\n  \"topK\": 5,\n  \"minScore\": 0.3\n}"
+            }
+          }
+        },
+        {
+          "name": "2.9 Search (cross-collection)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/search",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "search"
+              ]
+            },
+            "description": "Cross-collection search \u2014 only searches collections with compatible dimensions.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"FDA inspection requirements\",\n  \"topK\": 5,\n  \"minScore\": 0.3\n}"
+            }
+          }
+        },
+        {
+          "name": "2.10 RAG Context Assembly",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/search/context",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "search",
+                "context"
+              ]
+            },
+            "description": "Search + assemble context for prompt injection.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"quality records retention\",\n  \"collectionId\": \"{{collection_id}}\",\n  \"topK\": 5,\n  \"minScore\": 0.3\n}"
+            }
+          }
+        },
+        {
+          "name": "2.11 Vector Store Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "stats"
+              ]
+            },
+            "description": "View vector store statistics."
+          }
+        },
+        {
+          "name": "2.12 Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/documents/{{document_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "documents",
+                "{{document_id}}"
+              ]
+            },
+            "description": "Delete document and its vectors."
+          }
+        },
+        {
+          "name": "2.13 Delete Collection",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/knowledge/collections/{{collection_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections",
+                "{{collection_id}}"
+              ]
+            },
+            "description": "Delete collection \u2014 cascades vectors + documents."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. AI Gateway (9 endpoints)",
+      "item": [
+        {
+          "name": "3.1 Completion (Gemini)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/completions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "completions"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Explain ISO 9001 in one sentence.\"\n    }\n  ],\n  \"provider\": \"gemini\",\n  \"max_tokens\": 256\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", function() { pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.collectionVariables.set(\"completion_id\", pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2 Completion (OpenAI/Azure)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/completions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "completions"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"What is CAPA?\"\n    }\n  ],\n  \"provider\": \"openai\",\n  \"max_tokens\": 256\n}"
+            }
+          }
+        },
+        {
+          "name": "3.3 Completion (Anthropic/Azure)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/completions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "completions"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Define FDA Part 11.\"\n    }\n  ],\n  \"provider\": \"anthropic\",\n  \"max_tokens\": 256\n}"
+            }
+          }
+        },
+        {
+          "name": "3.4 List Completions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/completions?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "completions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "3.5 Get Completion",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/completions/{{completion_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "completions",
+                "{{completion_id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "3.6 List Providers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/providers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "providers"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "3.7 Provider Health (Gemini)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/providers/gemini/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "providers",
+                "gemini",
+                "health"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "3.8 All Models",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/models",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "models"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "3.9 Overall Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "health"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "3.10 Cost Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/costs?group_by=day",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "costs"
+              ],
+              "query": [
+                {
+                  "key": "group_by",
+                  "value": "day"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "3.11 Playground",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/playground",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "playground"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"ping\"\n    }\n  ],\n  \"provider\": \"gemini\",\n  \"max_tokens\": 10\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Prompt Management (16 endpoints)",
+      "item": [
+        {
+          "name": "4.1 Create Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"doc_analyzer_v1\",\n  \"description\": \"Analyze documents\",\n  \"use_case\": \"document_analysis\",\n  \"system_message\": \"You are an expert document analyst.\",\n  \"user_template\": \"Analyze this document:\\n\\n{{user_instructions}}\\n\\n{{file_content}}\",\n  \"model\": \"gemini-2.0-flash\",\n  \"provider\": \"gemini\",\n  \"temperature\": 0.3,\n  \"max_tokens\": 4096,\n  \"variables\": [\n    {\n      \"name\": \"user_instructions\",\n      \"type\": \"string\",\n      \"required\": false,\n      \"default\": \"\"\n    },\n    {\n      \"name\": \"file_content\",\n      \"type\": \"string\",\n      \"required\": false,\n      \"default\": \"See attached file.\"\n    }\n  ],\n  \"tags\": [\n    \"multimodal\",\n    \"document\"\n  ],\n  \"is_default\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201\", function() { pm.expect(pm.response.code).to.eql(201); });",
+                  "pm.collectionVariables.set(\"prompt_id\", pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 List Prompts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "4.3 Get Prompt",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "4.4 Update Prompt",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_template\": \"Analyze:\\n\\n{{user_instructions}}\\n\\n{{file_content}}\\n\\nProvide: Overview, Key Findings, Action Items.\",\n  \"change_notes\": \"Added structured output\"\n}"
+            }
+          }
+        },
+        {
+          "name": "4.5 Activate Prompt",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "status"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\"\n}"
+            }
+          }
+        },
+        {
+          "name": "4.6 Version History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/versions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "versions"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "4.7 Get Version 1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/versions/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "versions",
+                "1"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "4.8 Rollback to V1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/rollback",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "rollback"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "4.9 Test Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/test",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "test"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variables\": {\n    \"user_instructions\": \"Summarize\",\n    \"file_content\": \"FDA 21 CFR Part 211 requires...\"\n  },\n  \"provider\": \"gemini\"\n}"
+            }
+          }
+        },
+        {
+          "name": "4.10 Execute Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/execute",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "execute"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variables\": {\n    \"user_instructions\": \"Summarize compliance issues\",\n    \"file_content\": \"Batch 2026-001 failed dissolution test...\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "4.11 Execute with File (TXT) \u2605",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/execute-with-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "execute-with-file"
+              ]
+            },
+            "description": "Multimodal: Upload file + execute prompt",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "src": "/tmp/test-audit.txt",
+                  "type": "file"
+                },
+                {
+                  "key": "variables",
+                  "value": "{\"user_instructions\":\"Focus on FDA compliance risks.\"}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.12 Execute with File (PDF) \u2605",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/execute-with-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "execute-with-file"
+              ]
+            },
+            "description": "Multimodal: PDF sent visually to LLM",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "src": "/tmp/test-report.pdf",
+                  "type": "file"
+                },
+                {
+                  "key": "variables",
+                  "value": "{\"user_instructions\":\"Extract all test results.\"}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.13 Execute with File (Excel) \u2605",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/execute-with-file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "execute-with-file"
+              ]
+            },
+            "description": "Multimodal: Excel converted to CSV, injected as text",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "src": "/tmp/test-batch.xlsx",
+                  "type": "file"
+                },
+                {
+                  "key": "variables",
+                  "value": "{\"user_instructions\":\"Identify failed batches.\"}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.14 Clone Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/clone",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "clone"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"doc_analyzer_v2_clone\"\n}"
+            }
+          }
+        },
+        {
+          "name": "4.15 Create Test Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/test-cases",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "test-cases"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"FDA keyword test\",\n  \"description\": \"Verify FDA terms in output\",\n  \"variables\": {\n    \"user_instructions\": \"Focus on FDA\",\n    \"file_content\": \"21 CFR Part 211 compliance required.\"\n  },\n  \"expected_output\": \"Should mention 21 CFR Part 211\",\n  \"tags\": [\n    \"fda\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201\", function() { pm.expect(pm.response.code).to.eql(201); });",
+                  "pm.collectionVariables.set(\"test_case_id\", pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.16 List Test Cases",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}/test-cases",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}",
+                "test-cases"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "4.17 Run Test Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/test-cases/{{test_case_id}}/run",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "test-cases",
+                "{{test_case_id}}",
+                "run"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "4.18 Get Test Results",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/test-cases/{{test_case_id}}/results?limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "test-cases",
+                "{{test_case_id}}",
+                "results"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "4.19 Delete Prompt",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/prompts/{{prompt_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                "{{prompt_id}}"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    }
+  ]
+}

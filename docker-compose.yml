@@ -1,0 +1,348 @@
+version: '3.8'
+
+# ============================================
+# QAssure Platform - Docker Compose
+# ============================================
+# Usage:
+#   Start all:           docker-compose up -d
+#   With monitoring:     docker-compose --profile monitoring up -d
+#   With debug tools:    docker-compose --profile debug up -d
+#   View logs:           docker-compose logs -f api
+#   Stop all:            docker-compose down
+#   Stop + remove data:  docker-compose down -v
+
+#   docker exec -it qassure-postgres psql -U postgres -d qassure_dev
+
+services:
+  # ===========================================
+  # QAssure API
+  # ===========================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qassure-api
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Override host-specific variables for Docker networking
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres123}@postgres:5432/${DB_NAME:-qassure_dev}
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:9092
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - ELASTICSEARCH_NODE=${ELASTICSEARCH_NODE_CONTAINER}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-smtp}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@qassure.ai}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - qassure-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/v1/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # Mount source for hot-reload in development
+      - ./src:/app/src:ro
+      - ./app.js:/app/app.js:ro
+      - ./server.js:/app/server.js:ro
+      - ./escalation.scheduler.js:/app/escalation.scheduler.js:ro
+      - ./reminder.scheduler.js:/app/reminder.scheduler.js:ro
+      - ./uploads:/app/uploads
+      - api_exports:/app/exports
+
+  # ===========================================
+  # PostgreSQL Database
+  # ===========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: qassure-postgres
+    ports:
+      - "5434:5432" # Changed to 5433 to avoid conflict with local PostgreSQL
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres123}
+      - POSTGRES_DB=${DB_NAME:-qassure_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Initialize database with migrations
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - qassure-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # Redis Cache
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: qassure-redis
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - qassure-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # Zookeeper (for Kafka)
+  # ===========================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: qassure-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+    networks:
+      - qassure-network
+    restart: unless-stopped
+
+  # ===========================================
+  # Kafka
+  # ===========================================
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: qassure-kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    depends_on:
+      - zookeeper
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - qassure-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ===========================================
+  # Kafka UI (Debug Profile)
+  # ===========================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: qassure-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: qassure
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - qassure-network
+    profiles:
+      - debug
+
+  # ===========================================
+  # Redis Commander (Debug Profile)
+  # ===========================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: qassure-redis-ui
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - qassure-network
+    profiles:
+      - debug
+
+  # ===========================================
+  # pgAdmin (Debug Profile)
+  # ===========================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: qassure-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@qassure.ai}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin123}
+    depends_on:
+      - postgres
+    networks:
+      - qassure-network
+    profiles:
+      - debug
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # ===========================================
+  # Prometheus (Monitoring Profile)
+  # ===========================================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: qassure-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=15d'
+    networks:
+      - qassure-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # ===========================================
+  # Grafana (Monitoring Profile)
+  # ===========================================
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: qassure-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - qassure-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # ===========================================
+  # Elasticsearch (Search & Analytics)
+  # ===========================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: qassure-elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - cluster.name=qassure-cluster
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - qassure-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qE 'green|yellow'" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ===========================================
+  # Kibana (Elasticsearch UI)
+  # ===========================================
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: qassure-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - qassure-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+networks:
+  qassure-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_log:
+    driver: local
+  kafka_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  api_uploads:
+    driver: local
+  api_exports:
+    driver: local

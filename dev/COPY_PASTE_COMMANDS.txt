@@ -1,0 +1,185 @@
+# ============================================
+# QAssure API Testing - Copy & Paste Commands
+# ============================================
+# Copy and paste these commands ONE BY ONE into your terminal
+
+# ============================================
+# STEP 1: Set Base URL
+# ============================================
+export BASE_URL="http://localhost:3000/api/v1"
+
+# ============================================
+# STEP 2: Test Health (No Login Required)
+# ============================================
+curl -X GET ${BASE_URL}/health | python3 -m json.tool
+
+# ============================================
+# STEP 3: Login and Get Access Token
+# ============================================
+LOGIN_RESPONSE=$(curl -s -X POST ${BASE_URL}/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"testuser2@example.com","password":"Test123456"}')
+
+export ACCESS_TOKEN=$(echo "$LOGIN_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['data']['access_token'])")
+export REFRESH_TOKEN=$(echo "$LOGIN_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['data']['refresh_token'])")
+export USER_ID=$(echo "$LOGIN_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['data']['user']['id'])")
+export TENANT_ID=$(echo "$LOGIN_RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin)['data']['tenant_id'])")
+
+echo "✅ Login successful!"
+echo "User ID: $USER_ID"
+echo "Tenant ID: $TENANT_ID"
+echo "Token: ${ACCESS_TOKEN:0:50}..."
+
+# ============================================
+# STEP 4: Test Authentication Endpoints
+# ============================================
+
+# Get Current User
+curl -X GET ${BASE_URL}/auth/me \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# Validate Token
+curl -X POST ${BASE_URL}/auth/validate \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# Get Active Sessions
+curl -X GET ${BASE_URL}/auth/sessions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 5: Test User Management
+# ============================================
+
+# List All Users
+curl -X GET ${BASE_URL}/users \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# Get User by ID
+curl -X GET ${BASE_URL}/users/$USER_ID \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 6: Test Tenant Management
+# ============================================
+
+# Get Tenant by ID
+curl -X GET ${BASE_URL}/tenants/$TENANT_ID \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 7: Test Role Management
+# ============================================
+
+# List All Roles
+curl -X GET ${BASE_URL}/roles \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 8: Test Permission Management
+# ============================================
+
+# List All Permissions
+curl -X GET ${BASE_URL}/permissions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 9: Test API Key Management
+# ============================================
+
+# List API Keys
+curl -X GET ${BASE_URL}/api-keys \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 10: Test Module Management
+# ============================================
+
+# List All Modules
+curl -X GET ${BASE_URL}/modules \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# Get Module Statistics
+curl -X GET ${BASE_URL}/modules/stats \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# Get Module States
+curl -X GET ${BASE_URL}/modules/states \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 11: Test Session Management
+# ============================================
+
+# List All Sessions
+curl -X GET ${BASE_URL}/sessions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 12: Test Audit Logs
+# ============================================
+
+# List Audit Logs
+curl -X GET "${BASE_URL}/audit-logs?limit=10" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 13: Test QMS Integration
+# ============================================
+
+# List QMS Connections
+curl -X GET ${BASE_URL}/qms/connections \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# List Sync Jobs
+curl -X GET ${BASE_URL}/qms/sync-jobs \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# List Sync Conflicts
+curl -X GET ${BASE_URL}/qms/sync-conflicts \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# STEP 14: Test Refresh Token
+# ============================================
+
+# Refresh Access Token
+curl -X POST ${BASE_URL}/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d "{\"refresh_token\":\"$REFRESH_TOKEN\"}" | python3 -m json.tool
+
+# ============================================
+# STEP 15: Test Logout
+# ============================================
+
+# Logout Current Session
+curl -X POST ${BASE_URL}/auth/logout \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
+
+# ============================================
+# BONUS: Test Registration Flow
+# ============================================
+
+# Register New User
+curl -X POST ${BASE_URL}/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "newuser@test.com",
+    "password": "Test123456",
+    "first_name": "New",
+    "last_name": "User"
+  }' | python3 -m json.tool
+
+# ============================================
+# BONUS: Test Password Reset
+# ============================================
+
+# Request Password Reset
+curl -X POST ${BASE_URL}/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "testuser2@example.com"
+  }' | python3 -m json.tool
+
+# ============================================
+# DONE! All endpoints tested.
+# ============================================

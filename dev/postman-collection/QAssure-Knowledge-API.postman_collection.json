@@ -1,0 +1,459 @@
+{
+  "info": {
+    "name": "QAssure Knowledge API",
+    "description": "Integration collection for the QAssure Knowledge / RAG service.\n\n**Flow:**\n1. Authentication — login to obtain an access token (auto-saved)\n2. AI Provider Config — register an embedding provider once per tenant\n3. Collections — create knowledge collections (one per knowledge base)\n4. Documents — upload files (async processing)\n5. Search — single-collection or cross-collection semantic search\n\n**Setup:**\n- Open the **Variables** tab and update `baseUrl`, `email`, `password`, and any API keys you want to test with\n- Run requests in folder order (00 → 05) for the first full run — test scripts auto-capture IDs into variables\n\n**See:** QAssure-Knowledge-API-Integration-Guide for full API reference and code examples.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "qassure-knowledge-api-v1"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string",
+      "description": "API base URL"
+    },
+    {
+      "key": "email",
+      "value": "superadmin@qassure.ai",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "Password123!",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "Auto-populated by Login"
+    },
+    {
+      "key": "tenant_id",
+      "value": "",
+      "type": "string",
+      "description": "Auto-populated by Login"
+    },
+    {
+      "key": "collection_id",
+      "value": "",
+      "type": "string",
+      "description": "Auto-populated by Create Collection"
+    },
+    {
+      "key": "document_id",
+      "value": "",
+      "type": "string",
+      "description": "Auto-populated by Upload Document"
+    },
+    {
+      "key": "gemini_api_key",
+      "value": "REPLACE_WITH_GEMINI_KEY",
+      "type": "string"
+    },
+    {
+      "key": "openai_api_key",
+      "value": "REPLACE_WITH_OPENAI_KEY",
+      "type": "string"
+    },
+    {
+      "key": "custom_provider_api_key",
+      "value": "REPLACE_WITH_CUSTOM_KEY",
+      "type": "string"
+    },
+    {
+      "key": "custom_provider_endpoint",
+      "value": "https://your-open-source-endpoint/v1",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{access_token}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 — Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Login successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Has access_token', () => pm.expect(res.data.access_token).to.be.a('string'));",
+                  "pm.collectionVariables.set('access_token', res.data.access_token);",
+                  "pm.collectionVariables.set('tenant_id', res.data.tenant_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Logs in and auto-saves `access_token` and `tenant_id` to collection variables. Token is valid for 24 hours."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — AI Provider Config",
+      "item": [
+        {
+          "name": "Register Provider — Gemini",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"gemini\",\n  \"config_type\": \"direct\",\n  \"api_key\": \"{{gemini_api_key}}\",\n  \"default_embedding_model\": \"gemini-embedding-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "config"]
+            },
+            "description": "Registers Google Gemini as an embedding provider for this tenant. Replace `gemini_api_key` variable first."
+          }
+        },
+        {
+          "name": "Register Provider — OpenAI (direct)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"openai\",\n  \"config_type\": \"direct\",\n  \"api_key\": \"{{openai_api_key}}\",\n  \"default_embedding_model\": \"text-embedding-3-small\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "config"]
+            },
+            "description": "Registers direct OpenAI (api.openai.com) as an embedding provider. Replace `openai_api_key` variable first."
+          }
+        },
+        {
+          "name": "Register Provider — Custom open-source",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"CustomLLM\",\n  \"config_type\": \"direct\",\n  \"api_key\": \"{{custom_provider_api_key}}\",\n  \"endpoint\": \"{{custom_provider_endpoint}}\",\n  \"default_embedding_model\": \"intfloat/e5-large-v2\",\n  \"custom_embedding_models\": [\"intfloat/e5-large-v2\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "config"]
+            },
+            "description": "Registers a custom OpenAI-compatible open-source endpoint (e.g., self-hosted Mistral, Llama, e5-large). Provide your own `endpoint` and embedding model name."
+          }
+        },
+        {
+          "name": "List Providers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ai/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "config"]
+            }
+          }
+        },
+        {
+          "name": "Get Provider by Name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ai/config/gemini",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "config", "gemini"]
+            }
+          }
+        },
+        {
+          "name": "Test Provider Connection",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/ai/config/gemini/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "config", "gemini", "test"]
+            }
+          }
+        },
+        {
+          "name": "Delete Provider",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/ai/config/gemini",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "config", "gemini"]
+            },
+            "description": "Removes a provider. Existing collections using this provider will error on new ingests/searches until a compatible provider is registered again."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Collections",
+      "item": [
+        {
+          "name": "Create Collection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Collection created', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Has embedding metadata', () => {",
+                  "  pm.expect(res.data.embeddingModel).to.be.a('string');",
+                  "  pm.expect(res.data.embeddingProvider).to.be.a('string');",
+                  "  pm.expect(res.data.embeddingDimension).to.be.a('number');",
+                  "});",
+                  "pm.collectionVariables.set('collection_id', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"product-docs\",\n  \"description\": \"Product documentation knowledge base\",\n  \"provider\": \"gemini\",\n  \"embeddingModel\": \"gemini-embedding-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "collections"]
+            },
+            "description": "Creates a knowledge collection with the specified embedding model. If `provider` and `embeddingModel` are omitted, the tenant's default embedding-capable provider is used.\n\nResponse includes `embeddingModel`, `embeddingDimension`, `embeddingProvider` — these are immutable per collection."
+          }
+        },
+        {
+          "name": "List Collections",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "collections"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "active", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Collection",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections/{{collection_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "collections", "{{collection_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Collection",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\",\n  \"metadata\": { \"owner\": \"docs-team\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections/{{collection_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "collections", "{{collection_id}}"]
+            },
+            "description": "Update `name`, `description`, or `metadata`. Embedding model cannot be changed after creation."
+          }
+        },
+        {
+          "name": "Delete Collection",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections/{{collection_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "collections", "{{collection_id}}"]
+            },
+            "description": "Deletes the collection and all associated documents and vectors. Irreversible."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Documents",
+      "item": [
+        {
+          "name": "Upload Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data?.id) {",
+                  "  pm.collectionVariables.set('document_id', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "collectionId", "value": "{{collection_id}}", "type": "text" },
+                { "key": "file", "type": "file", "src": [] }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "documents"]
+            },
+            "description": "Multipart upload. Select a file in the `file` field.\n\nSupported: PDF, DOCX, XLSX, XLS, TXT, CSV, PNG, JPG. Max 50 MB.\n\nResponse returns immediately with `status: \"processing\"`. Poll `/documents/:id/status` until `completed`."
+          }
+        },
+        {
+          "name": "Get Document Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/documents/{{document_id}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "documents", "{{document_id}}", "status"]
+            },
+            "description": "Returns `status`: `processing`, `completed`, or `failed`. If `failed`, check `error_message`."
+          }
+        },
+        {
+          "name": "List Documents in Collection",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections/{{collection_id}}/documents?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "collections", "{{collection_id}}", "documents"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "completed", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/documents/{{document_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "documents", "{{document_id}}"]
+            },
+            "description": "Removes the document and all its vectors from the collection."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Search",
+      "item": [
+        {
+          "name": "Search — Single Collection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"how do I configure retention policy\",\n  \"collectionId\": \"{{collection_id}}\",\n  \"topK\": 5,\n  \"minScore\": 0.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "search"]
+            },
+            "description": "Semantic search within a single collection. Returns up to `topK` chunks above `minScore`.\n\nResponse: `{ results: [{ score, content, documentId, fileName, chunkIndex, collectionId }], metadata: { provider, model, fallbackUsed } }`"
+          }
+        },
+        {
+          "name": "Search — All Collections (cross-collection)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"how do I configure retention policy\",\n  \"topK\": 5,\n  \"minScore\": 0.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "search"]
+            },
+            "description": "Omit `collectionId` to search across all active collections for this tenant. Results are merged and ranked by score."
+          }
+        },
+        {
+          "name": "Search with RAG Context",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"how do I configure retention policy\",\n  \"collectionId\": \"{{collection_id}}\",\n  \"topK\": 3,\n  \"minScore\": 0.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/search/context",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "search", "context"]
+            },
+            "description": "Returns results plus a pre-assembled `context` string formatted for direct use in an LLM prompt. Includes `[Source N: <fileName>]` headers between chunks."
+          }
+        },
+        {
+          "name": "Knowledge Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "knowledge", "stats"]
+            },
+            "description": "Returns total vector counts and per-namespace breakdown across all of the tenant's knowledge collections. Useful for monitoring storage usage and debugging empty-result scenarios."
+          }
+        }
+      ]
+    }
+  ]
+}

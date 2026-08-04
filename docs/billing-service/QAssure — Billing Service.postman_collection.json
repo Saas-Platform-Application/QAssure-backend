@@ -1,0 +1,491 @@
+{
+	"info": {
+		"_postman_id": "caca0f90-ef31-482d-88bb-cfda4091abce",
+		"name": "QAssure — Billing Service",
+		"description": "API collection for QAssure Billing Service.\n\nBase URL: http://localhost:3000/api/v1\n\nAuth: Bearer JWT Token\n\nFolders included:\n- Auth: Helper login endpoints to save the jwt_token\n- Pricing Plans: Retrieval and creation of subscription price tiers\n- Invoices: Full lifecycle from draft creation, send dispatch, voiding, and retrieval\n- Payments: Recording transactions and querying payment records\n- Summaries: Tenant dashboard summary and revenue aggregations for Super Admins",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Token saved');",
+									"}",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@pharmacorp.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user credentials to retrieve JWT token and auto-populate the jwt_token variable."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💳 Pricing Plans",
+			"item": [
+				{
+					"name": "Get Pricing Plans",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/pricing-plans",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"pricing-plans"
+							]
+						},
+						"description": "Fetch all pricing plans."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pricing Plan by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/pricing-plans/{{plan_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"pricing-plans",
+								"{{plan_id}}"
+							]
+						},
+						"description": "Fetch details of a single pricing plan."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Pricing Plan",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('plan_id', jsonData.data.id);",
+									"    console.log('✅ Plan ID saved');",
+									"}",
+									"pm.test('Created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"aice-starter-monthly\",\n    \"name\": \"AiCE Starter Monthly\",\n    \"description\": \"AI-assisted Clinical Evaluation - Starter Tier\",\n    \"license_tier\": \"starter\",\n    \"application\": \"aice\",\n    \"base_price\": 199.00,\n    \"currency\": \"USD\",\n    \"billing_cycle\": \"monthly\",\n    \"features\": [\"cer_generation\", \"literature_search\"],\n    \"limits\": {\n        \"max_ai_tokens\": 1000\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/billing/pricing-plans",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"pricing-plans"
+							]
+						},
+						"description": "Create a new pricing plan option (Super Admin only)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Pricing Plan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"AiCE Starter Monthly (Updated)\",\n    \"base_price\": 229.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/billing/pricing-plans/{{plan_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"pricing-plans",
+								"{{plan_id}}"
+							]
+						},
+						"description": "Modifies plan base price or name details (Super Admin only)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🧾 Invoices",
+			"item": [
+				{
+					"name": "Create Invoice",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('invoice_id', jsonData.data.id);",
+									"    console.log('✅ Invoice ID saved');",
+									"}",
+									"pm.test('Invoice created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenant_id\": \"c0000000-0000-0000-0000-000000000001\",\n    \"license_id\": \"{{license_id}}\",\n    \"due_date\": \"2026-07-26T00:00:00.000Z\",\n    \"subtotal\": 199.00,\n    \"tax_rate\": 10.00,\n    \"tax_amount\": 19.90,\n    \"total\": 218.90,\n    \"amount_due\": 218.90,\n    \"billing_name\": \"Pharma Corp Quality Procurement\",\n    \"billing_email\": \"billing@pharmacorp.com\",\n    \"items\": [\n        {\n            \"description\": \"AiCE Starter Tier - Monthly Subscription\",\n            \"quantity\": 1,\n            \"unit_price\": 199.00,\n            \"amount\": 199.00,\n            \"item_type\": \"license\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/billing/invoices",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"invoices"
+							]
+						},
+						"description": "Generates a draft invoice header for a tenant's subscription license (Super Admin only)."
+					},
+					"response": []
+				},
+				{
+					"name": "List Invoices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/invoices?status=draft",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"invoices"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "draft"
+								}
+							]
+						},
+						"description": "Fetch invoices list."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/invoices/{{invoice_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"invoices",
+								"{{invoice_id}}"
+							]
+						},
+						"description": "Fetch details of an invoice."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Invoice",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/invoices/{{invoice_id}}/send",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"invoices",
+								"{{invoice_id}}",
+								"send"
+							]
+						},
+						"description": "Dispatches an invoice notification and locks it (Super Admin only)."
+					},
+					"response": []
+				},
+				{
+					"name": "Void Invoice",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/invoices/{{invoice_id}}/void",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"invoices",
+								"{{invoice_id}}",
+								"void"
+							]
+						},
+						"description": "Voids/cancels an active outstanding invoice debt (Super Admin only)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💰 Payments",
+			"item": [
+				{
+					"name": "Record Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('payment_id', jsonData.data.id);",
+									"    console.log('✅ Payment ID saved');",
+									"}",
+									"pm.test('Payment recorded', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenant_id\": \"c0000000-0000-0000-0000-000000000001\",\n    \"invoice_id\": \"{{invoice_id}}\",\n    \"amount\": 218.90,\n    \"payment_method\": \"wire\",\n    \"reference_number\": \"WIRE-REF-992102A\",\n    \"bank_name\": \"Chase Bank\",\n    \"transaction_date\": \"2026-06-26T00:00:00.000Z\",\n    \"notes\": \"Payment recorded for June invoice\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/billing/payments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"payments"
+							]
+						},
+						"description": "Record payments received and clear outstanding invoice balances (Super Admin only)."
+					},
+					"response": []
+				},
+				{
+					"name": "List Payments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/payments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"payments"
+							]
+						},
+						"description": "Fetch payments ledger."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/payments/{{payment_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"payments",
+								"{{payment_id}}"
+							]
+						},
+						"description": "Fetch details of a single payment transaction."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Summaries & Reports",
+			"item": [
+				{
+					"name": "Get Billing Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"summary"
+							]
+						},
+						"description": "Fetch current tenant's active plan subscriptions, outstanding debt, and last payment metadata."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Revenue Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/billing/revenue",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"billing",
+								"revenue"
+							]
+						},
+						"description": "Returns aggregated sales numbers across months (Super Admin only)."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "plan_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "invoice_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "payment_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

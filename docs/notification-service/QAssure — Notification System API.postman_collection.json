@@ -1,0 +1,2264 @@
+{
+	"info": {
+		"_postman_id": "74cb409d-cdaf-42df-a2c9-eed4948fff58",
+		"name": "QAssure — Notification System API",
+		"description": "Complete Postman collection for QAssure Notification System.\n\n## Setup\n1. Set `base_url` variable to your server (e.g. http://localhost:3000)\n2. Run folder '01 — Authentication' first to get tokens\n3. All other requests use saved tokens automatically\n\n## What is covered\n- All 8 REST notification endpoints\n- WebSocket connection instructions\n- Preference management\n- Admin endpoints (templates, alert rules, escalation rules)\n- Security tests (401, 403 verification)\n\n## Verified against live QAssure server — April 2026",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48835086"
+	},
+	"item": [
+		{
+			"name": "01 — Authentication",
+			"item": [
+				{
+					"name": "Login as Tenant Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.access_token) {",
+									"    pm.collectionVariables.set('tenant_admin_token', res.data.access_token);",
+									"    if (res.data.user && res.data.user.id) {",
+									"        pm.collectionVariables.set('tenant_admin_user_id', res.data.user.id);",
+									"    }",
+									"    pm.test('Login successful', () => pm.expect(res.success).to.be.true);",
+									"    pm.test('Token received', () => pm.expect(res.data.access_token).to.be.a('string'));",
+									"    console.log('Tenant admin token saved');",
+									"} else {",
+									"    pm.test('Login failed', () => pm.expect(res.success).to.be.true);",
+									"    console.error('Login error:', JSON.stringify(res));",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"tenant8admin@gmail.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Pharma Corp tenant admin. Token auto-saved to tenant_admin_token."
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Regular User (Bob)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.access_token) {",
+									"    pm.collectionVariables.set('regular_user_token', res.data.access_token);",
+									"    if (res.data.user && res.data.user.id) {",
+									"        pm.collectionVariables.set('regular_user_id', res.data.user.id);",
+									"    }",
+									"    pm.test('Login successful', () => pm.expect(res.success).to.be.true);",
+									"    console.log('Regular user token saved');",
+									"} else {",
+									"    pm.test('Login failed', () => pm.expect(res.success).to.be.true);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"bob@pharmacorp.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Bob (quality_analyst). Token auto-saved to regular_user_token."
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Super Admin (LTTS)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.access_token) {",
+									"    pm.collectionVariables.set('super_admin_token', res.data.access_token);",
+									"    pm.test('Login successful', () => pm.expect(res.success).to.be.true);",
+									"    console.log('Super admin token saved');",
+									"} else {",
+									"    pm.test('Login failed', () => pm.expect(res.success).to.be.true);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"polumuri.suresh@ltts.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as LTTS super admin. Token auto-saved to super_admin_token."
+					},
+					"response": []
+				}
+			],
+			"description": "Login to get tokens. Run these first."
+		},
+		{
+			"name": "02 — User Notifications",
+			"item": [
+				{
+					"name": "Get My Notifications",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Data is array', () => pm.expect(res.data).to.be.an('array'));",
+									"if (res.data.length > 0) {",
+									"    const n = res.data[0];",
+									"    pm.collectionVariables.set('notification_id', n.id);",
+									"    console.log('Saved notification_id:', n.id);",
+									"    pm.test('Notification has id', () => pm.expect(n.id).to.be.a('string'));",
+									"    pm.test('Notification has title', () => pm.expect(n.title).to.be.a('string'));",
+									"    pm.test('Notification has message', () => pm.expect(n.message).to.be.a('string'));",
+									"    pm.test('Notification has notification_type', () => pm.expect(n.notification_type).to.be.a('string'));",
+									"    pm.test('Notification has is_read boolean', () => pm.expect(n.is_read).to.be.a('boolean'));",
+									"    pm.test('Notification has created_at', () => pm.expect(n.created_at).to.be.a('string'));",
+									"    console.log('Sample notification:', JSON.stringify(n, null, 2));",
+									"} else {",
+									"    console.log('No notifications found for this user');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/me?limit=20&offset=0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"me"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Number of notifications to return (default 50)"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Pagination offset"
+								},
+								{
+									"key": "is_read",
+									"value": "false",
+									"description": "Filter by read status (true/false)",
+									"disabled": true
+								},
+								{
+									"key": "category",
+									"value": "capa",
+									"description": "Filter by category: capa, document, training, workflow, supplier, system",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns current user's notifications. Ordered newest first. Excludes dismissed and expired.\n\nResponse data array contains notification objects with:\n- id, title, message, notification_type, category, priority\n- entity_type, entity_id, entity_name, action_url\n- is_read, read_at, is_dismissed, dismissed_at\n- created_at, expires_at"
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Notifications — Filter Unread Only",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Data is array', () => pm.expect(res.data).to.be.an('array'));",
+									"if (res.data.length > 0) {",
+									"    pm.test('All are unread', () => {",
+									"        res.data.forEach(n => pm.expect(n.is_read).to.be.false);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/me?is_read=false&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"me"
+							],
+							"query": [
+								{
+									"key": "is_read",
+									"value": "false"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Returns only unread notifications. All returned items should have is_read: false."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Notifications — Filter by Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data.length > 0) {",
+									"    pm.test('All have category capa', () => {",
+									"        res.data.forEach(n => pm.expect(n.category).to.equal('capa'));",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/me?category=capa",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"me"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "capa"
+								}
+							]
+						},
+						"description": "Filter by category. Valid values: capa, document, training, workflow, supplier, system"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Count",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has unread_count', () => pm.expect(res.data.unread_count).to.be.a('number'));",
+									"pm.test('unread_count >= 0', () => pm.expect(res.data.unread_count).to.be.at.least(0));",
+									"console.log('Unread count:', res.data.unread_count);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/me/unread-count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"me",
+								"unread-count"
+							]
+						},
+						"description": "Returns count of unread notifications.\n\nResponse: { success: true, data: { unread_count: number } }\n\nUse this for the notification bell badge. Update in real-time via WebSocket unread_count event."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Single Notification as Read",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const id = pm.collectionVariables.get('notification_id');",
+									"if (!id) console.warn('notification_id not set — run Get My Notifications first');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data) {",
+									"    pm.test('is_read is now true', () => pm.expect(res.data.is_read).to.be.true);",
+									"    pm.test('read_at is set', () => pm.expect(res.data.read_at).to.be.a('string'));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/{{notification_id}}/read",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"{{notification_id}}",
+								"read"
+							]
+						},
+						"description": "Marks a single notification as read. notification_id is auto-populated by Get My Notifications.\n\nAlternative: send mark_read WebSocket event with { notificationId: 'uuid' }"
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All Notifications as Read",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has marked_count', () => pm.expect(res.data.marked_count).to.be.a('number'));",
+									"console.log('Marked as read:', res.data.marked_count, 'notifications');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/me/read-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"me",
+								"read-all"
+							]
+						},
+						"description": "Marks ALL unread notifications as read for the current user.\n\nResponse: { success: true, data: { marked_count: number } }"
+					},
+					"response": []
+				},
+				{
+					"name": "Dismiss Single Notification",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const id = pm.collectionVariables.get('notification_id');",
+									"if (!id) console.warn('notification_id not set — run Get My Notifications first');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data) {",
+									"    pm.test('is_dismissed is now true', () => pm.expect(res.data.is_dismissed).to.be.true);",
+									"    pm.test('dismissed_at is set', () => pm.expect(res.data.dismissed_at).to.be.a('string'));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/{{notification_id}}/dismiss",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"{{notification_id}}",
+								"dismiss"
+							]
+						},
+						"description": "Dismisses a single notification. Dismissed notifications are hidden from GET /me results."
+					},
+					"response": []
+				},
+				{
+					"name": "Dismiss All Notifications",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has dismissed_count', () => pm.expect(res.data.dismissed_count).to.be.a('number'));",
+									"console.log('Dismissed:', res.data.dismissed_count, 'notifications');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/me/dismiss-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"me",
+								"dismiss-all"
+							]
+						},
+						"description": "Dismisses ALL notifications for the current user.\n\nResponse: { success: true, data: { dismissed_count: number } }"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for reading and managing the current user's notifications. Available to any authenticated user."
+		},
+		{
+			"name": "03 — Preferences",
+			"item": [
+				{
+					"name": "Get My Preferences",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"const prefs = res.data;",
+									"pm.test('Has in_app_enabled', () => pm.expect(prefs.in_app_enabled).to.be.a('boolean'));",
+									"pm.test('Has email_enabled', () => pm.expect(prefs.email_enabled).to.be.a('boolean'));",
+									"pm.test('Has email_digest', () => pm.expect(prefs.email_digest).to.be.a('string'));",
+									"pm.test('Has category_preferences', () => pm.expect(prefs.category_preferences).to.be.an('object'));",
+									"pm.test('Has quiet_hours_enabled', () => pm.expect(prefs.quiet_hours_enabled).to.be.a('boolean'));",
+									"pm.test('Has timezone', () => pm.expect(prefs.timezone).to.be.a('string'));",
+									"console.log('Preferences:', JSON.stringify(prefs, null, 2));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/preferences",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"preferences"
+							]
+						},
+						"description": "Returns current user's notification preferences. Creates default preferences if none exist.\n\nDefault category_preferences:\n- capa: { in_app: true, email: true }\n- document: { in_app: true, email: true }\n- training: { in_app: true, email: true }\n- workflow: { in_app: true, email: true }\n- supplier: { in_app: true, email: true }\n- system: { in_app: true, email: false }"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Preferences — Disable CAPA Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data && res.data.category_preferences && res.data.category_preferences.capa) {",
+									"    pm.test('CAPA in_app now false', () => pm.expect(res.data.category_preferences.capa.in_app).to.be.false);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"category_preferences\": {\n    \"capa\": { \"in_app\": false, \"email\": true },\n    \"document\": { \"in_app\": true, \"email\": true },\n    \"training\": { \"in_app\": true, \"email\": true },\n    \"workflow\": { \"in_app\": true, \"email\": true },\n    \"supplier\": { \"in_app\": true, \"email\": true },\n    \"system\": { \"in_app\": true, \"email\": false }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/preferences",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"preferences"
+							]
+						},
+						"description": "Update category preferences. Only send fields you want to update."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Preferences — Enable Quiet Hours",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data) {",
+									"    pm.test('quiet_hours_enabled is true', () => pm.expect(res.data.quiet_hours_enabled).to.be.true);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quiet_hours_enabled\": true,\n  \"quiet_hours_start\": \"22:00\",\n  \"quiet_hours_end\": \"07:00\",\n  \"timezone\": \"Asia/Kolkata\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/preferences",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"preferences"
+							]
+						},
+						"description": "Enable quiet hours from 10pm to 7am IST. Urgent notifications bypass quiet hours."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Preferences — Disable All In-App",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"in_app_enabled\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/preferences",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"preferences"
+							]
+						},
+						"description": "Master switch to disable ALL in-app notifications. No in-app notifications will be delivered when this is false."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Preferences — Reset to Defaults",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data) {",
+									"    pm.test('in_app_enabled is true', () => pm.expect(res.data.in_app_enabled).to.be.true);",
+									"    pm.test('quiet_hours_enabled is false', () => pm.expect(res.data.quiet_hours_enabled).to.be.false);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"in_app_enabled\": true,\n  \"email_enabled\": true,\n  \"email_digest\": \"instant\",\n  \"quiet_hours_enabled\": false,\n  \"timezone\": \"UTC\",\n  \"category_preferences\": {\n    \"capa\": { \"in_app\": true, \"email\": true },\n    \"document\": { \"in_app\": true, \"email\": true },\n    \"training\": { \"in_app\": true, \"email\": true },\n    \"workflow\": { \"in_app\": true, \"email\": true },\n    \"supplier\": { \"in_app\": true, \"email\": true },\n    \"system\": { \"in_app\": true, \"email\": false }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/preferences",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"preferences"
+							]
+						},
+						"description": "Reset all preferences back to defaults."
+					},
+					"response": []
+				}
+			],
+			"description": "Get and update the current user's notification preferences."
+		},
+		{
+			"name": "04 — Admin: Send Notifications",
+			"item": [
+				{
+					"name": "Send to Specific User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data) {",
+									"    pm.test('Has notification id', () => pm.expect(res.data.id).to.be.a('string'));",
+									"    pm.test('Has correct title', () => pm.expect(res.data.title).to.equal('Test Notification'));",
+									"    console.log('Notification sent, id:', res.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"{{regular_user_id}}\",\n  \"title\": \"Test Notification\",\n  \"message\": \"This is a test notification sent via admin API\",\n  \"notification_type\": \"info\",\n  \"category\": \"system\",\n  \"priority\": \"normal\",\n  \"entity_type\": \"test\",\n  \"action_url\": \"/dashboard\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/send",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"send"
+							]
+						},
+						"description": "Send a notification to a specific user by user_id.\n\nnotification_type values: info, success, warning, action_required\ncategory values: capa, document, training, workflow, supplier, system\npriority values: normal, high, urgent"
+					},
+					"response": []
+				},
+				{
+					"name": "Send to Multiple Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Data is array', () => pm.expect(res.data).to.be.an('array'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_ids\": [\"{{tenant_admin_user_id}}\", \"{{regular_user_id}}\"],\n  \"title\": \"Broadcast Notification\",\n  \"message\": \"This notification was sent to multiple users\",\n  \"notification_type\": \"info\",\n  \"category\": \"system\",\n  \"priority\": \"normal\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/send",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"send"
+							]
+						},
+						"description": "Send the same notification to multiple users by user_ids array."
+					},
+					"response": []
+				},
+				{
+					"name": "Send to Role",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"role\": \"quality_manager\",\n  \"title\": \"Role Broadcast\",\n  \"message\": \"All quality managers: please review the new supplier submission\",\n  \"notification_type\": \"action_required\",\n  \"category\": \"supplier\",\n  \"priority\": \"high\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/send",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"send"
+							]
+						},
+						"description": "Send notification to all users with a specific role in the tenant. Uses role code (e.g. quality_manager, tenant_admin, viewer)."
+					},
+					"response": []
+				},
+				{
+					"name": "Send with Template Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"console.log('Notification sent via template');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"{{regular_user_id}}\",\n  \"template_code\": \"custom_alert_001\",\n  \"variables\": {\n    \"entity_name\": \"MyDocument.pdf\",\n    \"reason\": \"Incomplete signature\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/send",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"send"
+							]
+						},
+						"description": "Send a notification using a pre-defined template code. Dynamic variables like {{entity_name}} in the template will be replaced by variables provided in the request body."
+					},
+					"response": []
+				}
+			],
+			"description": "Admin endpoints for sending notifications manually. Requires notifications:write permission."
+		},
+		{
+			"name": "05 — Admin: Templates",
+			"item": [
+				{
+					"name": "Get All Templates",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/templates?limit=50&offset=0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"templates"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Super Admin Templates",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/templates/super-admin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"templates",
+								"super-admin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"custom_alert_001\",\n  \"name\": \"Custom Alert\",\n  \"description\": \"A custom notification template\",\n  \"title_template\": \"Alert: {{entity_name}}\",\n  \"message_template\": \"Action required for {{entity_name}} — {{reason}}\",\n  \"email_subject_template\": \"[QAssure] Alert: {{entity_name}}\",\n  \"email_body_template\": \"<h1>Alert</h1><p>Action required for {{entity_name}}.</p>\",\n  \"category\": \"system\",\n  \"default_priority\": \"high\",\n  \"channels\": [\"in_app\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/templates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Template",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Template Name\",\n  \"title_template\": \"Updated Title: {{entity_name}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/templates/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"templates",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "uuid-here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Override Global Template (Tenant)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title_template\": \"[Tenant Override] {{entity_name}}\",\n  \"message_template\": \"This is a custom message for our tenant for {{entity_name}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/templates/:code/override",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"templates",
+								":code",
+								"override"
+							],
+							"variable": [
+								{
+									"key": "code",
+									"value": "system_welcome"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Template to Global",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/templates/:code/reset",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"templates",
+								":code",
+								"reset"
+							],
+							"variable": [
+								{
+									"key": "code",
+									"value": "system_welcome"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Manage notification templates. Requires notifications:read / notifications:write permission."
+		},
+		{
+			"name": "06 — Security Tests",
+			"item": [
+				{
+					"name": "No Token — Verify 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 401', () => pm.response.to.have.status(401));",
+									"const res = pm.response.json();",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);",
+									"console.log('Confirmed: no token returns 401');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"me"
+							]
+						},
+						"description": "EXPECTED TO RETURN 401. No Authorization header."
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid Token — Verify 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 401', () => pm.response.to.have.status(401));",
+									"const res = pm.response.json();",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid.token.here"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"me"
+							]
+						},
+						"description": "EXPECTED TO RETURN 401. Invalid JWT token."
+					},
+					"response": []
+				},
+				{
+					"name": "Regular User Cannot Send Notifications — Verify 403",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 403', () => pm.response.to.have.status(403));",
+									"const res = pm.response.json();",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);",
+									"console.log('Confirmed: regular user cannot send notifications (403)');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"{{tenant_admin_user_id}}\",\n  \"title\": \"Unauthorized\",\n  \"message\": \"This should fail\",\n  \"notification_type\": \"info\",\n  \"category\": \"system\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/send",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"send"
+							]
+						},
+						"description": "EXPECTED TO RETURN 403. Regular users do not have notifications:write permission."
+					},
+					"response": []
+				},
+				{
+					"name": "Regular User Cannot Access Templates — Verify 403",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 403', () => pm.response.to.have.status(403));",
+									"const res = pm.response.json();",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/templates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"templates"
+							]
+						},
+						"description": "EXPECTED TO RETURN 403. Regular users do not have notifications:read permission."
+					},
+					"response": []
+				},
+				{
+					"name": "Regular User CAN Get Own Notifications — Verify 200",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"const res = pm.response.json();",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Data is array', () => pm.expect(res.data).to.be.an('array'));",
+									"console.log('Confirmed: regular user can read own notifications');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"me"
+							]
+						},
+						"description": "Regular users CAN read their own notifications and preferences. Only admin endpoints require special permissions."
+					},
+					"response": []
+				},
+				{
+					"name": "Regular User CAN Get Own Preferences — Verify 200",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"const res = pm.response.json();",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/preferences",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"preferences"
+							]
+						},
+						"description": "Regular users CAN read and update their own preferences."
+					},
+					"response": []
+				}
+			],
+			"description": "Verify security boundaries are working correctly."
+		},
+		{
+			"name": "07 — Admin: SMTP Configuration",
+			"item": [
+				{
+					"name": "Get Current SMTP Config",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/smtp-config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"smtp-config"
+							]
+						},
+						"description": "Returns SMTP configuration for the current tenant."
+					},
+					"response": []
+				},
+				{
+					"name": "List All SMTP Configs (Super Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/smtp-config/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"smtp-config",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test SMTP Connection",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{smtp-uuid-here}}\",\n  \"host\": \"smtp.gmail.com\",\n  \"port\": 587,\n  \"secure\": false,\n  \"username\": \"test@gmail.com\",\n  \"tenant_id\": \"{{tenant-uuid-here}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/smtp-config/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"smtp-config",
+								"test"
+							]
+						},
+						"description": "Trigger a live SMTP connection test for the tenant."
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Test SMTP (Super Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{smtp-uuid-here}}\",\n  \"host\": \"smtp.gmail.com\",\n  \"port\": 587,\n  \"secure\": false,\n  \"username\": \"test@gmail.com\",\n  \"tenant_id\": \"{{tenant-uuid-here}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/smtp-config/admin/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"smtp-config",
+								"admin",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upsert SMTP Config",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"host\": \"smtp.gmail.com\",\n  \"port\": 587,\n  \"secure\": false,\n  \"username\": \"test@gmail.com\",\n  \"password\": \"your-app-password\",\n  \"from_email\": \"noreply@yourdomain.com\",\n  \"from_name\": \"QAssure Notifications\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/smtp-config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"smtp-config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Setup SMTP (Super Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tenant_id\": \"optional-uuid\",\n  \"host\": \"smtp.provider.com\",\n  \"port\": 465,\n  \"secure\": true,\n  \"username\": \"admin@provider.com\",\n  \"password\": \"secret\",\n  \"scope\": \"tenant\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/smtp-config/setup",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"smtp-config",
+								"setup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete SMTP Config",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/smtp-config/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"smtp-config",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{smtp-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Manage SMTP settings for reliable email delivery."
+		},
+		{
+			"name": "08 — Admin: Failed Emails",
+			"item": [
+				{
+					"name": "Get Failed Emails Log",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/failed-emails?limit=50&offset=0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"failed-emails"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resend All Failed Emails",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/failed-emails/resend-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"failed-emails",
+								"resend-all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Single Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/failed-emails/:id/resend",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"failed-emails",
+								":id",
+								"resend"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "uuid-here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Failed Email Log",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/failed-emails/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"failed-emails",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "uuid-here"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "09 — Master Management (Categories & Codes)",
+			"item": [
+				{
+					"name": "Get All Categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Notification Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"workflow_status\",\n  \"name\": \"Workflow Status\",\n  \"description\": \"Updates regarding workflow state changes\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Codes for Category",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/categories/system/codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"categories",
+								"system",
+								"codes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Categories (Tenant)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/categories/tenant?module_id=8601d785-6bfd-4a59-8977-da68e3ea9b7c",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"categories",
+								"tenant"
+							],
+							"query": [
+								{
+									"key": "module_id",
+									"value": "8601d785-6bfd-4a59-8977-da68e3ea9b7c",
+									"description": "Optional: Only return categories for this module (plus platform defaults)"
+								}
+							]
+						},
+						"description": "Returns all notification categories accessible to the current tenant. Excellent for building dropdowns!"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/categories/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{notification-category-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Notification Category",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Category Name\",\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/categories/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{notification-category-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Notification Category",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/categories/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{notification-category-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Notification Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"workflow_assigned\",\n  \"name\": \"Workflow Assigned\",\n  \"description\": \"Triggered when a user is assigned to a workflow step\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/categories/:categoryId/codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"categories",
+								":categoryId",
+								"codes"
+							],
+							"variable": [
+								{
+									"key": "categoryId",
+									"value": "{{notification-category-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Notification Code",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Code Name\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/codes/:codeId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"codes",
+								":codeId"
+							],
+							"variable": [
+								{
+									"key": "codeId",
+									"value": "{{notification-code-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Notification Code",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/codes/:codeId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"codes",
+								":codeId"
+							],
+							"variable": [
+								{
+									"key": "codeId",
+									"value": "{{notification-code-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Master endpoints for defining the notification structure (Super Admin only)."
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string",
+			"description": "Base URL of QAssure server. Change for your deployment."
+		},
+		{
+			"key": "tenant_admin_token",
+			"value": "",
+			"type": "string",
+			"description": "Auto-populated after Login as Tenant Admin"
+		},
+		{
+			"key": "regular_user_token",
+			"value": "",
+			"type": "string",
+			"description": "Auto-populated after Login as Regular User"
+		},
+		{
+			"key": "super_admin_token",
+			"value": "",
+			"type": "string",
+			"description": "Auto-populated after Login as Super Admin"
+		},
+		{
+			"key": "notification_id",
+			"value": "",
+			"type": "string",
+			"description": "Auto-populated after Get My Notifications"
+		},
+		{
+			"key": "tenant_admin_user_id",
+			"value": "",
+			"type": "string",
+			"description": "Auto-populated after Login as Tenant Admin"
+		},
+		{
+			"key": "regular_user_id",
+			"value": "",
+			"type": "string",
+			"description": "Auto-populated after Login as Regular User"
+		},
+		{
+			"key": "smtp-uuid-here",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "tenant-uuid-here",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "notification-category-uuid-here",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "notification-code-uuid-here",
+			"value": "",
+			"type": "default"
+		}
+	]
+}

@@ -1,0 +1,159 @@
+QAssure.ai API Test Report
+Generated: Thu Jan  1 15:41:54 IST 2026
+Base URL: http://localhost:3000/api/v1
+Delay Between Tests: 0.5s
+
+======================================================================
+  QASSURE.AI COMPREHENSIVE API TEST REPORT
+======================================================================
+
+Test Started: Thu Jan  1 15:41:54 IST 2026
+Base URL: http://localhost:3000/api/v1
+[0;36mNOTE: Using 0.5s delay between tests. Use DELAY=1 to increase.[0m
+
+======================================================================
+  PHASE 1: CORE INFRASTRUCTURE
+======================================================================
+
+
+----------------------------------------------------------------------
+  1.1 Health Check Endpoints
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-1.1.1: Basic Health Check[0m
+Description: Verify server is running
+Command: curl -X GET "http://localhost:3000/api/v1/health"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-1.1.2: Detailed Health Check[0m
+Description: Verify all components status
+Command: curl -X GET "http://localhost:3000/api/v1/health/detailed"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-1.1.3: Invalid Endpoint[0m
+Description: Should return 404 for non-existent endpoint
+Command: curl -X GET "http://localhost:3000/api/v1/nonexistent-endpoint"
+[0;31m❌ FAIL[0m
+Expected: 404
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 2: REDIS & SESSION MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  2.1 Cache Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-2.1.1: Cache Health via Detailed Health[0m
+Description: Verify Redis connection
+Command: curl -X GET "http://localhost:3000/api/v1/health/detailed"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 3: AUTHENTICATION SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  3.1 User Registration
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.1.1: Register with Valid Data[0m
+Description: Should create new user
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.2: Register - Weak Password (No Uppercase)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.3: Register - Weak Password (No Numbers)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.4: Register - Weak Password (No Special Chars)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.5: Register - Weak Password (Too Short)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.6: Register - Invalid Email Format[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.7: Register - Missing Required Fields[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.8: Register - Duplicate Email[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 409
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+

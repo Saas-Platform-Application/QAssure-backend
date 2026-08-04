@@ -1,0 +1,1705 @@
+{
+	"info": {
+		"_postman_id": "5d1c9d46-84fa-4146-a59a-84318168e4f8",
+		"name": "QAssure — Audit Log API",
+		"description": "Complete Postman collection for QAssure Audit Log API endpoints. Verified against live server April 2026.\n\n## Setup\n1. Set the `base_url` variable to your server URL (e.g. http://localhost:3000)\n2. Run '01 - Login as Tenant Admin' or '01 - Login as Super Admin' first — the token is automatically saved\n3. All subsequent requests use the saved token automatically\n\n## User Types\n- **LTTS Super Admin** (superadmin@ltts.com) — sees all tenants\n- **Tenant Admin** (admin@pharmacorp.com) — sees Pharma Corp only\n- **Regular User** (bob@pharmacorp.com) — sees own logs only via /my-logs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48835086"
+	},
+	"item": [
+		{
+			"name": "01 — Authentication",
+			"item": [
+				{
+					"name": "Login as Tenant Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.access_token) {",
+									"    pm.collectionVariables.set('tenant_admin_token', res.data.access_token);",
+									"    console.log('Tenant admin token saved');",
+									"    pm.test('Login successful', () => pm.expect(res.success).to.be.true);",
+									"    pm.test('Token received', () => pm.expect(res.data.access_token).to.be.a('string'));",
+									"    pm.test('Role is tenant_admin', () => pm.expect(res.data.roles).to.include('tenant_admin'));",
+									"} else {",
+									"    console.error('Login failed:', JSON.stringify(res));",
+									"    pm.test('Login failed - check credentials', () => pm.expect(res.success).to.be.true);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@pharmacorp.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Pharma Corp tenant admin. Token is auto-saved to tenant_admin_token variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Super Admin (LTTS)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.access_token) {",
+									"    pm.collectionVariables.set('super_admin_token', res.data.access_token);",
+									"    console.log('Super admin token saved');",
+									"    pm.test('Login successful', () => pm.expect(res.success).to.be.true);",
+									"    pm.test('Token received', () => pm.expect(res.data.access_token).to.be.a('string'));",
+									"} else {",
+									"    console.error('Login failed:', JSON.stringify(res));",
+									"    pm.test('Login failed - check credentials', () => pm.expect(res.success).to.be.true);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"superadmin@ltts.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as LTTS super admin. Token is auto-saved to super_admin_token variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Regular User (Bob)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.access_token) {",
+									"    pm.collectionVariables.set('regular_user_token', res.data.access_token);",
+									"    console.log('Regular user token saved');",
+									"    pm.test('Login successful', () => pm.expect(res.success).to.be.true);",
+									"    pm.test('Token received', () => pm.expect(res.data.access_token).to.be.a('string'));",
+									"} else {",
+									"    console.error('Login failed:', JSON.stringify(res));",
+									"    pm.test('Login failed - check credentials', () => pm.expect(res.success).to.be.true);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"bob@pharmacorp.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Bob (quality_analyst role). Token is auto-saved to regular_user_token variable."
+					},
+					"response": []
+				}
+			],
+			"description": "Login endpoints to get tokens for each user type. Run these first before any audit log requests."
+		},
+		{
+			"name": "02 — My Logs (Any Authenticated User)",
+			"item": [
+				{
+					"name": "Get My Logs — as Tenant Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has data array', () => pm.expect(res.data).to.be.an('array'));",
+									"pm.test('Has pagination', () => pm.expect(res.pagination).to.be.an('object'));",
+									"pm.test('Has total', () => pm.expect(res.pagination.total).to.be.a('number'));",
+									"if (res.data.length > 0) {",
+									"    pm.test('All logs belong to this user', () => {",
+									"        const decoded = JSON.parse(atob(pm.collectionVariables.get('tenant_admin_token').split('.')[1]));",
+									"        res.data.forEach(log => pm.expect(log.user_id).to.equal(decoded.sub));",
+									"    });",
+									"    pm.test('Log has required fields', () => {",
+									"        const log = res.data[0];",
+									"        pm.expect(log.id).to.be.a('string');",
+									"        pm.expect(log.action).to.be.a('string');",
+									"        pm.expect(log.resource_type).to.be.a('string');",
+									"        pm.expect(log.created_at).to.be.a('string');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/my-logs?page=1&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"my-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Returns only the tenant admin's own audit logs. page and limit are optional."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Logs — as Regular User (Bob)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has data array', () => pm.expect(res.data).to.be.an('array'));",
+									"pm.test('Has pagination', () => pm.expect(res.pagination).to.be.an('object'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/my-logs?page=1&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"my-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Returns only Bob's own audit logs. Regular users can ONLY use this endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Logs — Global Search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has data array', () => pm.expect(res.data).to.be.an('array'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/my-logs?search=LOGIN",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"my-logs"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "LOGIN"
+								}
+							]
+						},
+						"description": "Performs a global search on the current user's logs. This searches across action, resource_type, resource_id, ip_address, and the metadata JSON field."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Logs — Regular User Blocked from /audit-logs (Verify 403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 403', () => pm.response.to.have.status(403));",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);",
+									"pm.test('Error code is FORBIDDEN', () => pm.expect(res.error.code).to.equal('FORBIDDEN'));",
+									"console.log('Confirmed: regular users cannot access /audit-logs');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							]
+						},
+						"description": "EXPECTED TO RETURN 403. Confirms that regular users cannot access the full audit log endpoint."
+					},
+					"response": []
+				}
+			],
+			"description": "GET /api/v1/audit-logs/my-logs — available to ALL authenticated users. Returns only the current user's own audit logs."
+		},
+		{
+			"name": "03 — Get All Audit Logs",
+			"item": [
+				{
+					"name": "Get All Logs — as Tenant Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has data array', () => pm.expect(res.data).to.be.an('array'));",
+									"pm.test('Has pagination', () => pm.expect(res.pagination).to.be.an('object'));",
+									"pm.test('Has total count', () => pm.expect(res.pagination.total).to.be.a('number'));",
+									"pm.test('Has totalPages', () => pm.expect(res.pagination.totalPages).to.be.a('number'));",
+									"pm.test('Has hasMore', () => pm.expect(res.pagination.hasMore).to.be.a('boolean'));",
+									"if (res.data.length > 0) {",
+									"    const log = res.data[0];",
+									"    pm.collectionVariables.set('audit_log_id', log.id);",
+									"    console.log('Saved audit_log_id:', log.id);",
+									"    pm.test('Log has id', () => pm.expect(log.id).to.be.a('string'));",
+									"    pm.test('Log has action', () => pm.expect(log.action).to.be.a('string'));",
+									"    pm.test('Log has resource_type', () => pm.expect(log.resource_type).to.be.a('string'));",
+									"    pm.test('Log has created_at', () => pm.expect(log.created_at).to.be.a('string'));",
+									"    pm.test('All logs belong to Pharma Corp tenant', () => {",
+									"        res.data.forEach(l => {",
+									"            if (l.tenant_id !== null) {",
+									"                pm.expect(l.tenant_id).to.equal('c0000000-0000-0000-0000-000000000001');",
+									"            }",
+									"        });",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?page=1&limit=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Returns audit logs for Pharma Corp only. Server enforces tenant isolation automatically — no tenantId needed."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Logs — as Super Admin (All Tenants)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has data array', () => pm.expect(res.data).to.be.an('array'));",
+									"pm.test('Has pagination total', () => pm.expect(res.pagination.total).to.be.a('number'));",
+									"if (res.data.length > 0 && !pm.collectionVariables.get('audit_log_id')) {",
+									"    pm.collectionVariables.set('audit_log_id', res.data[0].id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?page=1&limit=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Returns audit logs across ALL tenants. Super admin sees more records than tenant admin."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Logs — Filter by Specific Tenant (Super Admin Only)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data.length > 0) {",
+									"    pm.test('All logs belong to specified tenant', () => {",
+									"        res.data.forEach(l => {",
+									"            if (l.tenant_id !== null) {",
+									"                pm.expect(l.tenant_id).to.equal('c0000000-0000-0000-0000-000000000001');",
+									"            }",
+									"        });",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?tenant_id={{pharma_tenant_id}}&page=1&limit=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "tenant_id",
+									"value": "{{pharma_tenant_id}}"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Super admin filtering by a specific tenant ID. Only works with super_admin_token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Logs — Global Search (Across Metadata)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has data array', () => pm.expect(res.data).to.be.an('array'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?search=Metadata Search Value",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "Metadata Search Value"
+								}
+							]
+						},
+						"description": "Performs a global search. This is particularly valuable for searching values inside the 'metadata' JSON field."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Logs — Filter by Action (LOGIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data.length > 0) {",
+									"    pm.test('All results have action LOGIN', () => {",
+									"        res.data.forEach(l => pm.expect(l.action).to.equal('LOGIN'));",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?action=LOGIN",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "action",
+									"value": "LOGIN"
+								}
+							]
+						},
+						"description": "Filter audit logs by action type. Valid values: LOGIN, LOGOUT, CREATE, UPDATE, DELETE, READ, SUBMIT, APPROVE, REJECT, PUBLISH, ARCHIVE, CHECKOUT, CHECKIN"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Logs — Filter by Resource Type (document)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data.length > 0) {",
+									"    pm.test('All results have resource_type document', () => {",
+									"        res.data.forEach(l => pm.expect(l.resource_type).to.equal('document'));",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?resource_type=document",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "resource_type",
+									"value": "document"
+								}
+							]
+						},
+						"description": "Filter by resource_type. Valid values: document, capa, user, tenant, supplier, training, workflow, project, session, file_attachment, knowledge, billing, audit_log, etc."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Logs — Filter by Response Status (200)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?response_status=200",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "response_status",
+									"value": "200"
+								}
+							]
+						},
+						"description": "Filter by HTTP response status code. Useful for finding all successful or failed operations."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Logs — Paginated (Page 2)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Page is 2', () => pm.expect(res.pagination.page).to.equal(2));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?page=2&limit=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "2"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Pagination example — page 2 with 10 records per page."
+					},
+					"response": []
+				}
+			],
+			"description": "GET /api/v1/audit-logs — for tenant admins and super admins only. Tenant isolation is server-enforced."
+		},
+		{
+			"name": "04 — Get Single Audit Log",
+			"item": [
+				{
+					"name": "Get Single Audit Log by ID — as Tenant Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has data object', () => pm.expect(res.data).to.be.an('object'));",
+									"pm.test('Has id', () => pm.expect(res.data.id).to.be.a('string'));",
+									"pm.test('Has action', () => pm.expect(res.data.action).to.be.a('string'));",
+									"pm.test('Has resource_type', () => pm.expect(res.data.resource_type).to.be.a('string'));",
+									"pm.test('Has created_at', () => pm.expect(res.data.created_at).to.be.a('string'));"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const id = pm.collectionVariables.get('audit_log_id');",
+									"if (!id) {",
+									"    console.warn('audit_log_id not set — run Get All Logs first to populate it');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/{{audit_log_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"{{audit_log_id}}"
+							]
+						},
+						"description": "audit_log_id is auto-populated by running Get All Logs first. You can also paste any valid audit log UUID directly."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Audit Log — Invalid ID (Verify 400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 400 or 404', () => {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+									"});",
+									"const res = pm.response.json();",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/00000000-0000-0000-0000-000000000000",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"00000000-0000-0000-0000-000000000000"
+							]
+						},
+						"description": "EXPECTED TO FAIL — confirms proper error handling for invalid IDs."
+					},
+					"response": []
+				}
+			],
+			"description": "GET /api/v1/audit-logs/:id — retrieve a single audit log entry by ID."
+		},
+		{
+			"name": "05 — Stats",
+			"item": [
+				{
+					"name": "Get Stats — as Tenant Admin (Their Tenant Only)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has total', () => pm.expect(res.data.total).to.be.a('number'));",
+									"pm.test('Has by_action', () => pm.expect(res.data.by_action).to.be.an('object'));",
+									"pm.test('Has by_day', () => pm.expect(res.data.by_day).to.be.an('object'));",
+									"pm.test('Total is greater than 0', () => pm.expect(res.data.total).to.be.above(0));",
+									"console.log('Tenant admin total:', res.data.total);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"stats"
+							]
+						},
+						"description": "Returns stats for Pharma Corp only. Server enforces tenant isolation automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Stats — as Super Admin (All Tenants)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has total', () => pm.expect(res.data.total).to.be.a('number'));",
+									"pm.test('Has by_action', () => pm.expect(res.data.by_action).to.be.an('object'));",
+									"pm.test('Has by_day', () => pm.expect(res.data.by_day).to.be.an('object'));",
+									"console.log('Super admin total (all tenants):', res.data.total);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"stats"
+							]
+						},
+						"description": "Returns stats across ALL tenants. Super admin should see more total than tenant admin."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Stats — with Date Range Filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has total', () => pm.expect(res.data.total).to.be.a('number'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/stats?startDate=2026-04-01&endDate=2026-04-30",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"stats"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2026-04-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2026-04-30"
+								}
+							]
+						},
+						"description": "Stats filtered to a specific date range."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Stats — Super Admin Filter by Specific Tenant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has total', () => pm.expect(res.data.total).to.be.a('number'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/stats?tenantId={{pharma_tenant_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"stats"
+							],
+							"query": [
+								{
+									"key": "tenantId",
+									"value": "{{pharma_tenant_id}}"
+								}
+							]
+						},
+						"description": "Super admin getting stats for one specific tenant."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Stats — Regular User Blocked (Verify 403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 403', () => pm.response.to.have.status(403));",
+									"const res = pm.response.json();",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);",
+									"pm.test('Error code FORBIDDEN', () => pm.expect(res.error.code).to.equal('FORBIDDEN'));",
+									"console.log('Confirmed: regular users cannot access /stats');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"stats"
+							]
+						},
+						"description": "EXPECTED TO RETURN 403. Confirms regular users cannot access stats."
+					},
+					"response": []
+				}
+			],
+			"description": "GET /api/v1/audit-logs/stats — returns total count, breakdown by action, and breakdown by day."
+		},
+		{
+			"name": "06 — Export",
+			"item": [
+				{
+					"name": "Export Logs — as Tenant Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has data object', () => pm.expect(res.data).to.be.an('object'));",
+									"pm.test('Has total', () => pm.expect(res.data.total).to.be.a('number'));",
+									"pm.test('Has records array', () => pm.expect(res.data.records).to.be.an('array'));",
+									"pm.test('Has format', () => pm.expect(res.data.format).to.equal('json'));",
+									"if (res.data.records.length > 0) {",
+									"    const r = res.data.records[0];",
+									"    pm.test('Record has id', () => pm.expect(r.id).to.be.a('string'));",
+									"    pm.test('Record has action', () => pm.expect(r.action).to.be.a('string'));",
+									"    pm.test('Record has created_at', () => pm.expect(r.created_at).to.be.a('string'));",
+									"}",
+									"console.log('Export total:', res.data.total);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/export",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"export"
+							]
+						},
+						"description": "Exports all audit logs for the tenant. Response: { success, data: { format, total, records: [...] } }"
+					},
+					"response": []
+				},
+				{
+					"name": "Export Logs — as Super Admin (All Tenants)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has records array', () => pm.expect(res.data.records).to.be.an('array'));",
+									"pm.test('Has total', () => pm.expect(res.data.total).to.be.a('number'));",
+									"console.log('Super admin export total:', res.data.total);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/export",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"export"
+							]
+						},
+						"description": "Super admin exports all logs across all tenants."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Logs — with Date Range",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"pm.test('Has records', () => pm.expect(res.data.records).to.be.an('array'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/export?startDate=2026-04-01&endDate=2026-04-30&format=json",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"export"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2026-04-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2026-04-30"
+								},
+								{
+									"key": "format",
+									"value": "json"
+								}
+							]
+						},
+						"description": "Export filtered by date range. format is always json currently."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Logs — Regular User Blocked (Verify 403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 403', () => pm.response.to.have.status(403));",
+									"const res = pm.response.json();",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);",
+									"pm.test('Error code FORBIDDEN', () => pm.expect(res.error.code).to.equal('FORBIDDEN'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/export",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"export"
+							]
+						},
+						"description": "EXPECTED TO RETURN 403. Confirms regular users cannot export audit logs."
+					},
+					"response": []
+				}
+			],
+			"description": "GET /api/v1/audit-logs/export — bulk export of audit logs up to 10,000 records. Response contains data.records array."
+		},
+		{
+			"name": "07 — Security & Edge Cases",
+			"item": [
+				{
+					"name": "No Token — Verify 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 401', () => pm.response.to.have.status(401));",
+									"const res = pm.response.json();",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);",
+									"console.log('Confirmed: unauthenticated requests are rejected');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							]
+						},
+						"description": "EXPECTED TO RETURN 401. No Authorization header — confirms unauthenticated requests are rejected."
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid Token — Verify 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 401', () => pm.response.to.have.status(401));",
+									"const res = pm.response.json();",
+									"pm.test('Success false', () => pm.expect(res.success).to.be.false);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid.token.here"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							]
+						},
+						"description": "EXPECTED TO RETURN 401. Invalid JWT token — confirms token validation works."
+					},
+					"response": []
+				},
+				{
+					"name": "Tenant Isolation — Tenant Admin Cannot See Other Tenant Logs",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data.length > 0) {",
+									"    pm.test('No logs from BioTech tenant', () => {",
+									"        const bioTechId = 'c0000000-0000-0000-0000-000000000002';",
+									"        res.data.forEach(log => {",
+									"            pm.expect(log.tenant_id).to.not.equal(bioTechId);",
+									"        });",
+									"    });",
+									"}",
+									"console.log('Tenant isolation confirmed — no BioTech logs visible to Pharma Corp admin');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?limit=100",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Confirms tenant admin cannot see logs from other tenants (BioTech Inc). All returned logs must have tenant_id = Pharma Corp or null."
+					},
+					"response": []
+				},
+				{
+					"name": "My Logs — Verify User Sees Only Own Logs",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.test('Success true', () => pm.expect(res.success).to.be.true);",
+									"if (res.data.length > 0) {",
+									"    const decoded = JSON.parse(atob(pm.collectionVariables.get('regular_user_token').split('.')[1]));",
+									"    pm.test('All logs belong to Bob', () => {",
+									"        res.data.forEach(log => pm.expect(log.user_id).to.equal(decoded.sub));",
+									"    });",
+									"    console.log('Confirmed: Bob only sees his own logs, user_id:', decoded.sub);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{regular_user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs/my-logs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs",
+								"my-logs"
+							]
+						},
+						"description": "Verifies that Bob (regular user) only sees logs where user_id matches his own ID."
+					},
+					"response": []
+				}
+			],
+			"description": "Tests to verify security boundaries and error handling."
+		},
+		{
+			"name": "05 — Audit Resource Types",
+			"item": [
+				{
+					"name": "Create Module Resource Type (Super Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Batch Record\",\n  \"resource_type\": \"batch_record\",\n  \"description\": \"Audit type for production batch records\",\n  \"type\": \"MODULE\",\n  \"module_id\": \"{{your_module_id}}\",\n  \"is_audit_enabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-resource-types",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-resource-types"
+							]
+						},
+						"description": "Registers a new resource type for a specific module. The toggle 'is_audit_enabled' controls if logs are captured for this type."
+					}
+				},
+				{
+					"name": "Get All Resource Types",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-resource-types",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-resource-types"
+							]
+						},
+						"description": "Returns all registered audit resource types across platform and modules. Includes platform vs module categorization and toggle status."
+					}
+				}
+			]
+		},
+		{
+			"name": "06 — Module Integration (X-API-KEY)",
+			"item": [
+				{
+					"name": "Push Audit Log with X-API-KEY",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-KEY",
+								"value": "{{module_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"CREATE\",\n  \"resource_type\": \"batch_record\",\n  \"resource_id\": \"abc-123\",\n  \"description\": \"A module pushes its local audit to the central platform database.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							]
+						},
+						"description": "Modules call this to push logs. The platform auto-captures the module_id from the X-API-KEY header."
+					}
+				},
+				{
+					"name": "Filter Audit Logs by Module",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/audit-logs?module_id={{your_module_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "module_id",
+									"value": "{{your_module_id}}"
+								}
+							]
+						},
+						"description": "Admins can filter logs for a specific module."
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string",
+			"description": {
+				"content": "Base URL of the QAssure server. Change this to your deployment URL.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "tenant_admin_token",
+			"value": "",
+			"type": "string",
+			"description": {
+				"content": "Auto-populated after running Login as Tenant Admin",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "super_admin_token",
+			"value": "",
+			"type": "string",
+			"description": {
+				"content": "Auto-populated after running Login as Super Admin",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "regular_user_token",
+			"value": "",
+			"type": "string",
+			"description": {
+				"content": "Auto-populated after running Login as Regular User",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "audit_log_id",
+			"value": "",
+			"type": "string",
+			"description": {
+				"content": "Auto-populated after running Get All Audit Logs — used for Get Single Audit Log",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "pharma_tenant_id",
+			"value": "c0000000-0000-0000-0000-000000000001",
+			"type": "string",
+			"description": {
+				"content": "Pharma Corp tenant ID — pre-populated from DB",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "module_api_key",
+			"value": "YOUR_MODULE_API_KEY_HERE",
+			"type": "string",
+			"description": {
+				"content": "Paste your module's API key here to test the X-API-KEY integration",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "your_module_id",
+			"value": "YOUR_MODULE_UUID_HERE",
+			"type": "string",
+			"description": {
+				"content": "Paste your module's UUID here for filtering tests",
+				"type": "text/plain"
+			}
+		}
+	]
+}

@@ -1,0 +1,863 @@
+"""
+QAssure Platform Python SDK - Full Client Implementation
+"""
+
+import logging
+import time
+from typing import Optional, Dict, Any, List
+from urllib.parse import urljoin
+
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+from .exceptions import (
+    QAssureError,
+    AuthenticationError,
+    NotFoundError,
+    ValidationError,
+    RateLimitError,
+    ServerError,
+    InvalidStateTransitionError
+)
+
+logger = logging.getLogger("qassure_sdk")
+
+
+class QAssureClient:
+    """
+    QAssure Platform API Client
+    
+    Usage:
+        client = QAssureClient(base_url="https://api.qassure.ai")
+        client.login("user@example.com", "password")
+        
+        # List modules
+        modules = client.modules.list()
+        
+        # Register and start a module
+        module = client.modules.register({
+            "module_id": "aich",
+            "name": "AiCH Module",
+            "version": "1.0.0",
+            "base_url": "http://aich:3001",
+            "health_endpoint": "/health"
+        })
+        client.modules.start(module["data"]["id"])
+    """
+
+    def __init__(
+        self,
+        base_url: str = "https://api.qassure.ai",
+        api_version: str = "v1",
+        tenant_id: Optional[str] = None,
+        timeout: int = 30,
+        max_retries: int = 3,
+        retry_backoff: float = 0.5
+    ):
+        self.base_url = base_url.rstrip("/")
+        self.api_version = api_version
+        self.api_url = f"{self.base_url}/api/{api_version}"
+        self.tenant_id = tenant_id
+        self.timeout = timeout
+        
+        self._access_token: Optional[str] = None
+        self._refresh_token: Optional[str] = None
+        self._token_expires_at: Optional[float] = None
+        
+        # Setup session with retry logic
+        self._session = requests.Session()
+        retry_strategy = Retry(
+            total=max_retries,
+            backoff_factor=retry_backoff,
+            status_forcelist=[502, 503, 504],
+            allowed_methods=["GET", "POST", "PUT", "PATCH", "DELETE"]
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self._session.mount("http://", adapter)
+        self._session.mount("https://", adapter)
+        
+        # Initialize resource managers
+        self.auth = AuthResource(self)
+        self.users = UserResource(self)
+        self.tenants = TenantResource(self)
+        self.roles = RoleResource(self)
+        self.permissions = PermissionResource(self)
+        self.modules = ModuleResource(self)
+        self.api_keys = ApiKeyResource(self)
+        self.documents = DocumentResource(self)
+        self.capas = CapaResource(self)
+        self.training = TrainingResource(self)
+        self.suppliers = SupplierResource(self)
+        self.workflows = WorkflowResource(self)
+        self.notifications = NotificationResource(self)
+        self.reports = ReportResource(self)
+        self.audit_logs = AuditLogResource(self)
+        self.ai = AIResource(self)
+        self.qms = QMSResource(self)
+        self.files = FileResource(self)
+        self.webhooks = WebhookResource(self)
+        self.health = HealthResource(self)
+
+    def _get_headers(self) -> Dict[str, str]:
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "QAssure-Python-SDK/1.0.0"
+        }
+        if self._access_token:
+            headers["Authorization"] = f"Bearer {self._access_token}"
+        if self.tenant_id:
+            headers["X-Tenant-ID"] = self.tenant_id
+        return headers
+
+    def _handle_response(self, response: requests.Response) -> Dict[str, Any]:
+        """Handle API response and raise appropriate exceptions"""
+        try:
+            data = response.json()
+        except ValueError:
+            data = {"message": response.text}
+
+        if response.status_code == 200 or response.status_code == 201:
+            return data
+        elif response.status_code == 400:
+            error_msg = data.get("error", {}).get("message", "Validation error")
+            if "Invalid state transition" in error_msg:
+                raise InvalidStateTransitionError(error_msg, response.status_code, data)
+            raise ValidationError(error_msg, response.status_code, data)
+        elif response.status_code == 401:
+            raise AuthenticationError(
+                data.get("error", {}).get("message", "Authentication failed"),
+                response.status_code, data
+            )
+        elif response.status_code == 404:
+            raise NotFoundError(
+                data.get("error", {}).get("message", "Resource not found"),
+                response.status_code, data
+            )
+        elif response.status_code == 429:
+            raise RateLimitError(
+                data.get("error", {}).get("message", "Rate limit exceeded"),
+                response.status_code, data
+            )
+        elif response.status_code >= 500:
+            raise ServerError(
+                data.get("error", {}).get("message", "Server error"),
+                response.status_code, data
+            )
+        else:
+            raise QAssureError(
+                data.get("error", {}).get("message", f"HTTP {response.status_code}"),
+                response.status_code, data
+            )
+
+    def request(
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[Dict] = None,
+        params: Optional[Dict] = None,
+        files: Optional[Dict] = None
+    ) -> Dict[str, Any]:
+        """Make an API request"""
+        url = f"{self.api_url}/{endpoint.lstrip('/')}"
+        headers = self._get_headers()
+        
+        if files:
+            headers.pop("Content-Type", None)
+        
+        logger.debug(f"Request: {method} {url}")
+        
+        response = self._session.request(
+            method=method,
+            url=url,
+            json=data if not files else None,
+            data=data if files else None,
+            params=params,
+            headers=headers,
+            files=files,
+            timeout=self.timeout
+        )
+        
+        return self._handle_response(response)
+
+    def get(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
+        return self.request("GET", endpoint, params=params)
+
+    def post(self, endpoint: str, data: Optional[Dict] = None) -> Dict[str, Any]:
+        return self.request("POST", endpoint, data=data)
+
+    def put(self, endpoint: str, data: Optional[Dict] = None) -> Dict[str, Any]:
+        return self.request("PUT", endpoint, data=data)
+
+    def patch(self, endpoint: str, data: Optional[Dict] = None) -> Dict[str, Any]:
+        return self.request("PATCH", endpoint, data=data)
+
+    def delete(self, endpoint: str) -> Dict[str, Any]:
+        return self.request("DELETE", endpoint)
+
+    def login(self, email: str, password: str) -> Dict[str, Any]:
+        """Authenticate and store tokens"""
+        return self.auth.login(email, password)
+
+    def logout(self) -> Dict[str, Any]:
+        """End session and clear tokens"""
+        return self.auth.logout()
+
+    def set_tokens(self, access_token: str, refresh_token: Optional[str] = None):
+        """Manually set authentication tokens"""
+        self._access_token = access_token
+        self._refresh_token = refresh_token
+
+
+# ==================== Resource Classes ====================
+
+class BaseResource:
+    """Base class for API resources"""
+    
+    def __init__(self, client: QAssureClient):
+        self.client = client
+
+
+class AuthResource(BaseResource):
+    """Authentication endpoints"""
+    
+    def login(self, email: str, password: str) -> Dict[str, Any]:
+        response = self.client.post("/auth/login", {"email": email, "password": password})
+        if response.get("success"):
+            tokens = response["data"]
+            self.client._access_token = tokens["access_token"]
+            self.client._refresh_token = tokens["refresh_token"]
+        return response
+
+    def logout(self) -> Dict[str, Any]:
+        response = self.client.post("/auth/logout")
+        self.client._access_token = None
+        self.client._refresh_token = None
+        return response
+
+    def logout_all(self) -> Dict[str, Any]:
+        response = self.client.post("/auth/logout-all")
+        self.client._access_token = None
+        self.client._refresh_token = None
+        return response
+
+    def refresh(self) -> Dict[str, Any]:
+        response = self.client.post("/auth/refresh", {
+            "refresh_token": self.client._refresh_token
+        })
+        if response.get("success"):
+            self.client._access_token = response["data"]["access_token"]
+        return response
+
+    def me(self) -> Dict[str, Any]:
+        return self.client.get("/auth/me")
+
+    def change_password(self, current_password: str, new_password: str) -> Dict[str, Any]:
+        return self.client.post("/auth/change-password", {
+            "current_password": current_password,
+            "new_password": new_password
+        })
+
+    def forgot_password(self, email: str) -> Dict[str, Any]:
+        return self.client.post("/auth/forgot-password", {"email": email})
+
+    def reset_password(self, token: str, new_password: str) -> Dict[str, Any]:
+        return self.client.post("/auth/reset-password", {
+            "token": token,
+            "new_password": new_password
+        })
+
+
+class UserResource(BaseResource):
+    """User management endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 20, **filters) -> Dict[str, Any]:
+        params = {"page": page, "limit": limit, **filters}
+        return self.client.get("/users", params=params)
+
+    def get(self, user_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/users/{user_id}")
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/users", data)
+
+    def update(self, user_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/users/{user_id}", data)
+
+    def delete(self, user_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/users/{user_id}")
+
+    def activate(self, user_id: str) -> Dict[str, Any]:
+        return self.client.post(f"/users/{user_id}/activate")
+
+    def deactivate(self, user_id: str) -> Dict[str, Any]:
+        return self.client.post(f"/users/{user_id}/deactivate")
+
+    def assign_role(self, user_id: str, role_id: str) -> Dict[str, Any]:
+        return self.client.post(f"/users/{user_id}/roles", {"role_id": role_id})
+
+    def remove_role(self, user_id: str, role_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/users/{user_id}/roles/{role_id}")
+
+
+class TenantResource(BaseResource):
+    """Tenant management endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 20) -> Dict[str, Any]:
+        return self.client.get("/tenants", params={"page": page, "limit": limit})
+
+    def get(self, tenant_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/tenants/{tenant_id}")
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/tenants", data)
+
+    def update(self, tenant_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/tenants/{tenant_id}", data)
+
+    def delete(self, tenant_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/tenants/{tenant_id}")
+
+
+class RoleResource(BaseResource):
+    """Role management endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 20) -> Dict[str, Any]:
+        return self.client.get("/roles", params={"page": page, "limit": limit})
+
+    def get(self, role_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/roles/{role_id}")
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/roles", data)
+
+    def update(self, role_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/roles/{role_id}", data)
+
+    def delete(self, role_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/roles/{role_id}")
+
+    def assign_permissions(self, role_id: str, permission_ids: List[str]) -> Dict[str, Any]:
+        return self.client.post(f"/roles/{role_id}/permissions", {"permission_ids": permission_ids})
+
+
+class PermissionResource(BaseResource):
+    """Permission management endpoints"""
+    
+    def list(self) -> Dict[str, Any]:
+        return self.client.get("/permissions")
+
+    def get(self, permission_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/permissions/{permission_id}")
+
+
+class ModuleResource(BaseResource):
+    """Module registry endpoints - Full lifecycle management"""
+    
+    def list(self, page: int = 1, limit: int = 20, **filters) -> Dict[str, Any]:
+        params = {"page": page, "limit": limit, **filters}
+        return self.client.get("/modules", params=params)
+
+    def get(self, module_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/modules/{module_id}")
+
+    def get_by_code(self, module_code: str) -> Dict[str, Any]:
+        return self.client.get(f"/modules/code/{module_code}")
+
+    def register(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Register a new module
+        
+        Args:
+            data: Module configuration including:
+                - module_id: Unique module identifier (e.g., "aich")
+                - name: Display name
+                - version: Semantic version
+                - base_url: Module service URL
+                - health_endpoint: Health check path
+                - endpoints: List of API endpoints
+                - kafka_topics: Pub/sub topics
+                - cpu_request, cpu_limit, memory_request, memory_limit
+                - min_replicas, max_replicas
+        """
+        return self.client.post("/modules", data)
+
+    def update(self, module_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/modules/{module_id}", data)
+
+    def delete(self, module_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/modules/{module_id}")
+
+    def start(self, module_id: str) -> Dict[str, Any]:
+        """Start a module (pending/stopped -> starting -> running)"""
+        return self.client.post(f"/modules/{module_id}/start")
+
+    def stop(self, module_id: str, reason: Optional[str] = None) -> Dict[str, Any]:
+        """Stop a module gracefully"""
+        data = {"reason": reason} if reason else {}
+        return self.client.post(f"/modules/{module_id}/stop", data)
+
+    def restart(self, module_id: str, reason: Optional[str] = None) -> Dict[str, Any]:
+        """Restart a module"""
+        data = {"reason": reason} if reason else {}
+        return self.client.post(f"/modules/{module_id}/restart", data)
+
+    def set_maintenance(self, module_id: str, reason: Optional[str] = None) -> Dict[str, Any]:
+        """Put module in maintenance mode"""
+        data = {"reason": reason} if reason else {}
+        return self.client.post(f"/modules/{module_id}/maintenance", data)
+
+    def deprecate(self, module_id: str, reason: Optional[str] = None) -> Dict[str, Any]:
+        """Mark module as deprecated"""
+        data = {"reason": reason} if reason else {}
+        return self.client.post(f"/modules/{module_id}/deprecate", data)
+
+    def deregister(self, module_id: str) -> Dict[str, Any]:
+        """Soft delete - deregister module"""
+        return self.client.post(f"/modules/{module_id}/deregister")
+
+    def update_status(self, module_id: str, status: str, reason: Optional[str] = None) -> Dict[str, Any]:
+        """Update module status"""
+        return self.client.patch(f"/modules/{module_id}/status", {
+            "status": status,
+            "reason": reason
+        })
+
+    def update_version(self, module_id: str, version: str, changelog: Optional[str] = None) -> Dict[str, Any]:
+        """Update module version"""
+        return self.client.patch(f"/modules/{module_id}/version", {
+            "version": version,
+            "changelog": changelog
+        })
+
+    def health_check(self, module_id: str) -> Dict[str, Any]:
+        """Trigger health check"""
+        return self.client.post(f"/modules/{module_id}/health-check")
+
+    def health_history(self, module_id: str, limit: int = 100) -> Dict[str, Any]:
+        """Get health check history"""
+        return self.client.get(f"/modules/{module_id}/health-history", params={"limit": limit})
+
+    def stats(self) -> Dict[str, Any]:
+        """Get module statistics"""
+        return self.client.get("/modules/stats")
+
+    def states(self) -> Dict[str, Any]:
+        """Get available states and transitions"""
+        return self.client.get("/modules/states")
+
+
+class ApiKeyResource(BaseResource):
+    """API Key management endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 20) -> Dict[str, Any]:
+        return self.client.get("/api-keys", params={"page": page, "limit": limit})
+
+    def get(self, key_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/api-keys/{key_id}")
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/api-keys", data)
+
+    def update(self, key_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/api-keys/{key_id}", data)
+
+    def revoke(self, key_id: str) -> Dict[str, Any]:
+        return self.client.post(f"/api-keys/{key_id}/revoke")
+
+    def delete(self, key_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/api-keys/{key_id}")
+
+
+class DocumentResource(BaseResource):
+    """Document management endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 20, **filters) -> Dict[str, Any]:
+        params = {"page": page, "limit": limit, **filters}
+        return self.client.get("/documents", params=params)
+
+    def get(self, document_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/documents/{document_id}")
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/documents", data)
+
+    def update(self, document_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/documents/{document_id}", data)
+
+    def delete(self, document_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/documents/{document_id}")
+
+    def submit_for_review(self, document_id: str) -> Dict[str, Any]:
+        return self.client.post(f"/documents/{document_id}/submit")
+
+    def approve(self, document_id: str, comments: Optional[str] = None) -> Dict[str, Any]:
+        return self.client.post(f"/documents/{document_id}/approve", {"comments": comments})
+
+    def reject(self, document_id: str, reason: str) -> Dict[str, Any]:
+        return self.client.post(f"/documents/{document_id}/reject", {"reason": reason})
+
+    def get_versions(self, document_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/documents/{document_id}/versions")
+
+    def create_version(self, document_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/documents/{document_id}/versions", data)
+
+
+class CapaResource(BaseResource):
+    """CAPA management endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 20, **filters) -> Dict[str, Any]:
+        params = {"page": page, "limit": limit, **filters}
+        return self.client.get("/capas", params=params)
+
+    def get(self, capa_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/capas/{capa_id}")
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/capas", data)
+
+    def update(self, capa_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/capas/{capa_id}", data)
+
+    def delete(self, capa_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/capas/{capa_id}")
+
+    def add_action(self, capa_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/capas/{capa_id}/actions", data)
+
+    def update_action(self, capa_id: str, action_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/capas/{capa_id}/actions/{action_id}", data)
+
+    def complete_action(self, capa_id: str, action_id: str) -> Dict[str, Any]:
+        return self.client.post(f"/capas/{capa_id}/actions/{action_id}/complete")
+
+    def add_root_cause(self, capa_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/capas/{capa_id}/root-causes", data)
+
+    def close(self, capa_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/capas/{capa_id}/close", data)
+
+    def verify_effectiveness(self, capa_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/capas/{capa_id}/verify", data)
+
+
+class TrainingResource(BaseResource):
+    """Training management endpoints"""
+    
+    def list_courses(self, page: int = 1, limit: int = 20, **filters) -> Dict[str, Any]:
+        params = {"page": page, "limit": limit, **filters}
+        return self.client.get("/training/courses", params=params)
+
+    def get_course(self, course_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/training/courses/{course_id}")
+
+    def create_course(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/training/courses", data)
+
+    def update_course(self, course_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/training/courses/{course_id}", data)
+
+    def delete_course(self, course_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/training/courses/{course_id}")
+
+    def assign_training(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/training/assignments", data)
+
+    def get_assignments(self, user_id: Optional[str] = None) -> Dict[str, Any]:
+        params = {"user_id": user_id} if user_id else {}
+        return self.client.get("/training/assignments", params=params)
+
+    def complete_training(self, assignment_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/training/assignments/{assignment_id}/complete", data)
+
+    def get_transcript(self, user_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/training/transcripts/{user_id}")
+
+
+class SupplierResource(BaseResource):
+    """Supplier quality management endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 20, **filters) -> Dict[str, Any]:
+        params = {"page": page, "limit": limit, **filters}
+        return self.client.get("/suppliers", params=params)
+
+    def get(self, supplier_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/suppliers/{supplier_id}")
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/suppliers", data)
+
+    def update(self, supplier_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/suppliers/{supplier_id}", data)
+
+    def delete(self, supplier_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/suppliers/{supplier_id}")
+
+    def add_audit(self, supplier_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/suppliers/{supplier_id}/audits", data)
+
+    def get_audits(self, supplier_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/suppliers/{supplier_id}/audits")
+
+    def add_scorecard(self, supplier_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/suppliers/{supplier_id}/scorecards", data)
+
+    def get_scorecards(self, supplier_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/suppliers/{supplier_id}/scorecards")
+
+    def update_risk_level(self, supplier_id: str, risk_level: str, reason: str) -> Dict[str, Any]:
+        return self.client.patch(f"/suppliers/{supplier_id}/risk", {
+            "risk_level": risk_level,
+            "reason": reason
+        })
+
+
+class WorkflowResource(BaseResource):
+    """Workflow engine endpoints"""
+    
+    def list_definitions(self, page: int = 1, limit: int = 20) -> Dict[str, Any]:
+        return self.client.get("/workflows/definitions", params={"page": page, "limit": limit})
+
+    def get_definition(self, definition_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/workflows/definitions/{definition_id}")
+
+    def create_definition(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/workflows/definitions", data)
+
+    def update_definition(self, definition_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/workflows/definitions/{definition_id}", data)
+
+    def list_instances(self, page: int = 1, limit: int = 20, **filters) -> Dict[str, Any]:
+        params = {"page": page, "limit": limit, **filters}
+        return self.client.get("/workflows/instances", params=params)
+
+    def get_instance(self, instance_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/workflows/instances/{instance_id}")
+
+    def start_workflow(self, definition_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/workflows/definitions/{definition_id}/start", data)
+
+    def complete_task(self, task_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post(f"/workflows/tasks/{task_id}/complete", data)
+
+    def get_my_tasks(self) -> Dict[str, Any]:
+        return self.client.get("/workflows/tasks/my")
+
+
+class NotificationResource(BaseResource):
+    """Notification endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 20, **filters) -> Dict[str, Any]:
+        params = {"page": page, "limit": limit, **filters}
+        return self.client.get("/notifications/me", params=params)
+
+    def get(self, notification_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/notifications/{notification_id}")
+
+    def mark_read(self, notification_id: str) -> Dict[str, Any]:
+        return self.client.put(f"/notifications/{notification_id}/read")
+
+    def mark_all_read(self) -> Dict[str, Any]:
+        return self.client.put("/notifications/me/read-all")
+
+    def get_preferences(self) -> Dict[str, Any]:
+        return self.client.get("/notifications/preferences")
+
+    def update_preferences(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put("/notifications/preferences", data)
+
+    def unread_count(self) -> Dict[str, Any]:
+        return self.client.get("/notifications/me/unread-count")
+
+
+class ReportResource(BaseResource):
+    """Reporting and analytics endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 20) -> Dict[str, Any]:
+        return self.client.get("/reporting/reports", params={"page": page, "limit": limit})
+
+    def get(self, report_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/reporting/{report_id}")
+
+    def generate(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/reporting/generate", data)
+
+    def schedule(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/reporting/schedule", data)
+
+    def get_scheduled(self) -> Dict[str, Any]:
+        return self.client.get("/reporting/scheduled")
+
+    def delete_scheduled(self, schedule_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/reporting/scheduled/{schedule_id}")
+
+    def export(self, report_id: str, format: str = "pdf") -> bytes:
+        """Export report as PDF/Excel"""
+        response = self.client._session.get(
+            f"{self.client.api_url}/reporting/{report_id}/export",
+            params={"format": format},
+            headers=self.client._get_headers()
+        )
+        return response.content
+
+
+class AuditLogResource(BaseResource):
+    """Audit log endpoints"""
+    
+    def list(self, page: int = 1, limit: int = 50, **filters) -> Dict[str, Any]:
+        params = {"page": page, "limit": limit, **filters}
+        return self.client.get("/audit-logs", params=params)
+
+    def get(self, log_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/audit-logs/{log_id}")
+
+    def search(self, query: str, **filters) -> Dict[str, Any]:
+        params = {"query": query, **filters}
+        return self.client.get("/audit-logs/search", params=params)
+
+
+class AIResource(BaseResource):
+    """AI Gateway endpoints"""
+    
+    def complete(self, prompt: str, **options) -> Dict[str, Any]:
+        return self.client.post("/ai/completions", {"prompt": prompt, **options})
+
+    def analyze_document(self, document_id: str, analysis_type: str = "compliance") -> Dict[str, Any]:
+        return self.client.post("/ai/analyze", {
+            "document_id": document_id,
+            "analysis_type": analysis_type
+        })
+
+    def get_usage(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict[str, Any]:
+        params = {}
+        if start_date:
+            params["start_date"] = start_date
+        if end_date:
+            params["end_date"] = end_date
+        return self.client.get("/ai/usage", params=params)
+
+    def list_prompts(self) -> Dict[str, Any]:
+        return self.client.get("/ai/prompts")
+
+    def get_prompt(self, prompt_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/ai/prompts/{prompt_id}")
+
+    def create_prompt(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/ai/prompts", data)
+
+    def query_knowledge(self, query: str, **options) -> Dict[str, Any]:
+        return self.client.post("/ai/knowledge/query", {"query": query, **options})
+
+
+class QMSResource(BaseResource):
+    """QMS Integration endpoints"""
+    
+    def list_connections(self) -> Dict[str, Any]:
+        return self.client.get("/qms/connections")
+
+    def get_connection(self, connection_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/qms/connections/{connection_id}")
+
+    def create_connection(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/qms/connections", data)
+
+    def update_connection(self, connection_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/qms/connections/{connection_id}", data)
+
+    def delete_connection(self, connection_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/qms/connections/{connection_id}")
+
+    def test_connection(self, connection_id: str) -> Dict[str, Any]:
+        return self.client.post(f"/qms/connections/{connection_id}/test")
+
+    def sync(self, connection_id: str, entity_types: Optional[List[str]] = None) -> Dict[str, Any]:
+        data = {"entity_types": entity_types} if entity_types else {}
+        return self.client.post(f"/qms/connections/{connection_id}/sync", data)
+
+    def get_sync_status(self, connection_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/qms/connections/{connection_id}/sync-status")
+
+    def list_sync_jobs(self, connection_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/qms/connections/{connection_id}/sync-jobs")
+
+    def get_conflicts(self, connection_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/qms/connections/{connection_id}/conflicts")
+
+    def resolve_conflict(self, conflict_id: str, resolution: str) -> Dict[str, Any]:
+        return self.client.post(f"/qms/conflicts/{conflict_id}/resolve", {"resolution": resolution})
+
+
+class FileResource(BaseResource):
+    """File attachment endpoints"""
+    
+    def upload(self, file_path: str, entity_type: str, entity_id: str) -> Dict[str, Any]:
+        with open(file_path, "rb") as f:
+            files = {"file": f}
+            return self.client.request(
+                "POST",
+                "/files/upload",
+                data={"entity_type": entity_type, "entity_id": entity_id},
+                files=files
+            )
+
+    def download(self, file_id: str) -> bytes:
+        response = self.client._session.get(
+            f"{self.client.api_url}/files/{file_id}/download",
+            headers=self.client._get_headers()
+        )
+        return response.content
+
+    def get(self, file_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/files/{file_id}")
+
+    def delete(self, file_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/files/{file_id}")
+
+    def list_for_entity(self, entity_type: str, entity_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/files/entity/{entity_type}/{entity_id}")
+
+
+class WebhookResource(BaseResource):
+    """Webhook management endpoints"""
+    
+    def list(self) -> Dict[str, Any]:
+        return self.client.get("/webhooks")
+
+    def get(self, webhook_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/webhooks/{webhook_id}")
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.post("/webhooks", data)
+
+    def update(self, webhook_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self.client.put(f"/webhooks/{webhook_id}", data)
+
+    def delete(self, webhook_id: str) -> Dict[str, Any]:
+        return self.client.delete(f"/webhooks/{webhook_id}")
+
+    def test(self, webhook_id: str) -> Dict[str, Any]:
+        return self.client.post(f"/webhooks/{webhook_id}/test")
+
+    def get_deliveries(self, webhook_id: str) -> Dict[str, Any]:
+        return self.client.get(f"/webhooks/{webhook_id}/deliveries")
+
+    def retry_delivery(self, delivery_id: str) -> Dict[str, Any]:
+        return self.client.post(f"/webhooks/deliveries/{delivery_id}/retry")
+
+
+class HealthResource(BaseResource):
+    """Health check endpoints"""
+    
+    def check(self) -> Dict[str, Any]:
+        return self.client.get("/health")
+
+    def detailed(self) -> Dict[str, Any]:
+        return self.client.get("/health/detailed")
+
+    def ready(self) -> Dict[str, Any]:
+        return self.client.get("/health/ready")
+
+    def live(self) -> Dict[str, Any]:
+        return self.client.get("/health/live")

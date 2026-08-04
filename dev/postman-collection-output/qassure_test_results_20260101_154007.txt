@@ -1,0 +1,1533 @@
+QAssure.ai API Test Report
+Generated: Thu Jan  1 15:40:07 IST 2026
+Base URL: http://localhost:3000/api/v1
+Delay Between Tests: 0.5s
+
+======================================================================
+  QASSURE.AI COMPREHENSIVE API TEST REPORT
+======================================================================
+
+Test Started: Thu Jan  1 15:40:07 IST 2026
+Base URL: http://localhost:3000/api/v1
+[0;36mNOTE: Using 0.5s delay between tests. Use DELAY=1 to increase.[0m
+
+======================================================================
+  PHASE 1: CORE INFRASTRUCTURE
+======================================================================
+
+
+----------------------------------------------------------------------
+  1.1 Health Check Endpoints
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-1.1.1: Basic Health Check[0m
+Description: Verify server is running
+Command: curl -X GET "http://localhost:3000/api/v1/health"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"status":"healthy","timestamp":"2026-01-01T10:10:07.664Z","version":"1.0.0"}
+
+
+[0;34mTEST: TC-1.1.2: Detailed Health Check[0m
+Description: Verify all components status
+Command: curl -X GET "http://localhost:3000/api/v1/health/detailed"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"status":"degraded","timestamp":"2026-01-01T10:10:08.338Z","checks":{"database":"unhealthy: getPool is not a function","redis":"unhealthy: getRedisClient is not a function","memory":{"rss":56229888,"heapTotal":69398528,"heapUsed":56217928,"external":3451303,"arrayBuffers":552626}}}
+
+
+[0;34mTEST: TC-1.1.3: Invalid Endpoint[0m
+Description: Should return 404 for non-existent endpoint
+Command: curl -X GET "http://localhost:3000/api/v1/nonexistent-endpoint"
+[0;32m✅ PASS[0m
+Expected: 404
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/nonexistent-endpoint","correlationId":"1767262208958-c39ae613"}
+
+
+======================================================================
+  PHASE 2: REDIS & SESSION MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  2.1 Cache Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-2.1.1: Cache Health via Detailed Health[0m
+Description: Verify Redis connection
+Command: curl -X GET "http://localhost:3000/api/v1/health/detailed"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"status":"degraded","timestamp":"2026-01-01T10:10:09.625Z","checks":{"database":"unhealthy: getPool is not a function","redis":"unhealthy: getRedisClient is not a function","memory":{"rss":57241600,"heapTotal":69398528,"heapUsed":56426216,"external":3451311,"arrayBuffers":552634}}}
+
+
+======================================================================
+  PHASE 3: AUTHENTICATION SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  3.1 User Registration
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.1.1: Register with Valid Data[0m
+Description: Should create new user
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+
+[0;34mTEST: TC-3.1.2: Register - Weak Password (No Uppercase)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+
+[0;34mTEST: TC-3.1.3: Register - Weak Password (No Numbers)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+
+[0;34mTEST: TC-3.1.4: Register - Weak Password (No Special Chars)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+
+[0;34mTEST: TC-3.1.5: Register - Weak Password (Too Short)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+
+[0;34mTEST: TC-3.1.6: Register - Invalid Email Format[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+
+[0;34mTEST: TC-3.1.7: Register - Missing Required Fields[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+
+[0;34mTEST: TC-3.1.8: Register - Duplicate Email[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 409
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+
+----------------------------------------------------------------------
+  3.2 User Login
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.2.1: Login with Valid Credentials[0m
+Description: Should return tokens
+Login Response: {"success":false,"error":{"code":"INVALID_CREDENTIALS","message":"Invalid email or password"}}
+[0;31m❌ FAIL - No token[0m
+
+[0;34mTEST: TC-3.2.2: Login - Wrong Password[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_CREDENTIALS","message":"Invalid email or password"}}
+
+
+[0;34mTEST: TC-3.2.3: Login - Non-existent User[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_CREDENTIALS","message":"Invalid email or password"}}
+
+
+[0;34mTEST: TC-3.2.4: Login - Empty Password[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email and password are required"}}
+
+
+[0;34mTEST: TC-3.2.5: Login - Missing Email[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email and password are required"}}
+
+
+----------------------------------------------------------------------
+  3.3 Token Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.3.1: Protected Route - Valid Token[0m
+Description: Should allow
+Command: curl -X GET "http://localhost:3000/api/v1/auth/me"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-3.3.2: Protected Route - No Token[0m
+Description: Should deny
+Command: curl -X GET "http://localhost:3000/api/v1/auth/me"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-3.3.3: Protected Route - Invalid Token[0m
+Description: Should deny
+Command: curl -X GET "http://localhost:3000/api/v1/auth/me"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid token"}}
+
+
+[0;34mTEST: TC-3.3.4: Protected Route - Malformed JWT[0m
+Description: Should deny
+Command: curl -X GET "http://localhost:3000/api/v1/auth/me"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid token"}}
+
+
+[0;34mTEST: TC-3.3.5: Refresh Token - Valid[0m
+Description: Should return new tokens
+
+[0;34mTEST: TC-3.3.6: Refresh Token - Invalid[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/refresh"
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Refresh token is required"}}
+
+
+----------------------------------------------------------------------
+  3.4 Password Reset
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.4.1: Forgot Password - Valid Email[0m
+Description: Should accept
+Command: curl -X POST "http://localhost:3000/api/v1/auth/forgot-password"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":{"success":true,"message":"If an account exists with this email, a password reset link has been sent."}}
+
+
+[0;34mTEST: TC-3.4.2: Forgot Password - Non-existent Email[0m
+Description: Should still return 200
+Command: curl -X POST "http://localhost:3000/api/v1/auth/forgot-password"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":{"success":true,"message":"If an account exists with this email, a password reset link has been sent."}}
+
+
+[0;34mTEST: TC-3.4.3: Reset Password - Invalid Token[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/reset-password"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid or expired reset token"}}
+
+
+----------------------------------------------------------------------
+  3.5 Logout
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.5.1: Logout[0m
+Description: Should succeed
+Command: curl -X POST "http://localhost:3000/api/v1/auth/logout"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+Re-logged in for subsequent tests
+
+======================================================================
+  PHASE 4: RBAC & AUTHORIZATION
+======================================================================
+
+
+----------------------------------------------------------------------
+  4.1 Role Management
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-4.1.1: Get All Roles[0m
+Description: Should return roles
+Command: curl -X GET "http://localhost:3000/api/v1/roles"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-4.1.2: Get Roles - No Auth[0m
+Description: Should deny
+Command: curl -X GET "http://localhost:3000/api/v1/roles"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-4.1.3: Create Role - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/roles"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-4.1.4: Create Role - Duplicate Name[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/roles"
+[0;31m❌ FAIL[0m
+Expected: 409
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-4.1.5: Create Role - Missing Name[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/roles"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+----------------------------------------------------------------------
+  4.2 Permissions
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-4.2.1: Get Permissions[0m
+Description: Should return permissions
+Command: curl -X GET "http://localhost:3000/api/v1/permissions"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+----------------------------------------------------------------------
+  4.3 API Keys
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-4.3.1: Create API Key[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/api-keys"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-4.3.2: Get API Keys[0m
+Description: Should return keys
+Command: curl -X GET "http://localhost:3000/api/v1/api-keys"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 5: MODULE REGISTRY
+======================================================================
+
+
+----------------------------------------------------------------------
+  5.1 Module Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-5.1.1: Get All Modules[0m
+Description: Should return modules
+Command: curl -X GET "http://localhost:3000/api/v1/modules"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-5.1.2: Get Non-existent Module[0m
+Description: Should return 404
+Command: curl -X GET "http://localhost:3000/api/v1/modules/00000000-0000-0000-0000-000000000000"
+[0;31m❌ FAIL[0m
+Expected: 404
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-5.1.3: Get Module - Invalid UUID[0m
+Description: Should return 400
+Command: curl -X GET "http://localhost:3000/api/v1/modules/invalid-uuid"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-5.1.4: Create Module - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/modules"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-5.1.5: Create Module - Missing Fields[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/modules"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-5.1.6: Get Module Status[0m
+Description: Should return status
+Command: curl -X GET "http://localhost:3000/api/v1/modules/status"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 6: KAFKA EVENT SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  6.1 Events
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-6.1.1: Get Event Topics[0m
+Description: Should return topics
+Command: curl -X GET "http://localhost:3000/api/v1/events/topics"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/events/topics","correlationId":"1767262235381-04603c23"}
+
+
+[0;34mTEST: TC-6.1.2: Get Event History[0m
+Description: Should return history
+Command: curl -X GET "http://localhost:3000/api/v1/events/history"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/events/history","correlationId":"1767262235996-a0168487"}
+
+
+======================================================================
+  PHASE 7: AI GATEWAY
+======================================================================
+
+
+----------------------------------------------------------------------
+  7.1 AI Providers
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-7.1.1: Get AI Providers[0m
+Description: Should return providers
+Command: curl -X GET "http://localhost:3000/api/v1/ai/providers"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-7.1.2: Create AI Provider - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/ai/providers"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-7.1.3: Create AI Provider - Invalid Name[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/ai/providers"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-7.1.4: Create AI Provider - Missing API Key[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/ai/providers"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+----------------------------------------------------------------------
+  7.2 AI Usage
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-7.2.1: Get AI Usage Summary[0m
+Description: Should return usage
+Command: curl -X GET "http://localhost:3000/api/v1/ai/usage/summary"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-7.2.2: Get AI Costs[0m
+Description: Should return costs
+Command: curl -X GET "http://localhost:3000/api/v1/ai/costs"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 8: RAG & VECTOR DATABASE
+======================================================================
+
+
+----------------------------------------------------------------------
+  8.1 Knowledge Base
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-8.1.1: Get KB Collections[0m
+Description: Should return collections
+Command: curl -X GET "http://localhost:3000/api/v1/ai/knowledge-base"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-8.1.2: Create KB Collection[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/ai/knowledge-base/collections"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-8.1.3: Search KB - Empty Query[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/ai/knowledge-base/search"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 9: PROMPT MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  9.1 Prompts
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-9.1.1: Get All Prompts[0m
+Description: Should return prompts
+Command: curl -X GET "http://localhost:3000/api/v1/ai/prompts"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-9.1.2: Create Prompt - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/ai/prompts"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-9.1.3: Create Prompt - Missing System Prompt[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/ai/prompts"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 10-11: QMS INTEGRATION
+======================================================================
+
+
+----------------------------------------------------------------------
+  10.1 QMS Connections
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-10.1.1: Get QMS Connections[0m
+Description: Should return connections
+Command: curl -X GET "http://localhost:3000/api/v1/qms/connections"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-10.1.2: Create QMS - Invalid Type[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/qms/connections"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-10.1.3: Create QMS - Missing URL[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/qms/connections"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-11.1.1: Get Entity Mappings[0m
+Description: Should return mappings
+Command: curl -X GET "http://localhost:3000/api/v1/qms/mappings"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-11.1.2: Get Sync Jobs[0m
+Description: Should return jobs
+Command: curl -X GET "http://localhost:3000/api/v1/qms/sync-jobs"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 12: CROSS-MODULE COMMUNICATION
+======================================================================
+
+
+[0;34mTEST: TC-12.1.1: Get Module Dependencies[0m
+Description: Should return dependencies
+Command: curl -X GET "http://localhost:3000/api/v1/modules/dependencies"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 13: SECURITY & FDA PART 11
+======================================================================
+
+
+----------------------------------------------------------------------
+  13.1 E-Signatures
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-13.1.1: Create E-Signature - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/signatures"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/signatures","correlationId":"1767262248226-76b15a2e"}
+
+
+[0;34mTEST: TC-13.1.2: Create E-Signature - Wrong Password[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/signatures"
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/signatures","correlationId":"1767262248871-95cbeca1"}
+
+
+[0;34mTEST: TC-13.1.3: Create E-Signature - No Meaning[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/signatures"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/signatures","correlationId":"1767262249497-c449304d"}
+
+
+======================================================================
+  PHASE 14: AUDIT SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  14.1 Audit Logs
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-14.1.1: Get Audit Logs[0m
+Description: Should return logs
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-14.1.2: Get Audit Logs - Pagination[0m
+Description: Should return paginated
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs?page=1&limit=10"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-14.1.3: Get Audit Logs - Invalid Page[0m
+Description: Should reject
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs?page=-1&limit=10"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-14.1.4: Get Audit Logs - Filter[0m
+Description: Should filter
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs?action=LOGIN"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-14.1.5: Export Audit Logs[0m
+Description: Should export
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs/export?format=json"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 15: DOCUMENT MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  15.1 Documents
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-15.1.1: Get All Documents[0m
+Description: Should return docs
+Command: curl -X GET "http://localhost:3000/api/v1/documents"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-15.1.2: Create Document - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/documents"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-15.1.3: Create Document - Missing Title[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/documents"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-15.1.4: Search Documents[0m
+Description: Should search
+Command: curl -X GET "http://localhost:3000/api/v1/documents/search?q=test"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 16: TRAINING MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  16.1 Training Courses
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-16.1.1: Get Training Courses[0m
+Description: Should return courses
+Command: curl -X GET "http://localhost:3000/api/v1/training/courses"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-16.1.2: Create Course - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/training/courses"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-16.1.3: Create Course - Invalid Duration[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/training/courses"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-16.1.4: Create Course - Invalid Score[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/training/courses"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-16.2.1: Get Assignments[0m
+Description: Should return assignments
+Command: curl -X GET "http://localhost:3000/api/v1/training/assignments"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 17: CAPA MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  17.1 CAPAs
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-17.1.1: Get All CAPAs[0m
+Description: Should return CAPAs
+Command: curl -X GET "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-17.1.2: Create CAPA - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-17.1.3: Create CAPA - Invalid Type[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-17.1.4: Create CAPA - Invalid Priority[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-17.1.5: Create CAPA - Missing Title[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-17.2.1: Get CAPA Statistics[0m
+Description: Should return stats
+Command: curl -X GET "http://localhost:3000/api/v1/capas/statistics"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 18: SUPPLIER QUALITY
+======================================================================
+
+
+----------------------------------------------------------------------
+  18.1 Suppliers
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-18.1.1: Get All Suppliers[0m
+Description: Should return suppliers
+Command: curl -X GET "http://localhost:3000/api/v1/suppliers"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-18.1.2: Create Supplier - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/suppliers"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-18.1.3: Create Supplier - Invalid Email[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/suppliers"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 19: REPORTING & ANALYTICS
+======================================================================
+
+
+----------------------------------------------------------------------
+  19.1 Dashboard
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-19.1.1: Get Dashboard[0m
+Description: Should return dashboard
+Command: curl -X GET "http://localhost:3000/api/v1/reporting/dashboard"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-19.1.2: Get KPIs[0m
+Description: Should return KPIs
+Command: curl -X GET "http://localhost:3000/api/v1/reporting/kpis"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+----------------------------------------------------------------------
+  19.2 Reports
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-19.2.1: Get Report Definitions[0m
+Description: Should return reports
+Command: curl -X GET "http://localhost:3000/api/v1/reporting/reports"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-19.2.2: Generate Report - Valid[0m
+Description: Should generate
+Command: curl -X POST "http://localhost:3000/api/v1/reporting/reports/generate"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-19.2.3: Generate Report - Invalid Date Range[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/reporting/reports/generate"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-19.2.4: Global Search[0m
+Description: Should search
+Command: curl -X GET "http://localhost:3000/api/v1/reporting/search?q=test"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 20: NOTIFICATIONS
+======================================================================
+
+
+----------------------------------------------------------------------
+  20.1 Notifications
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-20.1.1: Get My Notifications[0m
+Description: Should return notifications
+Command: curl -X GET "http://localhost:3000/api/v1/notifications/me"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-20.1.2: Get Unread Count[0m
+Description: Should return count
+Command: curl -X GET "http://localhost:3000/api/v1/notifications/me/unread-count"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+----------------------------------------------------------------------
+  20.2 Preferences
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-20.2.1: Get Preferences[0m
+Description: Should return preferences
+Command: curl -X GET "http://localhost:3000/api/v1/notifications/preferences"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-20.2.2: Update Preferences - Valid[0m
+Description: Should update
+Command: curl -X PUT "http://localhost:3000/api/v1/notifications/preferences"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-20.2.3: Update Preferences - Invalid Frequency[0m
+Description: Should reject
+Command: curl -X PUT "http://localhost:3000/api/v1/notifications/preferences"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+----------------------------------------------------------------------
+  20.3 Alert Rules
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-20.3.1: Get Alert Rules[0m
+Description: Should return rules
+Command: curl -X GET "http://localhost:3000/api/v1/notifications/alert-rules"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+======================================================================
+  PHASE 21: FILE ATTACHMENTS
+======================================================================
+
+
+----------------------------------------------------------------------
+  21.1 Files
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-21.1.1: Get Storage Quota[0m
+Description: Should return quota
+Command: curl -X GET "http://localhost:3000/api/v1/files/quota"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+
+[0;34mTEST: TC-21.1.2: Create Share Link - Invalid Expiry[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/files/00000000-0000-0000-0000-000000000001/share"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 22: SYSTEM CONFIGURATION
+======================================================================
+
+
+----------------------------------------------------------------------
+  22.1 Settings
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.1.1: Get All Settings[0m
+Description: Should return settings
+Command: curl -X GET "http://localhost:3000/api/v1/config/settings"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.1.2: Update Setting[0m
+Description: Should update
+Command: curl -X PUT "http://localhost:3000/api/v1/config/settings/general/platform_name"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.2 Branding
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.2.1: Get Branding[0m
+Description: Should return branding
+Command: curl -X GET "http://localhost:3000/api/v1/config/branding"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.2.2: Update Branding - Valid[0m
+Description: Should update
+Command: curl -X PUT "http://localhost:3000/api/v1/config/branding"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.2.3: Update Branding - Invalid Color[0m
+Description: Should reject
+Command: curl -X PUT "http://localhost:3000/api/v1/config/branding"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.3 Security
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.3.1: Get Security Policy[0m
+Description: Should return policy
+Command: curl -X GET "http://localhost:3000/api/v1/config/security"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.3.2: Update Security - Valid[0m
+Description: Should update
+Command: curl -X PUT "http://localhost:3000/api/v1/config/security"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.3.3: Update Security - Invalid Length[0m
+Description: Should reject
+Command: curl -X PUT "http://localhost:3000/api/v1/config/security"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.4 Feature Flags
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.4.1: Get Feature Flags[0m
+Description: Should return flags
+Command: curl -X GET "http://localhost:3000/api/v1/config/features"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.4.2: Create Feature Flag - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/config/features"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.4.3: Create Flag - Invalid Rollout[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/config/features"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.5 Webhooks
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.5.1: Get Webhooks[0m
+Description: Should return webhooks
+Command: curl -X GET "http://localhost:3000/api/v1/config/webhooks"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.5.2: Create Webhook - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/config/webhooks"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.5.3: Create Webhook - Invalid URL[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/config/webhooks"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.5.4: Create Webhook - Empty Events[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/config/webhooks"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.6 Email & SMTP
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.6.1: Get Email Templates[0m
+Description: Should return templates
+Command: curl -X GET "http://localhost:3000/api/v1/config/email-templates"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.7.1: Get SMTP Config[0m
+Description: Should return config
+Command: curl -X GET "http://localhost:3000/api/v1/config/smtp"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.7.2: Update SMTP - Invalid Port[0m
+Description: Should reject
+Command: curl -X PUT "http://localhost:3000/api/v1/config/smtp"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  SECURITY TESTS
+======================================================================
+
+
+----------------------------------------------------------------------
+  SQL Injection Prevention
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-SEC-1: SQL Injection in Search[0m
+Description: Should sanitize
+Command: curl -X GET "http://localhost:3000/api/v1/documents/search?q=SELECT%20*%20FROM%20users"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-SEC-2: SQL Injection in Login[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  Pagination Edge Cases
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-PAGE-1: Large Page Number[0m
+Description: Should handle
+Command: curl -X GET "http://localhost:3000/api/v1/documents?page=99999&limit=10"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-PAGE-2: Large Limit[0m
+Description: Should cap
+Command: curl -X GET "http://localhost:3000/api/v1/documents?page=1&limit=10000"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-PAGE-3: Zero Limit[0m
+Description: Should reject
+Command: curl -X GET "http://localhost:3000/api/v1/documents?page=1&limit=0"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  UUID Validation
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-UUID-1: Malformed UUID[0m
+Description: Should reject
+Command: curl -X GET "http://localhost:3000/api/v1/documents/not-a-uuid"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  TEST EXECUTION SUMMARY
+======================================================================
+
+
+======================================================================
+                    FINAL TEST RESULTS                                
+======================================================================
+
+Test Completed: Thu Jan  1 15:41:29 IST 2026
+
+Total Tests:  123
+[0;32mPassed:       20[0m
+[0;31mFailed:       103[0m
+
+Pass Rate:    16%
+
+Results saved to: qassure_test_results_20260101_154007.txt
+======================================================================

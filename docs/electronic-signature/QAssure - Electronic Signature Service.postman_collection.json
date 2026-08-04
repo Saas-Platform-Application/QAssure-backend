@@ -1,0 +1,405 @@
+{
+	"info": {
+		"_postman_id": "7f8g9h0i-1j2k-3l4m-5n6o-7p8q9r0s1t2u",
+		"name": "QAssure - Electronic Signature Service",
+		"description": "Complete API collection for the QAssure FDA 21 CFR Part 11 Electronic Signature Service.\n\nPre-requisite: Run 'Login (Get JWT)' first to populate the {{jwt}} variable.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "0. Authentication",
+			"item": [
+				{
+					"name": "Login (Get JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Save JWT token\", function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data.access_token).to.be.a('string');",
+									"    pm.collectionVariables.set(\"jwt\", json.data.access_token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"tenant8user2@gmail.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "1. Signature Operations",
+			"item": [
+				{
+					"name": "Create Electronic Signature",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"resource_type\": \"document\",\n  \"resource_id\": \"1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d\",\n  \"resource_name\": \"SOP-001 Quality Policy\",\n  \"action\": \"APPROVE\",\n  \"meaning\": \"I approve the release and content of this standard operating procedure.\",\n  \"password\": \"Password123!\",\n  \"pin\": \"1234\",\n  \"auth_method\": \"password_pin\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/sign",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								"sign"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Signature Integrity",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"signature_id\": \"7f8g9h0i-1j2k-3l4m-5n6o-7p8q9r0s1t2u\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/verify",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								"verify"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Set or Update PIN",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"password\": \"Password123!\",\n  \"pin\": \"5678\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/pin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								"pin"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Signature Queries",
+			"item": [
+				{
+					"name": "Get Available Actions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/actions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								"actions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Compliance Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/statistics?start_date=2026-01-01&end_date=2026-12-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								"statistics"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2026-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2026-12-31"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Signature History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/history?limit=10&offset=0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								"history"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Signatures for Resource",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/resource/:resourceType/:resourceId",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								"resource",
+								":resourceType",
+								":resourceId"
+							],
+							"variable": [
+								{
+									"key": "resourceType",
+									"value": "document"
+								},
+								{
+									"key": "resourceId",
+									"value": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Workflow Completion Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/workflow/:workflowId/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								"workflow",
+								":workflowId",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "workflowId",
+									"value": "a8b9c0d1-e2f3-4a5b-6c7d-8e9f0a1b2c3d"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Signature Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "7f8g9h0i-1j2k-3l4m-5n6o-7p8q9r0s1t2u"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Admin Operations",
+			"item": [
+				{
+					"name": "Invalidate Signature",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Typographical errors detected inside the underlying PDF resource file.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/electronic-signatures/:id/invalidate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"electronic-signatures",
+								":id",
+								"invalidate"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "7f8g9h0i-1j2k-3l4m-5n6o-7p8q9r0s1t2u"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "jwt",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

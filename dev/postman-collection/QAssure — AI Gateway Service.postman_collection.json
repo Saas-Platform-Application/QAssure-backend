@@ -1,0 +1,1226 @@
+{
+	"info": {
+		"_postman_id": "9f373815-872d-4b1f-80ed-2ce732668c5f",
+		"name": "QAssure — AI Gateway Service",
+		"description": "AI Gateway Service endpoints (Gateway + Prompts + Tenant AI Config).\n\nBase URL: http://localhost:3000/api/v1\n\nAuth:\n- JWT only — Authorization: Bearer {{jwt_token}}\n- JWT + API Key — Authorization: Bearer {{jwt_token}} + X-API-Key: {{api_key}}\n- API Key + Tenant — X-API-Key: {{api_key}} + X-Tenant-ID: {{tenant_id}}\n\nPermissions:\n- ai:read / ai:write / ai:delete\n\nNotes:\n- All AI endpoints are tenant-scoped.\n- IDs (completion_id, prompt_id, test_case_id) are auto-saved by test scripts where applicable.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48835086"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"if (jsonData.data && jsonData.data.token) pm.collectionVariables.set('jwt_token', jsonData.data.token);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "// {\n//   \"email\": \"admin@pharmacorp.com\",\n//   \"password\": \"Admin@123\"\n// }\n\n{\n    \"email\": \"tenant8admin@gmail.com\",\n    \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Setup — SSO Launch Flow",
+			"item": [
+				{
+					"name": "Step 1 — Login (get user JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Has token in response', function() {",
+									"    pm.expect(jsonData.data).to.have.property('token');",
+									"    pm.expect(jsonData.data.token).to.be.a('string');",
+									"});",
+									"",
+									"pm.test('Has user details with department', function() {",
+									"    pm.expect(jsonData.data.user).to.have.property('email');",
+									"    if (jsonData.data.user.department) {",
+									"        pm.expect(jsonData.data.user.department).to.be.a('string');",
+									"    }",
+									"    if (jsonData.data.user.designation) {",
+									"        pm.expect(jsonData.data.user.designation).to.be.a('string');",
+									"    }",
+									"    if (jsonData.data.user.user_category) {",
+									"        pm.expect(jsonData.data.user.user_category).to.be.a('string');",
+									"    }",
+									"});",
+									"",
+									"// Capture tenant_token for Step 2",
+									"pm.collectionVariables.set('tenant_token', jsonData.data.token);",
+									"console.log('✅ tenant_token captured');"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "// {\n//   \"email\": \"polumuri.suresh@ltts.com\",\n//   \"password\": \"Password123!\"\n// }\n{\n  \"email\": \"tenant8admin@gmail.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as tenant admin to get user JWT.\nCaptures: tenant_token\n\nCredentials: tenantadmin@pharmacorp.com / SecurePass123!"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 — Launch Module (get launch token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Has launch_url', function() {",
+									"    pm.expect(jsonData.data).to.have.property('launch_url');",
+									"    pm.expect(jsonData.data.launch_url).to.include('token=');",
+									"});",
+									"",
+									"// Extract launch_token from launch_url query parameter",
+									"var launchUrl = jsonData.data.launch_url;",
+									"var launchToken = launchUrl.split('token=')[1];",
+									"if (launchToken && launchToken.indexOf('&') > -1) {",
+									"    launchToken = launchToken.split('&')[0];",
+									"}",
+									"",
+									"pm.collectionVariables.set('launch_token', launchToken);",
+									"console.log('✅ launch_token captured: ' + launchToken.substring(0, 20) + '...');"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenant_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/modules/{{coc_module_id}}/launch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{coc_module_id}}",
+								"launch"
+							]
+						},
+						"description": "Launch the CoC module to get a launch token.\nUses tenant_token from Step 1.\nCaptures: launch_token (extracted from launch_url query param)"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3 — Verify Launch Token (get module JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Has module session token', function() {",
+									"    pm.expect(jsonData.data).to.have.property('token');",
+									"    pm.expect(jsonData.data.token).to.be.a('string');",
+									"});",
+									"",
+									"pm.test('Has user details with department info', function() {",
+									"    if (jsonData.data.user) {",
+									"        pm.expect(jsonData.data.user).to.have.property('email');",
+									"        // Verify department, designation, user_category fields present",
+									"        if (jsonData.data.user.department !== undefined) {",
+									"            console.log('User department: ' + jsonData.data.user.department);",
+									"        }",
+									"        if (jsonData.data.user.designation !== undefined) {",
+									"            console.log('User designation: ' + jsonData.data.user.designation);",
+									"        }",
+									"        if (jsonData.data.user.user_category !== undefined) {",
+									"            console.log('User category: ' + jsonData.data.user.user_category);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test('Has tenant details', function() {",
+									"    if (jsonData.data.tenant) {",
+									"        pm.expect(jsonData.data.tenant).to.have.property('id');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Has permissions', function() {",
+									"    if (jsonData.data.permissions) {",
+									"        pm.expect(jsonData.data.permissions).to.be.an('array');",
+									"    }",
+									"});",
+									"",
+									"// Capture module_jwt for all subsequent Combined Auth requests",
+									"pm.collectionVariables.set('module_jwt', jsonData.data.token);",
+									"console.log('✅ module_jwt captured — Combined Auth ready');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{launch_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/verify-launch-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"verify-launch-token"
+							]
+						},
+						"description": "Verify launch token to get module session JWT (24h expiry).\nUses X-API-Key (NOT Bearer token).\nCaptures: module_jwt\n\nResponse includes: token, user details (with department, designation, user_category), tenant details, permissions.\n\nAfter this step, use Combined Auth on all requests:\n- Authorization: Bearer {{module_jwt}}\n- X-API-Key: {{api_key}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Use JWT + X-Api-Key",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/providers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"providers"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Three-step SSO flow to establish Combined Auth (JWT + API Key).\nRun these sequentially before any other requests.\n\nFlow: Login → Launch Module → Verify Launch Token → Combined Auth ready"
+		},
+		{
+			"name": "AI Gateway",
+			"item": [
+				{
+					"name": "GET Providers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/providers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"providers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Provider Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/providers/{{provider}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"providers",
+								"{{provider}}",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Models",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/models",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"models"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Gateway Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create Completion",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) pm.collectionVariables.set('completion_id', jsonData.data.id);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"Write a 2-line summary of QAssure.\"}\n  ],\n  \"provider\": \"Llama 3.2B\",\n  \"temperature\": 0.3,\n  \"max_tokens\": 200\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/completions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"completions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET List Completions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/completions?page=1&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"completions"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "provider",
+									"value": "openai",
+									"disabled": true
+								},
+								{
+									"key": "model",
+									"value": "gpt-4.1",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "completed",
+									"disabled": true
+								},
+								{
+									"key": "user_id",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "2026-03-01T00:00:00Z",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2026-03-31T23:59:59Z",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Completion by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/completions/{{completion_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"completions",
+								"{{completion_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Cost Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/costs?group_by=day",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"costs"
+							],
+							"query": [
+								{
+									"key": "group_by",
+									"value": "day"
+								},
+								{
+									"key": "start_date",
+									"value": "2026-03-01T00:00:00Z",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2026-03-31T23:59:59Z",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Playground (no persistence)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"Give 3 bullet points about GMP.\"}\n  ],\n  \"provider\": \"gemini\",\n  \"temperature\": 0.4\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/playground",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"playground"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tenant AI Config",
+			"item": [
+				{
+					"name": "POST Upsert Config",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"provider\": \"Llama 3.2B\",\n  \"display_name\": \"Llama 3.2B (direct new\",\n  \"config_type\": \"direct\",\n//   \"api_key\": \"AIzaSyADNKz7PYpmIJ5-1d2g1-4AasYTLIQTMqg\",//(gemini)\n  \"api_key\": \"4ccf68ad-485c-495a-935b-10d74b173a52\",\n  \"is_active\": true,\n  \"endpoint\":\"http://host.docker.internal:11434/v1\",\n  \"custom_models\": [\"llama3.2\"],\n  \"default_model\": \"llama3.2\"\n}\n"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET List Configs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Config by Provider",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/config/{{provider}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"config",
+								"{{provider}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Test Config Connection",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/config/{{provider}}/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"config",
+								"{{provider}}",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Config by Provider",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/config/{{provider}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"config",
+								"{{provider}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Prompts",
+			"item": [
+				{
+					"name": "POST Create Prompt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) pm.collectionVariables.set('prompt_id', jsonData.data.id);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"code_review_prompt1\",\n  \"description\": \"Reviews code for bugs\",\n  \"use_case\": \"code_review\",\n  \"system_message\": \"You are a senior developer.\",\n  \"user_template\": \"Review this {{language}} code:\\n\\n{{code}}\",\n  \"provider\": \"gemini\",\n  \"temperature\": 0.2,\n  \"max_tokens\": 800,\n  \"tags\": [\"code\", \"review\"],\n  \"variables\": [\n    {\"name\": \"language\", \"type\": \"string\", \"required\": true},\n    {\"name\": \"code\", \"type\": \"string\", \"required\": true}\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/prompts",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET List Prompts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/prompts?page=1&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "use_case",
+									"value": "code_review",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "review",
+									"disabled": true
+								},
+								{
+									"key": "tags",
+									"value": "code,review",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Prompt by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Update Prompt",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_template\": \"1Review this {{language}} code:\\n\\n{{code}}\",\n  \"description\": \"Updated description\",\n  \"temperature\": 0.3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PATCH Update Prompt Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Clone Prompt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"code_review_prompt_clone2\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}/clone",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}",
+								"clone"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Prompt Versions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}/versions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}",
+								"versions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Prompt Version (specific)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}/versions/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}",
+								"versions",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Rollback Prompt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"version\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}/rollback",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}",
+								"rollback"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Execute Prompt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"variables\": {\n    \"language\": \"javascript\",\n    \"code\": \"function add(a,b){return a+b}\"\n  },\n  \"temperature\": 0.2,\n  \"max_tokens\": 500\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}/execute",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}",
+								"execute"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Test Prompt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"variables\": {\n    \"language\": \"python\",\n    \"code\": \"def foo(x):\\n    return x+1\"\n  },\n  \"temperature\": 0.2,\n  \"max_tokens\": 500\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create Test Case",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) pm.collectionVariables.set('test_case_id', jsonData.data.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Basic code review test\",\n  \"description\": \"Checks that output includes at least one suggestion\",\n  \"variables\": {\"language\": \"python\", \"code\": \"def foo(x): return x+1\"},\n  \"expected_contains\": [\"suggest\"],\n  \"max_tokens\": 400\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}/test-cases",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}",
+								"test-cases"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET List Test Cases",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}/test-cases",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}",
+								"test-cases"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Run Test Case",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/test-cases/{{test_case_id}}/run",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"test-cases",
+								"{{test_case_id}}",
+								"run"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Test Case Results",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/test-cases/{{test_case_id}}/results?limit=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"test-cases",
+								"{{test_case_id}}",
+								"results"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Prompt",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ai/prompts/{{prompt_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								"{{prompt_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://backendqaasure.tech4bizsolutions.com/api/v1"
+		},
+		{
+			"key": "prod_url",
+			"value": "https://backendqassure.tech4bizsolutions.com/api/v1"
+		},
+		{
+			"key": "jwt_token",
+			"value": ""
+		},
+		{
+			"key": "api_key",
+			"value": "",
+			"description": {
+				"content": "Module API key (optional). Used for combined auth or API key mode.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "tenant_id",
+			"value": ""
+		},
+		{
+			"key": "provider",
+			"value": "openai"
+		},
+		{
+			"key": "completion_id",
+			"value": ""
+		},
+		{
+			"key": "prompt_id",
+			"value": ""
+		},
+		{
+			"key": "test_case_id",
+			"value": ""
+		},
+		{
+			"key": "tenant_token",
+			"value": ""
+		},
+		{
+			"key": "launch_token",
+			"value": ""
+		},
+		{
+			"key": "module_jwt",
+			"value": ""
+		}
+	]
+}

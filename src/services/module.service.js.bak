@@ -1,0 +1,779 @@
+/**
+ * Module Service - QAssure Platform
+ * Manages module registration, lifecycle, and health monitoring
+ */
+const crypto = require('crypto');
+const database = require('../config/database');
+const { getAuditService } = require('./audit.service');
+
+// Module lifecycle states
+const MODULE_STATES = {
+  PENDING: 'pending',           // Just registered, not yet deployed
+  STARTING: 'starting',         // Deployment in progress
+  RUNNING: 'running',           // Healthy and serving traffic
+  STOPPING: 'stopping',         // Graceful shutdown in progress
+  STOPPED: 'stopped',           // Manually stopped
+  FAILED: 'failed',             // Crashed or unhealthy
+  DEPRECATED: 'deprecated',     // Marked for removal
+  MAINTENANCE: 'maintenance'    // Temporarily offline for updates
+};
+
+// Valid state transitions
+const STATE_TRANSITIONS = {
+  [MODULE_STATES.PENDING]: [MODULE_STATES.STARTING, MODULE_STATES.FAILED],
+  [MODULE_STATES.STARTING]: [MODULE_STATES.RUNNING, MODULE_STATES.FAILED, MODULE_STATES.STOPPED],
+  [MODULE_STATES.RUNNING]: [MODULE_STATES.STOPPING, MODULE_STATES.FAILED, MODULE_STATES.MAINTENANCE, MODULE_STATES.DEPRECATED],
+  [MODULE_STATES.STOPPING]: [MODULE_STATES.STOPPED, MODULE_STATES.FAILED],
+  [MODULE_STATES.STOPPED]: [MODULE_STATES.STARTING, MODULE_STATES.DEPRECATED],
+  [MODULE_STATES.FAILED]: [MODULE_STATES.STARTING, MODULE_STATES.STOPPED, MODULE_STATES.DEPRECATED],
+  [MODULE_STATES.DEPRECATED]: [MODULE_STATES.STOPPED],
+  [MODULE_STATES.MAINTENANCE]: [MODULE_STATES.STARTING, MODULE_STATES.RUNNING, MODULE_STATES.STOPPED, MODULE_STATES.FAILED]
+};
+
+class ModuleService {
+  constructor() {
+    this.auditService = getAuditService();
+    this.healthCheckInterval = null;
+    this.STATES = MODULE_STATES;
+  }
+
+  /**
+   * Validate state transition
+   */
+  isValidTransition(currentState, newState) {
+    const allowedTransitions = STATE_TRANSITIONS[currentState];
+    if (!allowedTransitions) return false;
+    return allowedTransitions.includes(newState);
+  }
+
+  /**
+   * Register a new module
+   */
+  async register(data, userId, tenantId = null) {
+    const {
+      module_id,
+      name,
+      description,
+      version,
+      runtime_language,
+      framework,
+      base_url,
+      health_endpoint,
+      endpoints,
+      kafka_topics,
+      cpu_request,
+      cpu_limit,
+      memory_request,
+      memory_limit,
+      min_replicas,
+      max_replicas,
+      metadata
+    } = data;
+
+    // Check if module_id already exists
+    const existing = await database.query(
+      'SELECT id FROM modules WHERE module_id = $1',
+      [module_id]
+    );
+
+    if (existing.rows.length > 0) {
+      throw new Error(`Module with ID '${module_id}' already exists`);
+    }
+
+    const id = crypto.randomUUID();
+
+    const query = `
+      INSERT INTO modules (
+        id, module_id, name, description, version, status,
+        runtime_language, framework, base_url, health_endpoint,
+        endpoints, kafka_topics,
+        cpu_request, cpu_limit, memory_request, memory_limit,
+        min_replicas, max_replicas,
+        registered_by, tenant_id, metadata,
+        created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6,
+        $7, $8, $9, $10,
+        $11, $12,
+        $13, $14, $15, $16,
+        $17, $18,
+        $19, $20, $21,
+        NOW(), NOW()
+      )
+      RETURNING *
+    `;
+
+    const values = [
+      id,
+      module_id,
+      name,
+      description || null,
+      version,
+      MODULE_STATES.PENDING, // Initial status
+      runtime_language,
+      framework || null,
+      base_url,
+      health_endpoint,
+      endpoints ? JSON.stringify(endpoints) : null,
+      kafka_topics ? JSON.stringify(kafka_topics) : null,
+      cpu_request || '100m',
+      cpu_limit || '500m',
+      memory_request || '128Mi',
+      memory_limit || '512Mi',
+      min_replicas || 2,
+      max_replicas || 10,
+      userId,
+      tenantId,
+      metadata ? JSON.stringify(metadata) : null
+    ];
+
+    const result = await database.query(query, values);
+    const module = result.rows[0];
+
+    // Log audit event
+    await this.auditService.log({
+      action: 'module.register',
+      user_id: userId,
+      tenant_id: tenantId,
+      resource_type: 'module',
+      resource_id: module.id,
+      metadata: { module_id, name, version, initial_status: MODULE_STATES.PENDING }
+    });
+
+    return module;
+  }
+
+  /**
+   * Update module status with transition validation
+   */
+  async updateStatus(id, newStatus, userId, reason = null) {
+    const normalizedStatus = newStatus.toLowerCase();
+    
+    // Validate status value
+    if (!Object.values(MODULE_STATES).includes(normalizedStatus)) {
+      throw new Error(`Invalid status '${newStatus}'. Valid states: ${Object.values(MODULE_STATES).join(', ')}`);
+    }
+
+    // Get current module state
+    const module = await this.getById(id);
+    const currentStatus = module.status;
+
+    // Validate transition (skip validation for super_admin force updates)
+    if (!this.isValidTransition(currentStatus, normalizedStatus)) {
+      throw new Error(
+        `Invalid state transition from '${currentStatus}' to '${normalizedStatus}'. ` +
+        `Allowed transitions: ${STATE_TRANSITIONS[currentStatus]?.join(', ') || 'none'}`
+      );
+    }
+
+    const result = await database.query(`
+      UPDATE modules 
+      SET status = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [normalizedStatus, id]);
+
+    const updatedModule = result.rows[0];
+
+    // Log audit event with state transition details
+    await this.auditService.log({
+      action: 'module.status_change',
+      user_id: userId,
+      tenant_id: module.tenant_id,
+      resource_type: 'module',
+      resource_id: id,
+      changes: { 
+        previous_status: currentStatus,
+        new_status: normalizedStatus,
+        reason 
+      }
+    });
+
+    return updatedModule;
+  }
+
+  /**
+   * Force update status (super_admin only, bypasses transition validation)
+   */
+  async forceUpdateStatus(id, newStatus, userId, reason) {
+    const normalizedStatus = newStatus.toLowerCase();
+    
+    if (!Object.values(MODULE_STATES).includes(normalizedStatus)) {
+      throw new Error(`Invalid status '${newStatus}'. Valid states: ${Object.values(MODULE_STATES).join(', ')}`);
+    }
+
+    const module = await this.getById(id);
+    const currentStatus = module.status;
+
+    const result = await database.query(`
+      UPDATE modules 
+      SET status = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [normalizedStatus, id]);
+
+    const updatedModule = result.rows[0];
+
+    // Log audit event with force flag
+    await this.auditService.log({
+      action: 'module.status_force_change',
+      user_id: userId,
+      tenant_id: module.tenant_id,
+      resource_type: 'module',
+      resource_id: id,
+      changes: { 
+        previous_status: currentStatus,
+        new_status: normalizedStatus,
+        reason,
+        forced: true
+      }
+    });
+
+    return updatedModule;
+  }
+
+  /**
+   * Start a module (pending/stopped -> starting -> running)
+   */
+  async start(id, userId) {
+    const module = await this.getById(id);
+    
+    // First transition to starting
+    await this.updateStatus(id, MODULE_STATES.STARTING, userId, 'Module start requested');
+
+    // In a real system, this would trigger K8s deployment
+    // For now, we'll just set it to running
+    // TODO: Integrate with actual orchestration system
+
+    // Simulate startup (in production, this would be async with callbacks)
+    await this.updateStatus(id, MODULE_STATES.RUNNING, userId, 'Module started successfully');
+
+    return await this.getById(id);
+  }
+
+  /**
+   * Stop a module gracefully
+   */
+  async stop(id, userId, reason = 'Manual stop requested') {
+    const module = await this.getById(id);
+    
+    // First transition to stopping
+    await this.updateStatus(id, MODULE_STATES.STOPPING, userId, reason);
+
+    // In a real system, this would trigger graceful shutdown
+    // TODO: Integrate with actual orchestration system
+
+    // Simulate shutdown
+    await this.updateStatus(id, MODULE_STATES.STOPPED, userId, 'Module stopped successfully');
+
+    return await this.getById(id);
+  }
+
+  /**
+   * Restart a module
+   */
+  async restart(id, userId, reason = 'Restart requested') {
+    await this.stop(id, userId, reason);
+    return await this.start(id, userId);
+  }
+
+  /**
+   * Put module in maintenance mode
+   */
+  async setMaintenance(id, userId, reason = 'Scheduled maintenance') {
+    return await this.updateStatus(id, MODULE_STATES.MAINTENANCE, userId, reason);
+  }
+
+  /**
+   * Mark module as deprecated
+   */
+  async deprecate(id, userId, reason = 'Module deprecated') {
+    return await this.updateStatus(id, MODULE_STATES.DEPRECATED, userId, reason);
+  }
+
+  /**
+   * Mark module as failed
+   */
+  async markFailed(id, userId, error) {
+    const module = await this.getById(id);
+
+    const result = await database.query(`
+      UPDATE modules 
+      SET status = $1, consecutive_failures = consecutive_failures + 1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [MODULE_STATES.FAILED, id]);
+
+    // Log audit event
+    await this.auditService.log({
+      action: 'module.failed',
+      user_id: userId,
+      tenant_id: module.tenant_id,
+      resource_type: 'module',
+      resource_id: id,
+      changes: { 
+        previous_status: module.status,
+        new_status: MODULE_STATES.FAILED,
+        error 
+      }
+    });
+
+    return result.rows[0];
+  }
+
+  /**
+   * Update module version (deployment)
+   */
+  async updateVersion(id, version, userId, changelog = null) {
+    const current = await this.getById(id);
+
+    const result = await database.query(`
+      UPDATE modules 
+      SET version = $1, updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [version, id]);
+
+    if (result.rows.length === 0) {
+      throw new Error('Module not found');
+    }
+
+    const module = result.rows[0];
+
+    // Log audit event
+    await this.auditService.log({
+      action: 'module.version_update',
+      user_id: userId,
+      tenant_id: module.tenant_id,
+      resource_type: 'module',
+      resource_id: id,
+      changes: {
+        old_version: current.version,
+        new_version: version,
+        changelog
+      }
+    });
+
+    return module;
+  }
+
+  /**
+   * Get module by ID
+   */
+  async getById(id) {
+    const result = await database.query(`
+      SELECT m.*, u.email as registered_by_email
+      FROM modules m
+      LEFT JOIN users u ON u.id = m.registered_by
+      WHERE m.id = $1
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      throw new Error('Module not found');
+    }
+
+    return result.rows[0];
+  }
+
+  /**
+   * Get module by module_id
+   */
+  async getByModuleId(moduleId) {
+    const result = await database.query(`
+      SELECT m.*, u.email as registered_by_email
+      FROM modules m
+      LEFT JOIN users u ON u.id = m.registered_by
+      WHERE m.module_id = $1
+    `, [moduleId]);
+
+    if (result.rows.length === 0) {
+      throw new Error('Module not found');
+    }
+
+    return result.rows[0];
+  }
+
+  /**
+   * List modules with filters
+   */
+  async list(filters = {}, options = {}) {
+    const { tenant_id, status, health_status, runtime_language, search } = filters;
+    const { page = 1, limit = 20, sort_by = 'created_at', sort_order = 'DESC' } = options;
+    const offset = (page - 1) * limit;
+
+    let query = `
+      SELECT m.*, u.email as registered_by_email
+      FROM modules m
+      LEFT JOIN users u ON u.id = m.registered_by
+      WHERE 1=1
+    `;
+    const params = [];
+    let paramCount = 0;
+
+    if (tenant_id) {
+      paramCount++;
+      query += ` AND m.tenant_id = $${paramCount}`;
+      params.push(tenant_id);
+    }
+
+    if (status) {
+      paramCount++;
+      query += ` AND m.status = $${paramCount}`;
+      params.push(status.toLowerCase());
+    }
+
+    if (health_status) {
+      paramCount++;
+      query += ` AND m.health_status = $${paramCount}`;
+      params.push(health_status.toLowerCase());
+    }
+
+    if (runtime_language) {
+      paramCount++;
+      query += ` AND m.runtime_language = $${paramCount}`;
+      params.push(runtime_language);
+    }
+
+    if (search) {
+      paramCount++;
+      query += ` AND (m.name ILIKE $${paramCount} OR m.module_id ILIKE $${paramCount} OR m.description ILIKE $${paramCount})`;
+      params.push(`%${search}%`);
+    }
+
+    // Sorting
+    const validSortColumns = ['created_at', 'name', 'module_id', 'status', 'version', 'health_status'];
+    const sortColumn = validSortColumns.includes(sort_by) ? sort_by : 'created_at';
+    const sortDir = sort_order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    
+    query += ` ORDER BY m.${sortColumn} ${sortDir}`;
+    
+    paramCount++;
+    query += ` LIMIT $${paramCount}`;
+    params.push(limit);
+    
+    paramCount++;
+    query += ` OFFSET $${paramCount}`;
+    params.push(offset);
+
+    const result = await database.query(query, params);
+
+    // Get total count
+    let countQuery = `SELECT COUNT(*) FROM modules WHERE 1=1`;
+    const countParams = [];
+    let countIdx = 0;
+
+    if (tenant_id) {
+      countIdx++;
+      countQuery += ` AND tenant_id = $${countIdx}`;
+      countParams.push(tenant_id);
+    }
+    if (status) {
+      countIdx++;
+      countQuery += ` AND status = $${countIdx}`;
+      countParams.push(status.toLowerCase());
+    }
+
+    const countResult = await database.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].count);
+
+    return {
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: offset + limit < total
+      }
+    };
+  }
+
+  /**
+   * Update module configuration
+   */
+  async update(id, data, userId) {
+    const {
+      name,
+      description,
+      base_url,
+      health_endpoint,
+      endpoints,
+      kafka_topics,
+      cpu_request,
+      cpu_limit,
+      memory_request,
+      memory_limit,
+      min_replicas,
+      max_replicas,
+      metadata
+    } = data;
+
+    const updates = [];
+    const params = [];
+    let paramCount = 0;
+
+    const addUpdate = (field, value) => {
+      if (value !== undefined) {
+        paramCount++;
+        updates.push(`${field} = $${paramCount}`);
+        params.push(typeof value === 'object' ? JSON.stringify(value) : value);
+      }
+    };
+
+    addUpdate('name', name);
+    addUpdate('description', description);
+    addUpdate('base_url', base_url);
+    addUpdate('health_endpoint', health_endpoint);
+    addUpdate('endpoints', endpoints);
+    addUpdate('kafka_topics', kafka_topics);
+    addUpdate('cpu_request', cpu_request);
+    addUpdate('cpu_limit', cpu_limit);
+    addUpdate('memory_request', memory_request);
+    addUpdate('memory_limit', memory_limit);
+    addUpdate('min_replicas', min_replicas);
+    addUpdate('max_replicas', max_replicas);
+    addUpdate('metadata', metadata);
+
+    if (updates.length === 0) {
+      throw new Error('No fields to update');
+    }
+
+    updates.push('updated_at = NOW()');
+
+    paramCount++;
+    params.push(id);
+
+    const query = `
+      UPDATE modules 
+      SET ${updates.join(', ')}
+      WHERE id = $${paramCount}
+      RETURNING *
+    `;
+
+    const result = await database.query(query, params);
+
+    if (result.rows.length === 0) {
+      throw new Error('Module not found');
+    }
+
+    const module = result.rows[0];
+
+    // Log audit event
+    await this.auditService.log({
+      action: 'module.update',
+      user_id: userId,
+      tenant_id: module.tenant_id,
+      resource_type: 'module',
+      resource_id: id,
+      changes: data
+    });
+
+    return module;
+  }
+
+  /**
+   * Perform health check on a module
+   */
+  async checkHealth(id) {
+    const module = await this.getById(id);
+    
+    const healthUrl = `${module.base_url}${module.health_endpoint}`;
+    let healthStatus = 'unknown';
+    let responseTime = null;
+    let error = null;
+
+    try {
+      const startTime = Date.now();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(healthUrl, {
+        method: 'GET',
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+      responseTime = Date.now() - startTime;
+
+      if (response.ok) {
+        healthStatus = 'healthy';
+      } else {
+        healthStatus = 'unhealthy';
+        error = `HTTP ${response.status}`;
+      }
+    } catch (err) {
+      healthStatus = 'unhealthy';
+      error = err.message;
+    }
+
+    // Update module health status
+    const consecutiveFailures = healthStatus === 'healthy' 
+      ? 0 
+      : (module.consecutive_failures || 0) + 1;
+
+    // Auto-transition to failed if too many consecutive failures
+    let newStatus = module.status;
+    if (consecutiveFailures >= 3 && module.status === MODULE_STATES.RUNNING) {
+      newStatus = MODULE_STATES.FAILED;
+    }
+
+    await database.query(`
+      UPDATE modules 
+      SET 
+        last_health_check = NOW(),
+        health_status = $1,
+        consecutive_failures = $2,
+        status = $3,
+        updated_at = NOW()
+      WHERE id = $4
+    `, [healthStatus, consecutiveFailures, newStatus, id]);
+
+    // Record in health_checks table
+    await database.query(`
+      INSERT INTO health_checks (
+        id, module_id, status, response_time, error_message, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+    `, [
+      crypto.randomUUID(),
+      id,
+      healthStatus,
+      responseTime,
+      error
+    ]);
+
+    return {
+      module_id: module.module_id,
+      status: healthStatus,
+      module_status: newStatus,
+      response_time: responseTime,
+      error,
+      consecutive_failures: consecutiveFailures
+    };
+  }
+
+  /**
+   * Get health history for a module
+   */
+  async getHealthHistory(id, limit = 100) {
+    const result = await database.query(`
+      SELECT * FROM health_checks
+      WHERE module_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2
+    `, [id, limit]);
+
+    return result.rows;
+  }
+
+  /**
+   * Deregister (soft delete) a module
+   */
+  async deregister(id, userId) {
+    const module = await this.getById(id);
+
+    // Must stop before deregistering
+    if (module.status === MODULE_STATES.RUNNING) {
+      await this.stop(id, userId, 'Stopping for deregistration');
+    }
+
+    await database.query(`
+      UPDATE modules 
+      SET status = $1, updated_at = NOW()
+      WHERE id = $2
+    `, [MODULE_STATES.DEPRECATED, id]);
+
+    // Log audit event
+    await this.auditService.log({
+      action: 'module.deregister',
+      user_id: userId,
+      tenant_id: module.tenant_id,
+      resource_type: 'module',
+      resource_id: id,
+      metadata: { module_id: module.module_id }
+    });
+
+    return { success: true, message: 'Module deregistered successfully' };
+  }
+
+  /**
+   * Delete module permanently (admin only)
+   */
+  async delete(id, userId) {
+    const module = await this.getById(id);
+
+    // Delete health history first
+    await database.query('DELETE FROM health_history WHERE module_id = $1', [id]);
+    await database.query('DELETE FROM health_checks WHERE module_id = $1', [id]);
+
+    // Delete module
+    await database.query('DELETE FROM modules WHERE id = $1', [id]);
+
+    // Log audit event
+    await this.auditService.log({
+      action: 'module.delete',
+      user_id: userId,
+      tenant_id: module.tenant_id,
+      resource_type: 'module',
+      resource_id: id,
+      metadata: { module_id: module.module_id, name: module.name }
+    });
+
+    return { success: true, message: 'Module deleted permanently' };
+  }
+
+  /**
+   * Get module statistics
+   */
+  async getStats() {
+    const result = await database.query(`
+      SELECT 
+        status,
+        health_status,
+        COUNT(*) as count
+      FROM modules
+      GROUP BY status, health_status
+    `);
+
+    const stats = {
+      total: 0,
+      by_status: {},
+      by_health: {},
+      states: MODULE_STATES,
+      transitions: STATE_TRANSITIONS
+    };
+
+    for (const row of result.rows) {
+      const count = parseInt(row.count);
+      stats.total += count;
+      
+      stats.by_status[row.status] = (stats.by_status[row.status] || 0) + count;
+      
+      if (row.health_status) {
+        stats.by_health[row.health_status] = (stats.by_health[row.health_status] || 0) + count;
+      }
+    }
+
+    return stats;
+  }
+
+  /**
+   * Get state transition diagram
+   */
+  getStateTransitions() {
+    return {
+      states: MODULE_STATES,
+      transitions: STATE_TRANSITIONS
+    };
+  }
+}
+
+// Singleton
+let instance = null;
+const getModuleService = () => {
+  if (!instance) {
+    instance = new ModuleService();
+  }
+  return instance;
+};
+
+module.exports = { ModuleService, getModuleService, MODULE_STATES, STATE_TRANSITIONS };

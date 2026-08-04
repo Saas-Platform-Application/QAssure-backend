@@ -1,0 +1,625 @@
+{
+	"info": {
+		"_postman_id": "caca0f90-ef31-482d-88bb-cfda4091abff",
+		"name": "QAssure — CAPA Service",
+		"description": "API collection for QAssure Corrective and Preventive Action (CAPA) Service.\n\nBase URL: http://localhost:3000/api/v1\n\nAuth: Bearer JWT Token\n\nFolders included:\n- Auth: Helper login endpoints to save the jwt_token\n- Lookups: Static classification data (types, sources, priorities, statuses, methods)\n- CAPA CRUD: Creating, reading, updating, and listing CAPAs\n- Workflow: Submitting to QMS workflow engine and status patching\n- Actions: Appending and updating sub-tasks/evidence checklist items\n- 8D Report: Phase updates (D1-D8) for the Eight Disciplines problem-solving cycle\n- Dashboard: Aggregated charts, overdue ratios, and trend calculations",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Token saved to collection variable');",
+									"}",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.token);",
+									"    console.log('✅ Token saved to collection variable (alt field)');",
+									"}",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@pharmacorp.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user credentials to retrieve JWT token and auto-populate the jwt_token variable."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📋 Lookups",
+			"item": [
+				{
+					"name": "Get CAPA Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/types",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"types"
+							]
+						},
+						"description": "Fetch list of standard CAPA type classifications (corrective, preventive, both)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA Sources",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/sources",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"sources"
+							]
+						},
+						"description": "Fetch list of standard source categories (audit, deviation, complaint, supplier)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA Priorities",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/priorities",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"priorities"
+							]
+						},
+						"description": "Fetch list of SLA priority mappings (critical=7 days, high=14 days, medium=30 days, low=60 days)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA Statuses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/statuses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"statuses"
+							]
+						},
+						"description": "Fetch list of standard workflow lifecycle statuses (draft, open, investigation, action, verification, closed)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Root Cause Investigation Methods",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/root-cause-methods",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"root-cause-methods"
+							]
+						},
+						"description": "Fetch list of investigation tools (5_why, fishbone, fmea, fault_tree)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔄 CAPA CRUD",
+			"item": [
+				{
+					"name": "1. Create CAPA",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('capa_id', jsonData.data.id);",
+									"    console.log('✅ CAPA ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Supplier Raw Material Contamination\",\n    \"description\": \"Impurities identified in raw material batch RM-4902.\",\n    \"capa_type\": \"corrective\",\n    \"source\": \"supplier\",\n    \"priority\": \"high\",\n    \"risk_level\": \"high\",\n    \"problem_statement\": \"Particles discovered inside sealed canisters of RM-4902 during incoming quality control.\",\n    \"immediate_action\": \"Canisters quarantined; vendor notified; hold placed on affected batch.\",\n    \"target_date\": \"2026-09-30\",\n    \"use_8d\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/capas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas"
+							]
+						},
+						"description": "Create a new CAPA record. Auto-calculates CAPA sequence number and saves UUID into capa_id."
+					},
+					"response": []
+				},
+				{
+					"name": "2. List CAPAs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas?status=draft&limit=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "draft"
+								},
+								{
+									"key": "capa_type",
+									"value": "corrective",
+									"disabled": true
+								},
+								{
+									"key": "priority",
+									"value": "high",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "Supplier",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Get page list of CAPAs with filters (status, type, priority, source, owner, search term)."
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get CAPA by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}"
+							]
+						},
+						"description": "Retrieve full details for a single CAPA including ownership, action items list, and 8D report flag."
+					},
+					"response": []
+				},
+				{
+					"name": "4. Update CAPA Details",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"problem_statement\": \"Particles discovered inside canisters of RM-4902. Analysis shows steel filings.\",\n    \"root_cause_method\": \"5_why\",\n    \"root_cause\": \"Vibration during transit caused metal scraping on loose canister lids.\",\n    \"containment_action\": \"Lid inspections enforced at vendor loading dock.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}"
+							]
+						},
+						"description": "Update details (problem statement, root cause method, owner, targets) for a CAPA."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "⚡ Workflow Actions",
+			"item": [
+				{
+					"name": "Submit CAPA for Investigation",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}/submit",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}",
+								"submit"
+							]
+						},
+						"description": "Triggers the workflow engine, launches the capa_workflow instance, and sets status to open."
+					},
+					"response": []
+				},
+				{
+					"name": "Patch CAPA Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"investigation\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}",
+								"status"
+							]
+						},
+						"description": "Updates the CAPA status manually (gated behind permissions)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "✅ CAPA Actions",
+			"item": [
+				{
+					"name": "Add CAPA Action Item",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('action_id', jsonData.data.id);",
+									"    console.log('✅ Action ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Action added', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"Replace vendor canister lids with secure latch locks\",\n    \"action_type\": \"corrective\",\n    \"assigned_to\": \"da1e3090-ff2a-4a6c-90b1-fa12da431109\",\n    \"department\": \"Engineering\",\n    \"due_date\": \"2026-08-15\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}/actions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}",
+								"actions"
+							]
+						},
+						"description": "Appends an action item task to the CAPA and sets status to pending."
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA Action Items",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}/actions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}",
+								"actions"
+							]
+						},
+						"description": "Fetch the list of checklist actions for a CAPA."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Action Item",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"completed\",\n    \"evidence\": \"Latch lids installed on all canisters; inspected and approved on arrival.\",\n    \"verification_notes\": \"Audited by QA; evidence is acceptable.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}/actions/{{action_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}",
+								"actions",
+								"{{action_id}}"
+							]
+						},
+						"description": "Update action status, assignee, log implementation evidence, and add verification reviews."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "⚙️ 8D Report",
+			"item": [
+				{
+					"name": "Get 8D Report Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}/8d",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}",
+								"8d"
+							]
+						},
+						"description": "Fetch the 8D Problem Solving structure associated with this CAPA."
+					},
+					"response": []
+				},
+				{
+					"name": "Update D1 Team",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"d1_team\": [\n        { \"user_id\": \"da1e3090-ff2a-4a6c-90b1-fa12da431109\", \"name\": \"Alice QA\", \"role\": \"Champion\" },\n        { \"user_id\": \"8f8e025a-4bcf-4a30-8025-0d05ac4f9712\", \"name\": \"Bob Eng\", \"role\": \"Member\" }\n    ],\n    \"mark_complete\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}/8d/d1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}",
+								"8d",
+								"d1"
+							]
+						},
+						"description": "Update D1 stage (Team Assembly) and record completion timestamp."
+					},
+					"response": []
+				},
+				{
+					"name": "Update D2 Problem Description (5W2H)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"d2_problem_description\": \"Impurities in material RM-4902 canisters.\",\n    \"d2_who\": \"Warehouse receiving personnel\",\n    \"d2_what\": \"Visible particulate contaminants on lid surfaces\",\n    \"d2_when\": \"June 26, 2026, 09:30 AM\",\n    \"d2_where\": \"Loading dock receiving bay 4\",\n    \"d2_why\": \"Loose lids scraping during friction of transport\",\n    \"d2_how\": \"Visual inspection on arrival\",\n    \"d2_how_many\": \"3 out of 10 canisters in batch RM-4902\",\n    \"mark_complete\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/capas/{{capa_id}}/8d/d2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"{{capa_id}}",
+								"8d",
+								"d2"
+							]
+						},
+						"description": "Log problem details via the 5W2H parameters (Who, What, When, Where, Why, How, How Many) and close section D2."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Dashboard",
+			"item": [
+				{
+					"name": "Get CAPA Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/capas/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"capas",
+								"dashboard"
+							]
+						},
+						"description": "Fetch aggregated dashboard statistics (open, overdue, critical counts, and status lists) scoped to tenant."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "capa_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "action_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

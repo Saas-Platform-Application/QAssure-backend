@@ -1,0 +1,34 @@
+{
+  "name": "@qassure/cli",
+  "version": "1.0.0",
+  "description": "QAssure Platform Command Line Interface",
+  "main": "src/index.js",
+  "bin": {
+    "qassure": "./src/index.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "keywords": [
+    "qassure",
+    "qms",
+    "cli",
+    "quality-management"
+  ],
+  "author": "QAssure Team",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "axios": "^1.6.0",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "inquirer": "^8.2.6",
+    "conf": "^10.2.0",
+    "cli-table3": "^0.6.3",
+    "figlet": "^1.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

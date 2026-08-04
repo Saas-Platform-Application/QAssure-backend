@@ -1,0 +1,320 @@
+{
+  "info": {
+    "name": "QAssure - LTTS Multimodal RAG (Knowledge Service)",
+    "_postman_id": "b7e1a4c2-0d3f-4a9e-9c11-ltts-rag-2026",
+    "description": "Integration collection for the QAssure Knowledge Service multimodal RAG pipeline, prepared for the LTTS team.\n\nFIVE-MODEL FLOW (matches the LTTS requirement)\nPDF -> image -> YOLO (regions) -> LLaVA (page text) -> DistilUseBase (512-dim embeddings) -> Mistral (answer) -> Qwen (confidence score).\n\nWHAT THIS COVERS\n- Tenant AI provider registration: DistilUseBase (embeddings), Mistral7b (answer), Qwen7B (confidence). One-time setup.\n- Creating a multimodal knowledge collection (processingMode = multimodal).\n- Uploading documents (ingest runs PDF -> YOLO -> LLaVA -> DistilUseBase -> vector store).\n- Querying via /rag-answer, which retrieves, generates the answer with Mistral, scores confidence with Qwen, and returns answer + confidence + sources in one call.\n- The three LTTS requirements: priority documents (documentIds), conversation context (conversationHistory), and the multi-model pipeline.\n\nBASE PATH\nAll knowledge endpoints live under /api/v1/ai/knowledge. Set the baseUrl variable to the target environment.\n\nAUTH\ntenantId and userId are derived from the JWT, never from the request body. Run 'Auth > Login' first; it stores access_token as a collection variable and every other request sends Authorization: Bearer {{access_token}}.\n\nNote on the module API-key flow: the Document service accepts X-API-Key + X-Tenant-ID (authenticateAny). The Knowledge routes currently use JWT-only (authenticate). To enable the module API-key flow here, change router.use(authenticate) to router.use(authenticateAny) in src/routes/knowledge.routes.js (one line, identical to the Document service change).\n\nMODULE-LEVEL SCOPING\nKnowledge is scoped by tenant + collection (no module_id field). Map one collection per module and pass that collectionId on every call.\n\nOPERATIONAL NOTE\nMistral cold-starts in roughly 27 seconds on the first call after an idle period. Allow a generous timeout on the first query.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{access_token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://backendqassure.tech4bizsolutions.com/api/v1", "type": "string" },
+    { "key": "email", "value": "admin@pharmacorp.com", "type": "string" },
+    { "key": "password", "value": "password", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "tenantId", "value": "", "type": "string" },
+    { "key": "collectionId", "value": "", "type": "string" },
+    { "key": "documentId", "value": "", "type": "string" },
+    { "key": "secondDocumentId", "value": "", "type": "string" },
+    { "key": "distiluse_endpoint", "value": "https://opensourcemodeldep.centralindia.cloudapp.azure.com/DistilUseBase/v1", "type": "string" },
+    { "key": "distiluse_api_key", "value": "0c4e7f8d-8a12-40f8-a77d-4e48716b71c9", "type": "string" },
+    { "key": "mistral_endpoint", "value": "https://opensourcemodeldep.centralindia.cloudapp.azure.com/Mistral7b/v1", "type": "string" },
+    { "key": "mistral_api_key", "value": "9b4a9f1e-7e28-4c3c-88c7-4d2a8c6d1f3e", "type": "string" },
+    { "key": "qwen_endpoint", "value": "https://opensourcemodeldep.centralindia.cloudapp.azure.com/Qwen7B/v1", "type": "string" },
+    { "key": "qwen_api_key", "value": "4ddc4051-26af-49a5-8a15-48c1dd411dd3", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "0. Tenant Setup (one-time)",
+      "description": "Register the three open-source providers the pipeline uses, scoped to the authenticated tenant. Run once per tenant before creating a multimodal collection. The keys here belong to the LTTS model deployment; move them to your own vault or rotate as needed.",
+      "item": [
+        {
+          "name": "Register DistilUseBase provider (embeddings)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/ai/config", "host": ["{{baseUrl}}"], "path": ["ai", "config"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"distilusebase\",\n  \"config_type\": \"direct\",\n  \"display_name\": \"DistilUseBase (512-dim embeddings)\",\n  \"api_key\": \"{{distiluse_api_key}}\",\n  \"endpoint\": \"{{distiluse_endpoint}}\",\n  \"default_embedding_model\": \"DistilUseBase\",\n  \"custom_embedding_models\": [\"DistilUseBase\"]\n}"
+            },
+            "description": "Registers the DistilUseBase embedding provider. The endpoint is the OpenAI-compatible base URL (the SDK appends /embeddings). Produces 512-dim vectors."
+          }
+        },
+        {
+          "name": "Register Mistral7b provider (answer generation)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/ai/config", "host": ["{{baseUrl}}"], "path": ["ai", "config"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"Mistral7b\",\n  \"config_type\": \"direct\",\n  \"display_name\": \"Mistral small 7b (answer generation)\",\n  \"api_key\": \"{{mistral_api_key}}\",\n  \"endpoint\": \"{{mistral_endpoint}}\",\n  \"default_model\": \"mistral:7b\",\n  \"custom_models\": [\"mistral:7b\"]\n}"
+            },
+            "description": "Registers Mistral7b as the answer generator. The model name is mistral:7b. Mistral cold-starts in roughly 27 seconds on the first call after idle, so the first query needs a generous timeout."
+          }
+        },
+        {
+          "name": "Register Qwen7B provider (confidence scoring)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/ai/config", "host": ["{{baseUrl}}"], "path": ["ai", "config"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"qwen7b\",\n  \"config_type\": \"direct\",\n  \"display_name\": \"Qwen7B (confidence scoring)\",\n  \"api_key\": \"{{qwen_api_key}}\",\n  \"endpoint\": \"{{qwen_endpoint}}\",\n  \"default_model\": \"Qwen7B\",\n  \"custom_models\": [\"Qwen7B\"]\n}"
+            },
+            "description": "Registers Qwen7B for confidence scoring. Model name is Qwen7B."
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.success && json.data && json.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.data.access_token);",
+                  "  if (json.data.tenant_id) pm.collectionVariables.set('tenantId', json.data.tenant_id);",
+                  "  pm.test('access_token captured', function () { pm.expect(json.data.access_token).to.be.a('string'); });",
+                  "} else {",
+                  "  pm.test('login succeeded', function () { pm.expect(json && json.success).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "description": "Returns data.access_token (valid 24h). The test script stores it as a collection variable so every other request authenticates automatically. tenantId and userId are derived from this token server-side."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Collections",
+      "item": [
+        {
+          "name": "Create multimodal collection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('collectionId', json.data.id);",
+                  "  pm.test('collectionId captured', function () { pm.expect(json.data.id).to.be.a('string'); });",
+                  "  pm.test('processingMode is multimodal', function () { pm.expect(json.data.processingMode).to.eql('multimodal'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/collections", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "collections"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"LTTS Multimodal KB\",\n  \"description\": \"Multimodal RAG collection (PDF -> YOLO -> LLaVA -> DistilUseBase)\",\n  \"provider\": \"distilusebase\",\n  \"embeddingModel\": \"DistilUseBase\",\n  \"processingMode\": \"multimodal\",\n  \"metadata\": {}\n}"
+            },
+            "description": "Creates a collection whose documents run through the multi-model pipeline on ingest. processingMode must be 'multimodal' (use 'text' or omit it for plain text extraction). embeddingDimension comes back as 512 for DistilUseBase. The test script stores the new id as collectionId."
+          }
+        },
+        {
+          "name": "List collections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/collections?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "collections"], "query": [ { "key": "page", "value": "1" }, { "key": "limit", "value": "20" } ] }
+          }
+        },
+        {
+          "name": "Get collection by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/collections/{{collectionId}}", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "collections", "{{collectionId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Documents",
+      "item": [
+        {
+          "name": "Upload document (multipart)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('documentId', json.data.id);",
+                  "  pm.test('documentId captured', function () { pm.expect(json.data.id).to.be.a('string'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/documents", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "documents"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "collectionId", "value": "{{collectionId}}", "type": "text" },
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "description": "Multipart upload. Field 'collectionId' = target collection, field 'file' = the document (pick a PDF in the Body tab). Do NOT set Content-Type manually; Postman sets the multipart boundary. Processing is async: the response returns status 'processing' with a document id. Poll 'Get document status' until 'completed'. For a multimodal collection this triggers rasterize -> YOLO -> LLaVA -> DistilUseBase -> vector store."
+          }
+        },
+        {
+          "name": "Get document status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/documents/{{documentId}}/status", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "documents", "{{documentId}}", "status"] },
+            "description": "Poll until status is 'completed' or 'failed' before querying. Returns status, word_count, chunk_count, and error_message."
+          }
+        },
+        {
+          "name": "List documents in collection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/collections/{{collectionId}}/documents?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "collections", "{{collectionId}}", "documents"], "query": [ { "key": "page", "value": "1" }, { "key": "limit", "value": "20" } ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. RAG (LTTS requirements)",
+      "description": "The query-time surface. /rag-answer is the primary integration point: it retrieves, generates the answer with Mistral, scores confidence with Qwen, and returns { answer, confidence, sources } in one call.",
+      "item": [
+        {
+          "name": "Search (semantic)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/search", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "search"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What sections and metrics are in the report?\",\n  \"collectionId\": \"{{collectionId}}\",\n  \"topK\": 5,\n  \"minScore\": 0.25\n}"
+            },
+            "description": "Raw ranked chunks with scores and source metadata. Omit collectionId to search every active collection of the tenant. Default minScore is 0.25."
+          }
+        },
+        {
+          "name": "Search with context",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/search/context", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "search", "context"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What sections and metrics are in the report?\",\n  \"collectionId\": \"{{collectionId}}\",\n  \"topK\": 5,\n  \"minScore\": 0.25\n}"
+            },
+            "description": "Same retrieval as /search but also returns a single assembled context string (source-labelled) for pasting into a prompt."
+          }
+        },
+        {
+          "name": "RAG answer - default",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/rag-answer", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "rag-answer"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What sections and metrics are in the report?\",\n  \"collectionId\": \"{{collectionId}}\",\n  \"answerProvider\": \"Mistral7b\",\n  \"answerModel\": \"mistral:7b\",\n  \"confidenceProvider\": \"qwen7b\",\n  \"confidenceModel\": \"Qwen7B\",\n  \"topK\": 5,\n  \"minScore\": 0.25\n}"
+            },
+            "description": "Returns data.answer (generated by Mistral), data.confidence (0.0-1.0, scored by Qwen), data.sources, data.metadata. Only 'query' is required; if the provider/model fields are omitted, the endpoint defaults to Mistral for the answer and Qwen for confidence."
+          }
+        },
+        {
+          "name": "RAG answer - priority documents (Req 1)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/rag-answer", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "rag-answer"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What sections and metrics are in the report?\",\n  \"collectionId\": \"{{collectionId}}\",\n  \"documentIds\": [\"{{documentId}}\"],\n  \"answerProvider\": \"Mistral7b\",\n  \"answerModel\": \"mistral:7b\",\n  \"confidenceProvider\": \"qwen7b\",\n  \"confidenceModel\": \"Qwen7B\",\n  \"topK\": 5,\n  \"minScore\": 0.25\n}"
+            },
+            "description": "Requirement 1. documentIds lists the priority document(s): retrieval searches those first and falls back to the rest of the collection only if the priority docs have nothing relevant. Pass one or more document ids."
+          }
+        },
+        {
+          "name": "RAG answer - conversation history (Req 2)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/rag-answer", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "rag-answer"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"How many of them are there?\",\n  \"collectionId\": \"{{collectionId}}\",\n  \"conversationHistory\": [\n    { \"role\": \"user\", \"content\": \"What sections are in the report?\" },\n    { \"role\": \"assistant\", \"content\": \"The report has CAPA Metrics, Overall Health Score, Training Metrics, Document Metrics, and Supply Metrics.\" }\n  ],\n  \"answerProvider\": \"Mistral7b\",\n  \"answerModel\": \"mistral:7b\",\n  \"confidenceProvider\": \"qwen7b\",\n  \"confidenceModel\": \"Qwen7B\",\n  \"topK\": 5,\n  \"minScore\": 0.25\n}"
+            },
+            "description": "Requirement 2. conversationHistory is an ordered list of prior turns ([{role, content}]). Prior user turns are folded into the retrieval query so pronoun-only follow-ups (for example 'How many of them are there?') resolve against the earlier context, and the full history is passed to the answer model."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Cleanup & Stats (optional)",
+      "item": [
+        {
+          "name": "Delete document",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/documents/{{documentId}}", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "documents", "{{documentId}}"] },
+            "description": "Removes the document and its vectors."
+          }
+        },
+        {
+          "name": "Delete collection",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/collections/{{collectionId}}", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "collections", "{{collectionId}}"] },
+            "description": "Deletes the collection plus all of its documents and vectors."
+          }
+        },
+        {
+          "name": "Vector store stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ai/knowledge/stats", "host": ["{{baseUrl}}"], "path": ["ai", "knowledge", "stats"] },
+            "description": "Vector counts across the tenant's indexes, useful for verifying ingest landed in the 512-dim index."
+          }
+        }
+      ]
+    }
+  ]
+}

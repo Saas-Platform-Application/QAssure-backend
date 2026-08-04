@@ -1,0 +1,4297 @@
+{
+  "info": {
+    "_postman_id": "693d9ce3-11e0-43dd-900a-555177d8091e",
+    "name": "QAssure Identity & Platform Service",
+    "description": "Complete API collection — 93 endpoints across 13 groups.\n\n**SETUP:**\n1. Import this collection + companion environment file\n2. Set `base_url` in environment (default: http://localhost:3000)\n3. Run 'Login (captures tokens)' first — auto-captures access_token, refresh_token, tenant_id\n4. All subsequent requests inherit Bearer token automatically\n\n**SSO FLOW (3-step test):**\n1. Run 'Launch Module (SSO Token)' — auto-extracts launch_token from launch_url\n2. Set `api_key` variable to the target module's API key\n3. Run 'Verify Launch Token' — returns full user context + session JWT\n\n**AUTO-CAPTURED VARIABLES:**\nLogin → access_token, refresh_token, tenant_id, user_id\nCreate User → user_id | Create Role → role_id\nCreate Dept → department_id | Create Desig → designation_id\nCreate Category → user_category_id | Register Module → module_id\nLaunch Module → launch_token (from launch_url)\nCreate Review → review_id | Get Review Items → review_item_id\n\nGenerated: March 2026 | Source: verified codebase + live DB schema",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "48835086"
+  },
+  "item": [
+    {
+      "name": "01 · Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser12@example.com\",\n  \"password\": \"SecureP@ss123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public. Create new user account."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{email-verification-token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/verify-email",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-email"
+              ]
+            },
+            "description": "Public. Verify email with token from registration email."
+          },
+          "response": []
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser12@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/resend-verification",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "resend-verification"
+              ]
+            },
+            "description": "Public."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (captures tokens)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Has access_token\", function () { pm.expect(jsonData).to.have.property(\"access_token\"); });",
+                  "pm.test(\"Has refresh_token\", function () { pm.expect(jsonData).to.have.property(\"refresh_token\"); });",
+                  "pm.test(\"token_type is Bearer\", function () { pm.expect(jsonData.token_type).to.eql(\"Bearer\"); });",
+                  "pm.test(\"Has expires_in and expires_at\", function () {",
+                  "    pm.expect(jsonData).to.have.property(\"expires_in\");",
+                  "    pm.expect(jsonData).to.have.property(\"expires_at\");",
+                  "});",
+                  "if (jsonData.access_token) { pm.collectionVariables.set(\"access_token\", jsonData.access_token); }",
+                  "if (jsonData.refresh_token) { pm.collectionVariables.set(\"refresh_token\", jsonData.refresh_token); }",
+                  "if (jsonData.tenant_id) { pm.collectionVariables.set(\"tenant_id\", jsonData.tenant_id); }",
+                  "if (jsonData.user && jsonData.user.id) { pm.collectionVariables.set(\"user_id\", jsonData.user.id); }",
+                  "console.log(\"✅ Tokens + tenant_id + user_id captured from login response\");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "// {\n//   \"email\": \"ganesh.ghule@ltts.com\",\n//   \"password\": \"abcd1234\"\n// }\n\n{\n  \"email\": \"tenant8admin@gmail.com\",\n  \"password\": \"Password12345\"\n}\n\n// {\n//   \"email\": \"polumuri.suresh@ltts.com\",\n//   \"password\": \"Password123!\"\n// }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Public. Returns access_token, refresh_token, user, tenant, roles, permissions.\n\nTest script auto-captures: access_token, refresh_token, tenant_id, user_id"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) { pm.collectionVariables.set(\"access_token\", jsonData.access_token); }",
+                  "if (jsonData.refresh_token) { pm.collectionVariables.set(\"refresh_token\", jsonData.refresh_token); }",
+                  "pm.test(\"Token refreshed\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Public. Exchange refresh_token for new token pair.\nAuto-updates stored tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/forgot-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "Public. Sends password reset email."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{reset-token}}\",\n  \"password\": \"NewSecureP@ss456!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "Public. Reset password with token from email."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "JWT required. Revokes current session."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout All Sessions",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout-all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout-all"
+              ]
+            },
+            "description": "JWT required. Revokes ALL sessions for current user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User (/me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Returns user object\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(jsonData).to.have.property(\"user\");",
+                  "    pm.expect(jsonData.user).to.have.property(\"id\");",
+                  "    pm.expect(jsonData.user).to.have.property(\"email\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "JWT required.\nResponse: { user: { id, email, tenant_id, roles, permissions }, session }"
+          },
+          "response": []
+        },
+        {
+          "name": "List My Sessions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.sessions && jsonData.sessions.length > 0) {",
+                  "    pm.collectionVariables.set(\"session_id\", jsonData.sessions[0].id);",
+                  "    console.log(\"✅ session_id captured: \" + jsonData.sessions[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "sessions"
+              ]
+            },
+            "description": "JWT required.\nResponse: { sessions: [...], current_session_id }"
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Specific Session",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/sessions/{{session_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "sessions",
+                "{{session_id}}"
+              ]
+            },
+            "description": "JWT required. Revoke session by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/validate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "validate"
+              ]
+            },
+            "description": "JWT required.\nResponse: { valid, user_id, tenant_id, session }"
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"Password123!\",\n  \"new_password\": \"NewPassword123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/change-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "change-password"
+              ]
+            },
+            "description": "JWT required. Requires current_password."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/auth\nSource: auth.routes.js + auth.controller.js"
+    },
+    {
+      "name": "02 · Users",
+      "item": [
+        {
+          "name": "List Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set(\"user_id\", jsonData.data[0].id);",
+                  "    console.log(\"✅ user_id captured: \" + jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users?limit=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "authorize(users, read). Paginated list of users in current tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "authorize(users, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) {",
+                  "    pm.collectionVariables.set(\"user_id\", id);",
+                  "    console.log(\"✅ user_id captured: \" + id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane.smith@tenant.com\",\n  \"password\": \"SecureP@ss123!\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Smith\",\n  \"status\": \"active\",\n  \"auth_provider\": \"local\",\n  \"tenant_id\": \"{{tenant_id}}\",\n  \"role_id\": \"{{role_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "description": "authorize(users, create).\n\nZod CreateUserSchema accepts: email (required), password, first_name, last_name,\nstatus, auth_provider, tenant_id, role_id OR role_ids, saml_subject,\noauth_provider, oauth_subject, preferences.\n\n⚠️ SCHEMA GAP: department_id, designation_id, user_category_id, and address fields\nexist in DB but are NOT in Zod validation yet."
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Smith-Updated\",\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "authorize(users, update). Zod UpdateUserSchema validates fields."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "authorize(users, delete)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get supplier details linked to a specific user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/:id/supplier-details",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":id",
+                "supplier-details"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "901e40d4-4766-4e1d-b39a-4d2e9a1db833"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get all users linked to a specific supplier",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/supplier/:supplier_id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "supplier",
+                ":supplier_id"
+              ],
+              "variable": [
+                {
+                  "key": "supplier_id",
+                  "value": "4f312e1f-3001-44c7-b12a-ecfb0e877079"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/users\nAll routes: JWT + tenantContext + verifyTenantAccess\nSource: user_routes.js + user_controller.js"
+    },
+    {
+      "name": "03 · Tenants",
+      "item": [
+        {
+          "name": "Get Tenant Theme (Public)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/theme?domain=http://tenant-8.localhost:5173/tenant",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "theme"
+              ],
+              "query": [
+                {
+                  "key": "domain",
+                  "value": "http://tenant-8.localhost:5173/tenant",
+                  "description": "Tenant custom domain"
+                }
+              ]
+            },
+            "description": "Public. Returns theme/branding for a domain."
+          },
+          "response": []
+        },
+        {
+          "name": "List All Tenants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set(\"tenant_id\", jsonData.data[0].id);",
+                  "    console.log(\"✅ tenant_id captured: \" + jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants?limit=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "requireSuperAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}"
+              ]
+            },
+            "description": "authorize(tenants, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tenant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"tenant_id\", id); }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"LTTS Quality Division\",\n  \"slug\": \"ltts-quality\",\n  \"status\": \"active\",\n  \"subscription_tier\": \"enterprise\",\n  \"max_users\": 500,\n  \"max_modules\": 20,\n  \"domain\": \"quality.ltts.com\",\n  \"enable_sso\": false,\n  \"enable_2fa\": false,\n  \"primary_color\": \"#1F3864\",\n  \"secondary_color\": \"#2E5090\",\n  \"accent_color\": \"#4472C4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants"
+              ]
+            },
+            "description": "requireSuperAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"LTTS Quality Division Updated\",\n  \"max_users\": 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}"
+              ]
+            },
+            "description": "authorize(tenants, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Tenant",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}"
+              ]
+            },
+            "description": "requireSuperAdmin. ⚠️ CASCADES all data (users, roles, modules, etc)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant Modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/modules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}",
+                "modules"
+              ]
+            },
+            "description": "requireSuperAdmin. Lists modules assigned to this tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "Enable Module for Tenant",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/modules/{{module_id}}/enable",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}",
+                "modules",
+                "{{module_id}}",
+                "enable"
+              ]
+            },
+            "description": "requireSuperAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Disable Module for Tenant",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/modules/{{module_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}",
+                "modules",
+                "{{module_id}}"
+              ]
+            },
+            "description": "requireSuperAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tenant Module Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"settings\": {\n    \"max_concurrent_users\": 50\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tenants/{{tenant_id}}/modules/{{module_id}}/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tenants",
+                "{{tenant_id}}",
+                "modules",
+                "{{module_id}}",
+                "settings"
+              ]
+            },
+            "description": "requireSuperAdmin."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/tenants\nSource: tenant_routes.js"
+    },
+    {
+      "name": "04 · Roles",
+      "item": [
+        {
+          "name": "List Roles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set(\"role_id\", jsonData.data[0].id);",
+                  "    console.log(\"✅ role_id captured: \" + jsonData.data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            },
+            "description": "authorize(roles, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                "{{role_id}}"
+              ]
+            },
+            "description": "authorize(roles, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"role_id\", id); console.log(\"✅ role_id: \" + id); }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Quality Inspector\",\n  \"code\": \"quality_inspector\",\n  \"description\": \"Can perform quality inspections\",\n  \"scope\": \"tenant\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Senior Quality Inspector\",\n  \"description\": \"Updated description\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                "{{role_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                "{{role_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin. Cascades permissions."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/roles\nSource: role_routes.js"
+    },
+    {
+      "name": "05 · Permissions",
+      "item": [
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/permissions?limit=2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "permissions"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "authorize(permissions, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Permission by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/permissions/{{permission_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "permissions",
+                "{{permission_id}}"
+              ]
+            },
+            "description": "authorize(permissions, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Permission",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"permission_id\", id); }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_id\": \"14ddb48e-1269-4e34-8ff9-b26f3ae4a40c\",\n  \"resource\": \"ai\",\n  \"action\": \"*\",\n  \"scope\": \"tenant\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/permissions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "permissions"
+              ]
+            },
+            "description": "requireSuperAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Permission",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"update\",\n  \"scope\": \"tenant\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/permissions/{{permission_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "permissions",
+                "{{permission_id}}"
+              ]
+            },
+            "description": "requireSuperAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Permission",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/permissions/{{permission_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "permissions",
+                "{{permission_id}}"
+              ]
+            },
+            "description": "requireSuperAdmin."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/permissions\nSource: permission_routes.js"
+    },
+    {
+      "name": "06 · User-Role Assignments",
+      "item": [
+        {
+          "name": "List Assignments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-roles?limit=2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-roles"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "authorize(user_roles, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Assignment by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-roles/{{user_role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-roles",
+                "{{user_role_id}}"
+              ]
+            },
+            "description": "authorize(user_roles, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Role to User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"user_role_id\", id); }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"role_id\": \"{{role_id}}\",\n  \"tenant_id\": \"{{tenant_id}}\",\n  \"assigned_at\":\"09-03-2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-roles"
+              ]
+            },
+            "description": "authorize(user_roles, create)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Assignment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expires_at\": \"2027-01-01T00:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-roles/{{user_role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-roles",
+                "{{user_role_id}}"
+              ]
+            },
+            "description": "authorize(user_roles, update). E.g. set expiry for temporary roles."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Role from User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-roles/{{user_role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-roles",
+                "{{user_role_id}}"
+              ]
+            },
+            "description": "authorize(user_roles, delete)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/user-roles\nSource: user_role_routes.js"
+    },
+    {
+      "name": "07 · User-Tenant Assignments",
+      "item": [
+        {
+          "name": "List Assignments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-tenants?limit=2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-tenants"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "authorize(user_tenants, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Assignment by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-tenants/{{user_tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-tenants",
+                "{{user_tenant_id}}"
+              ]
+            },
+            "description": "authorize(user_tenants, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign User to Tenant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"user_tenant_id\", id); }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"tenant_id\": \"{{tenant_id}}\",\n  \"is_primary\": true,\n  \"status\":\"active\",\n  \"joined_at\":\"09-03-2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-tenants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-tenants"
+              ]
+            },
+            "description": "authorize(user_tenants, create)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Assignment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\",\n  \"is_primary\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-tenants/{{user_tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-tenants",
+                "{{user_tenant_id}}"
+              ]
+            },
+            "description": "authorize(user_tenants, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove User from Tenant",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-tenants/{{user_tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-tenants",
+                "{{user_tenant_id}}"
+              ]
+            },
+            "description": "authorize(user_tenants, delete)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/user-tenants\nSource: user_tenant_routes.js"
+    },
+    {
+      "name": "08 · Departments (Phase 27)",
+      "item": [
+        {
+          "name": "List Departments (flat)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/departments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "departments"
+              ]
+            },
+            "description": "authorize(departments, read). Returns flat list."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Department Tree",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/departments/tree",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "departments",
+                "tree"
+              ]
+            },
+            "description": "authorize(departments, read).\nReturns nested JSON: [{ id, name, children: [...] }]"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Department by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/departments/{{department_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "departments",
+                "{{department_id}}"
+              ]
+            },
+            "description": "authorize(departments, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"department_id\", id); console.log(\"✅ department_id: \" + id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Engineering\",\n  \"code\": \"ENG\",\n  \"description\": \"Software Engineering Department\",\n  \"parent_id\": null,\n  \"level\": 0,\n  \"sort_order\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/departments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "departments"
+              ]
+            },
+            "description": "requireTenantAdmin.\nparent_id=null → root department.\nUnique: (tenant_id, COALESCE(parent_id, '0000...'), name)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Department",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Engineering & DevOps\",\n  \"description\": \"Updated dept\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/departments/{{department_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "departments",
+                "{{department_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Department",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/departments/{{department_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "departments",
+                "{{department_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin. Soft delete (sets is_active=false)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/departments\nHierarchical via self-referencing parent_id.\nSource: department.routes.js + department.controller.js"
+    },
+    {
+      "name": "09 · Designations (Phase 27)",
+      "item": [
+        {
+          "name": "List Designations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/designations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "designations"
+              ]
+            },
+            "description": "authorize(designations, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Designation by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/designations/{{designation_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "designations",
+                "{{designation_id}}"
+              ]
+            },
+            "description": "authorize(designations, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Designation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"designation_id\", id); console.log(\"✅ designation_id: \" + id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Quality Manager\",\n  \"code\": \"QM\",\n  \"description\": \"Manages quality processes\",\n  \"level\": 3,\n  \"sort_order\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/designations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "designations"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Designation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Senior Quality Manager\",\n  \"level\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/designations/{{designation_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "designations",
+                "{{designation_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Designation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/designations/{{designation_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "designations",
+                "{{designation_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin. Soft delete."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/designations\nTenant-scoped with seniority levels.\nSource: designation.routes.js + designation.controller.js"
+    },
+    {
+      "name": "10 · User Categories (Phase 27)",
+      "item": [
+        {
+          "name": "List User Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-categories"
+              ]
+            },
+            "description": "authorize(user_categories, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-categories/{{user_category_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-categories",
+                "{{user_category_id}}"
+              ]
+            },
+            "description": "authorize(user_categories, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create User Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"user_category_id\", id); console.log(\"✅ user_category_id: \" + id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Internal User\",\n  \"code\": \"INT\",\n  \"description\": \"Full-time employees\",\n  \"sort_order\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-categories"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Internal Employee\",\n  \"description\": \"Updated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-categories/{{user_category_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-categories",
+                "{{user_category_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate User Category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/user-categories/{{user_category_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user-categories",
+                "{{user_category_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin. Soft delete."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/user-categories\nTenant-scoped user classification.\nSource: user_category.routes.js + user_category.controller.js"
+    },
+    {
+      "name": "11 · Sessions",
+      "item": [
+        {
+          "name": "List All Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions?limit=2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "authorize(sessions, read). Admin view."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Session by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions",
+                "{{session_id}}"
+              ]
+            },
+            "description": "authorize(sessions, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Session (system)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"tenant_id\": \"{{tenant_id}}\",\n  \"token_hash\":\"sfdds\",\n  \"expires_at\":\"09-03-2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            },
+            "description": "authorize(sessions, create). System/internal use."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Session",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions",
+                "{{session_id}}"
+              ]
+            },
+            "description": "authorize(sessions, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Session",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sessions/{{session_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions",
+                "{{session_id}}"
+              ]
+            },
+            "description": "authorize(sessions, delete)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/sessions\nSource: session_routes.js"
+    },
+    {
+      "name": "12 · Modules & SSO Launch",
+      "item": [
+        {
+          "name": "⚡ Verify Launch Token (Module SSO)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Verify returns success\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "pm.test(\"Has correct response shape\", function () {",
+                  "    var d = pm.response.json().data;",
+                  "    pm.expect(d).to.have.property(\"user\");",
+                  "    pm.expect(d).to.have.property(\"tenant\");",
+                  "    pm.expect(d).to.have.property(\"access\");",
+                  "    pm.expect(d.access).to.have.property(\"is_super_admin\");",
+                  "    pm.expect(d.access).to.have.property(\"is_tenant_admin\");",
+                  "    pm.expect(d).to.have.property(\"permissions\");",
+                  "    pm.expect(d).to.have.property(\"module\");",
+                  "    pm.expect(d).to.have.property(\"token\");",
+                  "    pm.expect(d).to.have.property(\"expires_in\");",
+                  "    pm.expect(d).to.have.property(\"expires_at\");",
+                  "    pm.expect(d).to.have.property(\"launched_at\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "description": "Module API Key",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{launch_token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/verify-launch-token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "verify-launch-token"
+              ]
+            },
+            "description": "Auth: X-API-Key header (module's API key). NO JWT.\n\nRequest body field: \"token\" (NOT \"launch_token\")\nToken format: starts with 'mlt_', min length prefix + 64 hex chars\n\nValidation checks:\n1. Format: starts with 'mlt_'\n2. Hash lookup: SHA-256 of token → module_launch_tokens.token_hash\n3. Expiry: expires_at > NOW() (60-second window)\n4. Single-use: used_at must be NULL\n5. Module match: API key's moduleId must match token's module_id\n\nOn success: marks token used (used_at, used_by_ip, verification_module_api_key_id)\nFetches LIVE data from DB (user dept/desig/category, permissions, tenant logo)\nGenerates NEW session JWT via jwtService.generateAccessToken()\n\nResponse field is 'token' NOT 'access_token'.\nAdmin flags in 'access' object NOT 'user' object."
+          },
+          "response": []
+        },
+        {
+          "name": "My Accessible Modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/my?tenant_id={{tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "my"
+              ],
+              "query": [
+                {
+                  "key": "tenant_id",
+                  "value": "{{tenant_id}}",
+                  "description": "Required for super admin"
+                }
+              ]
+            },
+            "description": "JWT. Returns modules current user can access.\nSuper admin: pass ?tenant_id query param."
+          },
+          "response": []
+        },
+        {
+          "name": "Available Modules for Assignment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/available",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "available"
+              ]
+            },
+            "description": "authorize(tenants, read). Modules available for role assignment."
+          },
+          "response": []
+        },
+        {
+          "name": "List All Modules",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set(\"module_id\", jsonData.data[0].id);",
+                  "    console.log(\"✅ module_id captured: \" + jsonData.data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules"
+              ]
+            },
+            "description": "authorize(modules, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Module Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "stats"
+              ]
+            },
+            "description": "authorize(modules, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Module States/Transitions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/states",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "states"
+              ]
+            },
+            "description": "authorize(modules, read). Returns available state machine transitions."
+          },
+          "response": []
+        },
+        {
+          "name": "Register Module",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"module_id\", id); console.log(\"✅ module_id: \" + id); }"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"module_id\": \"capa-service-v1\",\n  \"name\": \"CAPA Management\",\n  \"description\": \"Corrective and Preventive Action management\",\n  \"version\": \"1.0.0\",\n  \"runtime_language\": \"Node.js\",\n  \"framework\": \"Express\",\n  \"frontend_base_url\": \"http://localhost:8001\",\n  \"backend_base_url\": \"http://localhost:3000\",\n  \"health_endpoint\": \"/health\",\n  \"cpu_request\": \"100m\",\n  \"cpu_limit\": \"500m\",\n  \"memory_request\": \"256Mi\",\n  \"memory_limit\": \"512Mi\",\n  \"min_replicas\": 2,\n  \"max_replicas\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules"
+              ]
+            },
+            "description": "authorize(modules, create)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Module by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}"
+              ]
+            },
+            "description": "authorize(modules, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Module",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"CAPA Management v2\",\n  \"version\": \"2.0.0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}"
+              ]
+            },
+            "description": "authorize(modules, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Module Permanently",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}"
+              ]
+            },
+            "description": "authorize(modules, delete). ⚠️ Permanent deletion."
+          },
+          "response": []
+        },
+        {
+          "name": "⚡ Launch Module (SSO Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Launch returns launch_url\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property(\"launch_url\");",
+                  "    pm.expect(jsonData.data.launch_url).to.contain(\"/auth/sso?token=mlt_\");",
+                  "});",
+                  "pm.test(\"TTL is 60 seconds\", function () {",
+                  "    pm.expect(jsonData.data.expires_in).to.eql(60);",
+                  "});",
+                  "pm.test(\"Has module and tenant\", function () {",
+                  "    pm.expect(jsonData.data).to.have.property(\"module\");",
+                  "    pm.expect(jsonData.data).to.have.property(\"tenant\");",
+                  "});",
+                  "// Extract token from launch_url",
+                  "if (jsonData.data && jsonData.data.launch_url) {",
+                  "    var match = jsonData.data.launch_url.match(/[?&]token=([^&]+)/);",
+                  "    if (match) {",
+                  "        pm.collectionVariables.set(\"launch_token\", match[1]);",
+                  "        console.log(\"✅ launch_token extracted: \" + match[1].substring(0, 24) + \"...\");",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/launch",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "launch"
+              ],
+              "query": [
+                {
+                  "key": "tenant_id",
+                  "value": "{{tenant_id}}",
+                  "description": "Required for super admin",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "JWT auth. Generates one-time SSO launch token.\n\nSuper admin: pass ?tenant_id query param.\n\nACCESS CONTROL (from canUserLaunchModule):\n- Super Admin: always allowed if tenant_id provided + tenant exists and active\n- Tenant Admin: all modules assigned to their tenant (via tenant_modules)\n- Regular User: must have user_roles entry with module_id OR role in role_modules\n\nRESPONSE (from generateLaunchToken line ~220):\n{\n  success: true,\n  data: {\n    launch_url: '<base_url>/auth/sso?token=mlt_<64-hex>',\n    expires_in: 60,\n    module: { id, module_id, name },\n    tenant: { id, name }\n  }\n}\n\nToken is ONLY in launch_url. No separate 'launch_token' field.\nTest script auto-extracts the token from the URL."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Module Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "status"
+              ]
+            },
+            "description": "authorize(modules, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Start Module",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/start",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "start"
+              ]
+            },
+            "description": "authorize(modules, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Module",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/stop",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "stop"
+              ]
+            },
+            "description": "authorize(modules, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Restart Module",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/restart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "restart"
+              ]
+            },
+            "description": "authorize(modules, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Set Maintenance Mode",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/maintenance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "maintenance"
+              ]
+            },
+            "description": "authorize(modules, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Deprecate Module",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/deprecate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "deprecate"
+              ]
+            },
+            "description": "authorize(modules, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Deregister Module (Soft Delete)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/deregister",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "deregister"
+              ]
+            },
+            "description": "authorize(modules, delete)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Module Version",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"2.1.0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/version",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "version"
+              ]
+            },
+            "description": "authorize(modules, update)."
+          },
+          "response": []
+        },
+        {
+          "name": "Trigger Health Check",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/health-check",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "health-check"
+              ]
+            },
+            "description": "authorize(modules, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Health Check History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/health-history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "health-history"
+              ]
+            },
+            "description": "authorize(modules, read)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenants for Module",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/tenants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "tenants"
+              ]
+            },
+            "description": "requireSuperAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users Assigned to Module",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "users"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Assign Users to Module",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_ids\": [\n    \"{{user_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/users/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "users",
+                "bulk"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Remove Users from Module",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_ids\": [\n    \"{{user_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/users/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "users",
+                "bulk"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign User to Module",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove User from Module",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/modules/{{module_id}}/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "modules",
+                "{{module_id}}",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "requireTenantAdmin."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/modules\nSource: module_routes.js + module.controller.js + module_launch.service.js\n\n═══ SSO LAUNCH FLOW (verified from module_launch.service.js) ═══\n\nStep 1 → POST /modules/:id/launch (JWT auth)\n  Response: { success, data: { launch_url, expires_in: 60, module: {id,module_id,name}, tenant: {id,name} } }\n  Token is embedded in launch_url: <base_url>/auth/sso?token=mlt_<64-hex-chars>\n  NO separate 'launch_token' field. TTL = 60 seconds.\n\nStep 2 → Browser redirects to launch_url\n\nStep 3 → POST /modules/verify-launch-token (X-API-Key auth)\n  Body: { \"token\": \"mlt_...\" }  ← field name is 'token' NOT 'launch_token'\n  Response: { success, data: {\n    user: { id, email, first_name, last_name, mobile,\n            department_id, department_name, department_code,\n            designation_id, designation_name, designation_code,\n            user_category_id, user_category_name },\n    tenant: { id, name, slug, company_name, company_logo },\n    access: { is_super_admin, is_tenant_admin },\n    permissions: ['resource:action', ...],\n    module: { id, module_id, name },\n    token: '<session-jwt>',  ← NOT 'access_token'\n    expires_in: <seconds>,\n    expires_at: '<ISO-8601>',\n    launched_at: '<ISO-8601>'\n  }}"
+    },
+    {
+      "name": "13 · Security & Compliance",
+      "item": [
+        {
+          "name": "Get Password Policy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/password-policy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "password-policy"
+              ]
+            },
+            "description": "JWT. Returns tenant's password policy."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Password Policy",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"min_length\": 12,\n  \"max_length\": 128,\n  \"require_uppercase\": true,\n  \"require_lowercase\": true,\n  \"require_numbers\": true,\n  \"require_special_chars\": true,\n  \"password_history_count\": 12,\n  \"password_expiry_days\": 90,\n  \"max_failed_attempts\": 5,\n  \"lockout_duration_minutes\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/password-policy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "password-policy"
+              ]
+            },
+            "description": "security:write."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Password Requirements (UI)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/password-policy/requirements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "password-policy",
+                "requirements"
+              ]
+            },
+            "description": "JWT. Formatted for front-end display."
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Password Against Policy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"TestP@ssw0rd!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/password-policy/validate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "password-policy",
+                "validate"
+              ]
+            },
+            "description": "JWT."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Password Expiry",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/password-expiry",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "password-expiry"
+              ]
+            },
+            "description": "JWT."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Decision Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/decision-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "decision-types"
+              ]
+            },
+            "description": "JWT. Returns: certify, revoke, modify."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Review Statuses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/review-statuses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "review-statuses"
+              ]
+            },
+            "description": "JWT. Returns: pending, in_progress, completed, cancelled."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Access Review",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"review_id\", id); console.log(\"✅ review_id: \" + id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Q1 2026 Access Review\",\n  \"description\": \"Quarterly access certification\",\n  \"review_type\": \"periodic\",\n  \"scope_type\": \"all_users\",\n  \"frequency\": \"quarterly\",\n  \"start_date\": \"2026-03-01\",\n  \"due_date\": \"2026-03-15\",\n  \"reviewer_id\": \"{{user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews"
+              ]
+            },
+            "description": "security:write."
+          },
+          "response": []
+        },
+        {
+          "name": "List Access Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews"
+              ]
+            },
+            "description": "security:read."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Review Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews/{{review_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews",
+                "{{review_id}}"
+              ]
+            },
+            "description": "security:read."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Review Items",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set(\"review_item_id\", jsonData.data[0].id);",
+                  "    console.log(\"✅ review_item_id captured\");",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews/{{review_id}}/items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews",
+                "{{review_id}}",
+                "items"
+              ]
+            },
+            "description": "security:read."
+          },
+          "response": []
+        },
+        {
+          "name": "Start Review",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews/{{review_id}}/start",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews",
+                "{{review_id}}",
+                "start"
+              ]
+            },
+            "description": "security:write."
+          },
+          "response": []
+        },
+        {
+          "name": "Populate Review Items",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews/{{review_id}}/populate-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews",
+                "{{review_id}}",
+                "populate-items"
+              ]
+            },
+            "description": "security:write."
+          },
+          "response": []
+        },
+        {
+          "name": "Make Access Decision",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"certify\",\n  \"decision_reason\": \"Access confirmed appropriate\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews/{{review_id}}/items/{{review_item_id}}/decide",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews",
+                "{{review_id}}",
+                "items",
+                "{{review_item_id}}",
+                "decide"
+              ]
+            },
+            "description": "security:write."
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Certify Pending",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews/{{review_id}}/bulk-certify",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews",
+                "{{review_id}}",
+                "bulk-certify"
+              ]
+            },
+            "description": "security:write."
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Review Decisions",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews/{{review_id}}/execute",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews",
+                "{{review_id}}",
+                "execute"
+              ]
+            },
+            "description": "Super Admin only (*:*)."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Review",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews/{{review_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews",
+                "{{review_id}}",
+                "cancel"
+              ]
+            },
+            "description": "security:write."
+          },
+          "response": []
+        },
+        {
+          "name": "Compliance Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/access-reviews/compliance-report",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "access-reviews",
+                "compliance-report"
+              ]
+            },
+            "description": "audit:read."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Security Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "settings"
+              ]
+            },
+            "description": "security:read."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Security Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_timeout_minutes\": 480,\n  \"idle_timeout_minutes\": 30,\n  \"force_single_session\": false,\n  \"esig_require_pin\": true,\n  \"esig_pin_length\": 4,\n  \"esig_require_reason\": true,\n  \"api_rate_limit_per_minute\": 100,\n  \"notify_on_failed_login\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "settings"
+              ]
+            },
+            "description": "security:write."
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Compliance Preset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"fda_part11\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/settings/compliance-mode",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "settings",
+                "compliance-mode"
+              ]
+            },
+            "description": "Super Admin only (*:*)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Compliance Modes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/settings/compliance-modes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "settings",
+                "compliance-modes"
+              ]
+            },
+            "description": "JWT."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Compliance Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/settings/compliance-summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "settings",
+                "compliance-summary"
+              ]
+            },
+            "description": "security:read."
+          },
+          "response": []
+        },
+        {
+          "name": "Export Settings for Audit",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/security/settings/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "security",
+                "settings",
+                "export"
+              ]
+            },
+            "description": "Super Admin only (*:*)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Base: /api/v1/security\nFDA 21 CFR Part 11 compliance.\nSource: security.routes.js + security.controller.js"
+    },
+    {
+      "name": "14 · Storage Buckets",
+      "item": [
+        {
+          "name": "List Storage Buckets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets"
+              ]
+            },
+            "description": "List all storage buckets. SuperAdmin sees all; standard tenant gets their own/assigned."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Local Storage Bucket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"bucket_id\", id); console.log(\"✅ bucket_id: \" + id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Local Bucket\",\n  \"description\": \"Local filesystem storage bucket\",\n  \"storage_type\": \"local\",\n  \"local_path\": \"./uploads\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets"
+              ]
+            },
+            "description": "Create a new local filesystem storage bucket. Enforces SuperAdmin or storage_buckets:write permission."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Azure Storage Bucket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"bucket_id\", id); console.log(\"✅ bucket_id: \" + id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Azure Bucket\",\n  \"description\": \"Azure Blob storage bucket\",\n  \"storage_type\": \"azure\",\n  \"azure_account\": \"testaccount\",\n  \"azure_container\": \"testcontainer\",\n  \"azure_sas_token\": \"testsastoken\",\n  \"azure_url\": \"https://testaccount.blob.core.windows.net\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets"
+              ]
+            },
+            "description": "Create a new Azure Blob storage bucket. Enforces SuperAdmin or storage_buckets:write permission."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Storage Bucket by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets/{{bucket_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets",
+                "{{bucket_id}}"
+              ]
+            },
+            "description": "Get storage bucket details by its UUID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Storage Bucket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test Bucket\",\n  \"description\": \"Updated description\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets/{{bucket_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets",
+                "{{bucket_id}}"
+              ]
+            },
+            "description": "Update an existing storage bucket."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Storage Bucket to Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenant_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets/{{bucket_id}}/assign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets",
+                "{{bucket_id}}",
+                "assign"
+              ]
+            },
+            "description": "Assign bucket to a tenant [superAdmin]."
+          },
+          "response": []
+        },
+        {
+          "name": "Share Own Bucket with Tenant (Assign Self)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenant_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets/{{bucket_id}}/assign-self",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets",
+                "{{bucket_id}}",
+                "assign-self"
+              ]
+            },
+            "description": "Super admin shares own bucket with another tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant Active Bucket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets/tenant/{{tenant_id}}/active",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets",
+                "tenant",
+                "{{tenant_id}}",
+                "active"
+              ]
+            },
+            "description": "Get active bucket for tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant Bucket Assignment History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets/tenant/{{tenant_id}}/history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets",
+                "tenant",
+                "{{tenant_id}}",
+                "history"
+              ]
+            },
+            "description": "Get assignment history for tenant [superAdmin]."
+          },
+          "response": []
+        },
+        {
+          "name": "Unassign Tenant Storage Bucket",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets/tenant/{{tenant_id}}/unassign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets",
+                "tenant",
+                "{{tenant_id}}",
+                "unassign"
+              ]
+            },
+            "description": "Unassign bucket from tenant [superAdmin]."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Storage Bucket",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/storage-buckets/{{bucket_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "storage-buckets",
+                "{{bucket_id}}"
+              ]
+            },
+            "description": "Soft-delete storage bucket [superAdmin only]."
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage and assign dynamic, multi-tenant storage buckets."
+    },
+    {
+      "name": "15 · Platform Services",
+      "item": [
+        {
+          "name": "List All Platform Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/platform-services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "platform-services"
+              ]
+            },
+            "description": "List all registered platform services. Requires super_admin role."
+          },
+          "response": []
+        },
+        {
+          "name": "List My Enabled Platform Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/platform-services/my",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "platform-services",
+                "my"
+              ]
+            },
+            "description": "List enabled services for the current user's tenant. Requires any authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "List Platform Services for Tenant",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/platform-services/tenant/{{tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "platform-services",
+                "tenant",
+                "{{tenant_id}}"
+              ]
+            },
+            "description": "List all services showing enabled state for a specific tenant. Requires super_admin role."
+          },
+          "response": []
+        }
+      ],
+      "description": "Retrieve platform service registry and per-tenant enabled state."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://backendqaasure.tech4bizsolutions.com"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "tenant_id",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "module_id",
+      "value": ""
+    },
+    {
+      "key": "module_uuid",
+      "value": ""
+    },
+    {
+      "key": "department_id",
+      "value": ""
+    },
+    {
+      "key": "designation_id",
+      "value": ""
+    },
+    {
+      "key": "user_category_id",
+      "value": ""
+    },
+    {
+      "key": "role_id",
+      "value": ""
+    },
+    {
+      "key": "permission_id",
+      "value": ""
+    },
+    {
+      "key": "user_role_id",
+      "value": ""
+    },
+    {
+      "key": "user_tenant_id",
+      "value": ""
+    },
+    {
+      "key": "session_id",
+      "value": ""
+    },
+    {
+      "key": "api_key",
+      "value": ""
+    },
+    {
+      "key": "launch_token",
+      "value": ""
+    },
+    {
+      "key": "review_id",
+      "value": ""
+    },
+    {
+      "key": "review_item_id",
+      "value": ""
+    },
+    {
+      "key": "bucket_id",
+      "value": ""
+    }
+  ]
+}

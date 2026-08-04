@@ -1,0 +1,723 @@
+/**
+ * Knowledge Base Service - QAssure Platform
+ * Manages document ingestion, chunking, embedding, and search
+ *
+ * Multi-tenancy: All DB queries enforce tenant_id. Vector namespaces
+ * use {tenantId}_{collectionId} pattern for strict tenant isolation.
+ */
+const crypto = require("crypto");
+const { getAIGateway } = require("../infrastructure/ai/gateway.service");
+const database = require("../config/database");
+const {
+  getEmbeddingService,
+} = require("../infrastructure/ai/embedding.service");
+const {
+  getDocumentProcessor,
+} = require("../infrastructure/ai/document.processor");
+const { getChunkerService } = require("../infrastructure/ai/chunker.service");
+const {
+  getVectorStoreService,
+} = require("../infrastructure/ai/vector-store.service");
+
+const { getAuditService } = require('./audit.service');
+
+// Embedding batch size — OpenAI limit is 2048 inputs per request.
+// Use conservative limit to avoid token ceiling on large chunks.
+const EMBEDDING_BATCH_SIZE = 100;
+
+// Pinecone metadata value limit is 40KB. Store enough content for
+// meaningful RAG context while staying within limits.
+const METADATA_CONTENT_LIMIT = 3600;
+
+class KnowledgeService {
+  constructor() {
+    this.embeddingService = getEmbeddingService();
+    this.documentProcessor = getDocumentProcessor();
+    this.chunkerService = getChunkerService();
+    this.vectorStore = getVectorStoreService();
+  }
+
+  /**
+   * Initialize all services
+   */
+  async initialize() {
+    await this.embeddingService.initialize();
+    await this.vectorStore.initialize();
+    console.log("[KnowledgeService] ✅ Initialized");
+  }
+
+  // ==================== Collections ====================
+
+  /**
+   * Create a knowledge collection
+   */
+  async createCollection(data, context = {}) {
+    const { tenantId, userId } = context;
+    const { name, description, metadata = {}, provider, embeddingModel } = data;
+
+    const id = crypto.randomUUID();
+
+    const query = `
+      INSERT INTO knowledge_collections (
+        id, tenant_id, name, description, metadata,
+        document_count, chunk_count, status,
+        embedding_model, embedding_dimension, embedding_provider,
+        created_by,
+        created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, 0, 0, 'active', $6, $7, $8, $9, NOW(), NOW())
+      RETURNING *
+    `;
+    // Resolve tenant's embedding config for this collection
+    const embeddingConfig = await this._resolveEmbeddingConfig(tenantId, { provider, model: embeddingModel });
+    const result = await database.query(query, [
+      id,
+      tenantId,
+      name,
+      description,
+      JSON.stringify(metadata),
+      embeddingConfig.model,
+      embeddingConfig.dimension,
+      embeddingConfig.provider,
+      userId,
+    ]);
+
+    setImmediate(async () => { try { await getAuditService().log({ action: 'CREATE', user_id: userId, tenant_id: tenantId, resource_type: 'knowledge', resource_id: id, response_status: 201, metadata: { collection_name: name } }); } catch(e){} });
+
+    return this._formatCollection(result.rows[0]);
+  }
+
+  /**
+   * List collections
+   */
+  async listCollections(tenantId, options = {}) {
+    const { page = 1, limit = 20, status = "active" } = options;
+    const offset = (page - 1) * limit;
+
+    const query = `
+      SELECT * FROM knowledge_collections
+      WHERE tenant_id = $1 AND status = $2
+      ORDER BY created_at DESC
+      LIMIT $3 OFFSET $4
+    `;
+
+    const result = await database.query(query, [
+      tenantId,
+      status,
+      limit,
+      offset,
+    ]);
+
+    const countResult = await database.query(
+      "SELECT COUNT(*) FROM knowledge_collections WHERE tenant_id = $1 AND status = $2",
+      [tenantId, status],
+    );
+
+    return {
+      data: result.rows.map((r) => this._formatCollection(r)),
+      pagination: {
+        page,
+        limit,
+        total: parseInt(countResult.rows[0].count),
+        totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit),
+      },
+    };
+  }
+
+  /**
+   * Get collection by ID
+   */
+  async getCollection(collectionId, tenantId) {
+    const query = `
+      SELECT * FROM knowledge_collections
+      WHERE id = $1 AND tenant_id = $2
+    `;
+    const result = await database.query(query, [collectionId, tenantId]);
+
+    if (result.rows.length === 0) return null;
+    return this._formatCollection(result.rows[0]);
+  }
+
+  /**
+   * Update collection
+   */
+  async updateCollection(collectionId, tenantId, data) {
+    const { name, description, metadata } = data;
+    const updates = [];
+    const params = [];
+    let paramIndex = 0;
+
+    if (name) {
+      paramIndex++;
+      updates.push(`name = $${paramIndex}`);
+      params.push(name);
+    }
+
+    if (description !== undefined) {
+      paramIndex++;
+      updates.push(`description = $${paramIndex}`);
+      params.push(description);
+    }
+
+    if (metadata) {
+      paramIndex++;
+      updates.push(`metadata = $${paramIndex}`);
+      params.push(JSON.stringify(metadata));
+    }
+
+    if (updates.length === 0) {
+      return this.getCollection(collectionId, tenantId);
+    }
+
+    updates.push("updated_at = NOW()");
+    params.push(collectionId, tenantId);
+
+    const query = `
+      UPDATE knowledge_collections
+      SET ${updates.join(", ")}
+      WHERE id = $${paramIndex + 1} AND tenant_id = $${paramIndex + 2}
+      RETURNING *
+    `;
+
+    const result = await database.query(query, params);
+    return result.rows[0] ? this._formatCollection(result.rows[0]) : null;
+  }
+
+  /**
+   * Delete collection
+   */
+  async deleteCollection(collectionId, tenantId) {
+    // Delete vectors from vector store
+    const namespace = `${tenantId}_${collectionId}`;
+    await this.vectorStore.deleteAll(namespace);
+
+    // FIX: Add tenant_id filter for defense-in-depth
+    await database.query(
+      "DELETE FROM knowledge_documents WHERE collection_id = $1 AND tenant_id = $2",
+      [collectionId, tenantId],
+    );
+
+    // Delete collection
+    await database.query(
+      "DELETE FROM knowledge_collections WHERE id = $1 AND tenant_id = $2",
+      [collectionId, tenantId],
+    );
+
+    setImmediate(async () => { try { await getAuditService().log({ action: 'DELETE', user_id: null, tenant_id: tenantId, resource_type: 'knowledge', resource_id: collectionId, response_status: 200, metadata: { collection_id: collectionId } }); } catch(e){} });
+
+    return { success: true };
+  }
+
+  // ==================== Documents ====================
+
+  /**
+   * Ingest a document
+   */
+  async ingestDocument(
+    collectionId,
+    fileBuffer,
+    fileName,
+    mimeType,
+    context = {},
+  ) {
+    const { tenantId, userId, provider } = context;
+
+    // Verify collection exists and belongs to this tenant
+    const collection = await this.getCollection(collectionId, tenantId);
+    if (!collection) {
+      throw new Error("Collection not found");
+    }
+
+    const documentId = crypto.randomUUID();
+
+    // Create document record with processing status
+    await database.query(
+      `
+      INSERT INTO knowledge_documents (
+        id, collection_id, tenant_id, file_name, mime_type,
+        file_size, status, created_by, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'processing', $7, NOW(), NOW())
+    `,
+      [
+        documentId,
+        collectionId,
+        tenantId,
+        fileName,
+        mimeType,
+        fileBuffer.length,
+        userId,
+      ],
+    );
+
+    setImmediate(async () => { try { await getAuditService().log({ action: 'CREATE', user_id: userId, tenant_id: tenantId, resource_type: 'knowledge', resource_id: documentId, response_status: 201, metadata: { collection_id: collectionId, file_name: fileName, mime_type: mimeType } }); } catch(e){} });
+
+    // Process asynchronously, using collection's specific embedding settings
+    this._processDocument(
+      documentId,
+      collectionId,
+      tenantId,
+      fileBuffer,
+      fileName,
+      mimeType,
+      { 
+        provider: collection.embeddingProvider, 
+        model: collection.embeddingModel 
+      },
+    ).catch((err) => {
+      console.error(
+        `[KnowledgeService] Document processing failed: ${err.message}`,
+      );
+      this._updateDocumentStatus(documentId, "failed", err.message);
+    });
+
+    return {
+      id: documentId,
+      fileName,
+      status: "processing",
+      message: "Document queued for processing",
+    };
+  }
+
+  /**
+   * Process document (async)
+   */
+  async _processDocument(
+    documentId,
+    collectionId,
+    tenantId,
+    fileBuffer,
+    fileName,
+    mimeType,
+    options = {},
+  ) {
+    const { provider, model } = options;
+    try {
+      // Extract text
+      const { text, metadata, wordCount } =
+        await this.documentProcessor.processBuffer(
+          fileBuffer,
+          mimeType,
+          fileName,
+        );
+
+      if (!text || text.length === 0) {
+        throw new Error("No text extracted from document");
+      }
+
+      // Chunk text
+      const chunks = this.chunkerService.chunkByParagraphs(text, {
+        chunkSize: 512,
+      });
+
+      if (chunks.length === 0) {
+        throw new Error("No chunks created from document");
+      }
+
+      // FIX: Generate embeddings in batches to avoid OpenAI API limits
+      const allEmbeddings = [];
+      let finalProvider = provider;
+      let finalModel = null;
+
+      for (let i = 0; i < chunks.length; i += EMBEDDING_BATCH_SIZE) {
+        const batchTexts = chunks
+          .slice(i, i + EMBEDDING_BATCH_SIZE)
+          .map((c) => c.content);
+        const embedRes = await this.embeddingService.embedBatch(batchTexts, {
+          tenantId,
+          provider,
+          model
+        });
+        allEmbeddings.push(...embedRes.embeddings);
+        finalProvider = embedRes.provider;
+        finalModel = embedRes.model;
+      }
+
+      // Prepare vectors for storage
+      const namespace = `${tenantId}_${collectionId}`;
+      const vectors = chunks.map((chunk, index) => ({
+        id: `${documentId}_${index}`,
+        embedding: allEmbeddings[index],
+        metadata: {
+          documentId,
+          collectionId,
+          tenantId,
+          fileName,
+          chunkIndex: index,
+          totalChunks: chunks.length,
+          // FIX: Store more content for better RAG context (Pinecone metadata limit is 40KB)
+          content: chunk.content.substring(0, METADATA_CONTENT_LIMIT),
+          charCount: chunk.charCount,
+        },
+      }));
+
+      // Store in vector database (VectorStore already batches at 100 per Pinecone request)
+      await this.vectorStore.upsert(vectors, namespace);
+
+      // Enrich metadata with AI info
+      const enrichedMetadata = {
+        ...metadata,
+        ai: {
+          provider: finalProvider,
+          model: finalModel,
+        },
+      };
+
+      // FIX: Add tenant_id filter for defense-in-depth
+      await database.query(
+        `
+        UPDATE knowledge_documents
+        SET status = 'completed',
+            word_count = $1,
+            chunk_count = $2,
+            metadata = $3,
+            processed_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $4 AND tenant_id = $5
+      `,
+        [
+          wordCount,
+          chunks.length,
+          JSON.stringify(enrichedMetadata),
+          documentId,
+          tenantId,
+        ],
+      );
+
+      // FIX: Add tenant_id filter for defense-in-depth
+      await database.query(
+        `
+        UPDATE knowledge_collections
+        SET document_count = document_count + 1,
+            chunk_count = chunk_count + $1,
+            updated_at = NOW()
+        WHERE id = $2 AND tenant_id = $3
+      `,
+        [chunks.length, collectionId, tenantId],
+      );
+
+      console.log(
+        `[KnowledgeService] Document processed: ${fileName} (${chunks.length} chunks, ${allEmbeddings.length} embeddings)`,
+      );
+    } catch (error) {
+      await this._updateDocumentStatus(documentId, "failed", error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Update document status
+   */
+  async _updateDocumentStatus(documentId, status, errorMessage = null) {
+    await database.query(
+      `
+      UPDATE knowledge_documents
+      SET status = $1, error_message = $2, updated_at = NOW()
+      WHERE id = $3
+    `,
+      [status, errorMessage, documentId],
+    );
+  }
+
+  /**
+   * Get document status
+   */
+  async getDocumentStatus(documentId, tenantId) {
+    const query = `
+      SELECT id, file_name, mime_type, file_size, status,
+             word_count, chunk_count, error_message,
+             created_at, processed_at
+      FROM knowledge_documents
+      WHERE id = $1 AND tenant_id = $2
+    `;
+    const result = await database.query(query, [documentId, tenantId]);
+    return result.rows[0] || null;
+  }
+
+  /**
+   * List documents in a collection
+   */
+  async listDocuments(collectionId, tenantId, options = {}) {
+    const { page = 1, limit = 20, status } = options;
+    const offset = (page - 1) * limit;
+
+    let query = `
+      SELECT * FROM knowledge_documents
+      WHERE collection_id = $1 AND tenant_id = $2
+    `;
+    const params = [collectionId, tenantId];
+
+    if (status) {
+      query += ` AND status = $3`;
+      params.push(status);
+    }
+
+    query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
+
+    const result = await database.query(query, params);
+
+    return {
+      data: result.rows,
+      pagination: { page, limit },
+    };
+  }
+
+  /**
+   * Delete document
+   */
+  async deleteDocument(documentId, tenantId) {
+    // Get document info
+    const doc = await this.getDocumentStatus(documentId, tenantId);
+    if (!doc) {
+      throw new Error("Document not found");
+    }
+
+    // FIX: Add tenant_id filter for defense-in-depth
+    const collection = await database.query(
+      "SELECT collection_id FROM knowledge_documents WHERE id = $1 AND tenant_id = $2",
+      [documentId, tenantId],
+    );
+
+    if (collection.rows[0]) {
+      const collectionId = collection.rows[0].collection_id;
+      const namespace = `${tenantId}_${collectionId}`;
+
+      // Delete all vectors for this document
+      await this.vectorStore.deleteByFilter({ documentId }, namespace);
+
+      // FIX: Add tenant_id filter for defense-in-depth
+      await database.query(
+        `
+        UPDATE knowledge_collections
+        SET document_count = GREATEST(document_count - 1, 0),
+            chunk_count = GREATEST(chunk_count - $1, 0),
+            updated_at = NOW()
+        WHERE id = $2 AND tenant_id = $3
+      `,
+        [doc.chunk_count || 0, collectionId, tenantId],
+      );
+    }
+
+    // Delete document record
+    await database.query(
+      "DELETE FROM knowledge_documents WHERE id = $1 AND tenant_id = $2",
+      [documentId, tenantId],
+    );
+
+    setImmediate(async () => { try { await getAuditService().log({ action: 'DELETE', user_id: null, tenant_id: tenantId, resource_type: 'knowledge', resource_id: documentId, response_status: 200, metadata: { document_id: documentId } }); } catch(e){} });
+
+    return { success: true };
+  }
+
+  // ==================== Search ====================
+
+  /**
+   * Semantic search across collections
+   * FIX: Cross-collection search now queries each collection namespace
+   * individually and merges results, instead of using a non-existent
+   * tenant-level namespace that would return zero results.
+   */
+  async search(query, context = {}) {
+    const { tenantId, collectionId, provider, topK = 5, minScore = 0.7 } = context;
+
+    let finalProvider = provider;
+    let finalModel = context.model;
+
+    // If searching within a collection, use its specific embedding settings
+    if (collectionId) {
+      const collection = await this.getCollection(collectionId, tenantId);
+      if (!collection) {
+        throw new Error("Collection not found or access denied");
+      }
+      finalProvider = collection.embeddingProvider || provider;
+      finalModel = collection.embeddingModel || context.model;
+    }
+
+    // Generate embedding for query
+    const embedResult = await this.embeddingService.embed(query, {
+      tenantId,
+      provider: finalProvider,
+      model: finalModel
+    });
+    const { embedding } = embedResult;
+
+    // Single collection search — straightforward
+    if (collectionId) {
+      const namespace = `${tenantId}_${collectionId}`;
+      const results = await this.vectorStore.query(embedding, {
+        topK,
+        namespace,
+        minScore,
+        includeMetadata: true,
+      });
+      return {
+        results: this._formatSearchResults(results),
+        metadata: {
+          provider: embedResult.provider,
+          model: embedResult.model,
+          fallbackUsed: embedResult.fallbackUsed || false,
+        },
+      };
+    }
+
+    // FIX: Cross-collection search — query each collection namespace and merge
+    const collectionsResult = await database.query(
+      "SELECT id FROM knowledge_collections WHERE tenant_id = $1 AND status = 'active'",
+      [tenantId],
+    );
+    console.log("collectionsResult", collectionsResult, "tenantId", tenantId);
+    if (collectionsResult.rows.length === 0) {
+      return {
+        results: [],
+        metadata: {
+          provider: embedResult.provider,
+          model: embedResult.model,
+          fallbackUsed: embedResult.fallbackUsed || false,
+        },
+      };
+    }
+
+    // Query each collection namespace in parallel
+    const searchPromises = collectionsResult.rows.map((row) => {
+      const namespace = `${tenantId}_${row.id}`;
+      return this.vectorStore
+        .query(embedding, {
+          topK,
+          namespace,
+          minScore,
+          includeMetadata: true,
+        })
+        .catch((err) => {
+          console.warn(
+            `[KnowledgeService] Search failed for namespace ${namespace}: ${err.message}`,
+          );
+          return []; // Graceful degradation — skip failed namespaces
+        });
+    });
+
+    const allResults = await Promise.all(searchPromises);
+
+    // Merge, sort by score descending, take topK
+    const merged = allResults
+      .flat()
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK);
+
+    return {
+      results: this._formatSearchResults(merged),
+      metadata: {
+        provider: embedResult.provider,
+        model: embedResult.model,
+        fallbackUsed: embedResult.fallbackUsed || false,
+      },
+    };
+  }
+
+  /**
+   * Search with context for RAG
+   */
+  async searchWithContext(query, context = {}) {
+    const searchResult = await this.search(query, context);
+    const { results } = searchResult;
+
+    // Combine top results into context
+    const contextText = results
+      .map((r, i) => `[Source ${i + 1}: ${r.fileName}]\n${r.content}`)
+      .join("\n\n---\n\n");
+
+    return {
+      results,
+      context: contextText,
+      sourceCount: results.length,
+      metadata: searchResult.metadata,
+    };
+  }
+
+  // ==================== Helpers ====================
+
+  /**
+   * Format vector search results into standard response shape
+   */
+  _formatSearchResults(results) {
+    return results.map((r) => ({
+      score: r.score,
+      content: r.metadata?.content,
+      documentId: r.metadata?.documentId,
+      fileName: r.metadata?.fileName,
+      chunkIndex: r.metadata?.chunkIndex,
+      collectionId: r.metadata?.collectionId,
+    }));
+  }
+
+  /**
+   * Resolve the embedding model, dimension, and provider for a tenant.
+   * Checks tenant AI config first, falls back to system defaults.
+   */
+  async _resolveEmbeddingConfig(tenantId, options = {}) {
+    try {
+      const gateway = getAIGateway();
+      if (!gateway.initialized) await gateway.initialize();
+
+      const { providers } = await gateway._resolveProviders(tenantId);
+      const embeddingProviderName = options.provider || gateway._getEmbeddingProvider(providers);
+
+      if (embeddingProviderName) {
+        const provider = providers.get(embeddingProviderName);
+        if (!provider) {
+          throw new Error(`Provider "${embeddingProviderName}" not configured or available for this tenant.`);
+        }
+        const model = options.model || provider.defaultEmbeddingModel || 'unknown';
+
+        // Known dimensions per model family
+        const dimensionMap = {
+          'text-embedding-3-small': 1536,
+          'text-embedding-3-large': 3072,
+          'text-embedding-ada-002': 1536,
+          'gemini-embedding-001': 768,
+          'gemini-embedding-2-preview': 768,
+          'nomic-embed-text': 768,
+          'bge-m3': 1024,
+          'all-minilm': 384,
+          'intfloat/e5-large-v2': 1024,
+        };
+
+        const dimension = dimensionMap[model] || null;
+
+        return { model, dimension, provider: embeddingProviderName };
+      }
+    } catch (err) {
+      console.warn('[KnowledgeService] Could not resolve embedding config:', err.message);
+    }
+
+    // Fallback: unknown until first document is processed
+    return { model: null, dimension: null, provider: null };
+  }
+
+  _formatCollection(row) {
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      documentCount: row.document_count,
+      chunkCount: row.chunk_count,
+      status: row.status,
+      metadata: row.metadata,
+      embeddingModel: row.embedding_model,
+      embeddingDimension: row.embedding_dimension,
+      embeddingProvider: row.embedding_provider,
+      createdBy: row.created_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+}
+
+// Singleton
+let instance = null;
+const getKnowledgeService = () => {
+  if (!instance) {
+    instance = new KnowledgeService();
+  }
+  return instance;
+};
+
+module.exports = { KnowledgeService, getKnowledgeService };

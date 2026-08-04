@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "qassure.fullname" . }}-config
+  labels:
+    {{- include "qassure.labels" . | nindent 4 }}
+data:
+  NODE_ENV: {{ .Values.global.environment | quote }}
+  PORT: {{ .Values.api.service.port | quote }}
+  API_PREFIX: "/api/v1"
+  LOG_LEVEL: {{ .Values.api.env.LOG_LEVEL | default "info" | quote }}
+  LOG_FORMAT: {{ .Values.api.env.LOG_FORMAT | default "json" | quote }}
+  DB_HOST: "{{ include "qassure.fullname" . }}-postgresql"
+  DB_PORT: "5432"
+  DB_NAME: {{ .Values.postgresql.auth.database | quote }}
+  REDIS_HOST: "{{ include "qassure.fullname" . }}-redis-master"
+  REDIS_PORT: "6379"
+  {{- if .Values.kafka.enabled }}
+  KAFKA_BROKERS: "{{ include "qassure.fullname" . }}-kafka:9092"
+  KAFKA_CLIENT_ID: "qassure-api"
+  {{- end }}
+  {{- if .Values.elasticsearch.enabled }}
+  ELASTICSEARCH_URL: "http://{{ include "qassure.fullname" . }}-elasticsearch:9200"
+  {{- end }}
+  ENABLE_WEBSOCKET: "true"
+  ENABLE_KAFKA: {{ .Values.kafka.enabled | quote }}
+  ENABLE_ELASTICSEARCH: {{ .Values.elasticsearch.enabled | quote }}

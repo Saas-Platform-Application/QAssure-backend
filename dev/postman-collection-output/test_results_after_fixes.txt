@@ -1,0 +1,1652 @@
+
+======================================================================
+  QASSURE.AI COMPREHENSIVE API TEST REPORT
+======================================================================
+
+Test Started: Fri Jan  2 18:10:35 IST 2026
+Base URL: http://localhost:3000/api/v1
+[0;36mNOTE: Using 0.5s delay between tests. Use DELAY=1 to increase.[0m
+
+======================================================================
+  PHASE 1: CORE INFRASTRUCTURE
+======================================================================
+
+
+----------------------------------------------------------------------
+  1.1 Health Check Endpoints
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-1.1.1: Basic Health Check[0m
+Description: Verify server is running
+Command: curl -X GET "http://localhost:3000/api/v1/health"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"status":"healthy","timestamp":"2026-01-02T12:40:35.832Z","version":"1.0.0"}
+
+{"success":true,"status":"healthy","timestamp":"2026-01-02T12:40:35.832Z","version":"1.0.0"}
+
+[0;34mTEST: TC-1.1.2: Detailed Health Check[0m
+Description: Verify all components status
+Command: curl -X GET "http://localhost:3000/api/v1/health/detailed"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"status":"degraded","timestamp":"2026-01-02T12:40:36.469Z","checks":{"database":"unhealthy: getPool is not a function","redis":"unhealthy: getRedisClient is not a function","memory":{"rss":58146816,"heapTotal":63827968,"heapUsed":61772560,"external":3452601,"arrayBuffers":553632}}}
+
+{"success":true,"status":"degraded","timestamp":"2026-01-02T12:40:36.469Z","checks":{"database":"unhealthy: getPool is not a function","redis":"unhealthy: getRedisClient is not a function","memory":{"rss":58146816,"heapTotal":63827968,"heapUsed":61772560,"external":3452601,"arrayBuffers":553632}}}
+
+[0;34mTEST: TC-1.1.3: Invalid Endpoint[0m
+Description: Should return 404 for non-existent endpoint
+Command: curl -X GET "http://localhost:3000/api/v1/nonexistent-endpoint"
+[0;32m✅ PASS[0m
+Expected: 404
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/nonexistent-endpoint","correlationId":"1767357637078-1302fbbc"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/nonexistent-endpoint","correlationId":"1767357637078-1302fbbc"}
+
+======================================================================
+  PHASE 2: REDIS & SESSION MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  2.1 Cache Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-2.1.1: Cache Health via Detailed Health[0m
+Description: Verify Redis connection
+Command: curl -X GET "http://localhost:3000/api/v1/health/detailed"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"status":"degraded","timestamp":"2026-01-02T12:40:37.754Z","checks":{"database":"unhealthy: getPool is not a function","redis":"unhealthy: getRedisClient is not a function","memory":{"rss":58884096,"heapTotal":63827968,"heapUsed":62090744,"external":3452649,"arrayBuffers":553640}}}
+
+{"success":true,"status":"degraded","timestamp":"2026-01-02T12:40:37.754Z","checks":{"database":"unhealthy: getPool is not a function","redis":"unhealthy: getRedisClient is not a function","memory":{"rss":58884096,"heapTotal":63827968,"heapUsed":62090744,"external":3452649,"arrayBuffers":553640}}}
+
+======================================================================
+  PHASE 3: AUTHENTICATION SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  3.1 User Registration
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.1.1: Register with Valid Data[0m
+Description: Should create new user
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 201
+Actual HTTP Status: 201
+Response:
+{"success":true,"data":{"user":{"id":"570cfc89-dc7f-4186-8f41-3bc33715feea","email":"testuser_1767357638@qassure.ai","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+{"success":true,"data":{"user":{"id":"570cfc89-dc7f-4186-8f41-3bc33715feea","email":"testuser_1767357638@qassure.ai","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+[0;34mTEST: TC-3.1.2: Register - Weak Password (No Uppercase)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 201
+Response:
+{"success":true,"data":{"user":{"id":"b35733d3-3fbf-49e0-ad3f-ce11a486494a","email":"test2@qassure.ai","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+{"success":true,"data":{"user":{"id":"b35733d3-3fbf-49e0-ad3f-ce11a486494a","email":"test2@qassure.ai","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+[0;34mTEST: TC-3.1.3: Register - Weak Password (No Numbers)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 201
+Response:
+{"success":true,"data":{"user":{"id":"36967c80-ebe8-4926-a4b0-9297ab7b8803","email":"test3@qassure.ai","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+{"success":true,"data":{"user":{"id":"36967c80-ebe8-4926-a4b0-9297ab7b8803","email":"test3@qassure.ai","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+[0;34mTEST: TC-3.1.4: Register - Weak Password (No Special Chars)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 201
+Response:
+{"success":true,"data":{"user":{"id":"0a5d6dea-f3e0-43b2-ac09-aebce481b9f1","email":"test4@qassure.ai","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+{"success":true,"data":{"user":{"id":"0a5d6dea-f3e0-43b2-ac09-aebce481b9f1","email":"test4@qassure.ai","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+[0;34mTEST: TC-3.1.5: Register - Weak Password (Too Short)[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"WEAK_PASSWORD","message":"Password must be at least 8 characters long"}}
+
+{"success":false,"error":{"code":"WEAK_PASSWORD","message":"Password must be at least 8 characters long"}}
+
+[0;34mTEST: TC-3.1.6: Register - Invalid Email Format[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 201
+Response:
+{"success":true,"data":{"user":{"id":"58467493-2930-4315-8dcd-5cbb4003e7d2","email":"invalid-email","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+{"success":true,"data":{"user":{"id":"58467493-2930-4315-8dcd-5cbb4003e7d2","email":"invalid-email","first_name":"Test","last_name":"User","status":"pending_verification"},"message":"Registration successful. Please check your email to verify your account."}}
+
+[0;34mTEST: TC-3.1.7: Register - Missing Required Fields[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email, password, first name, and last name are required"}}
+
+[0;34mTEST: TC-3.1.8: Register - Duplicate Email[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/register"
+[0;32m✅ PASS[0m
+Expected: 409
+Actual HTTP Status: 409
+Response:
+{"success":false,"error":{"code":"EMAIL_EXISTS","message":"An account with this email already exists"}}
+
+{"success":false,"error":{"code":"EMAIL_EXISTS","message":"An account with this email already exists"}}
+
+----------------------------------------------------------------------
+  3.2 User Login
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.2.1: Login with Valid Credentials[0m
+Description: Should return tokens
+Login Response: {"success":true,"data":{"user":{"id":"7db3b040-7c64-482d-8709-17fe4773364d","email":"admin@qassure.ai","first_name":"Tenant","last_name":"Admin"},"tenant_id":"00000000-0000-0000-0000-000000000001","roles":["tenant_admin","tenant_admin"],"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3ZGIzYjA0MC03YzY0LTQ4MmQtODcwOS0xN2ZlNDc3MzM2NGQiLCJlbWFpbCI6ImFkbWluQHFhc3N1cmUuYWkiLCJ0aWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlcyI6WyJ0ZW5hbnRfYWRtaW4iLCJ0ZW5hbnRfYWRtaW4iXSwicGVybWlzc2lvbnMiOlsiYWlfY29tcGxldGlvbnM6KiIsImFwaV9rZXlzOioiLCJhdWRpdF9sb2dzOnJlYWQiLCJxbXNfY29ubmVjdGlvbnM6KiIsInJvbGVzOioiLCJ0ZW5hbnRzOnJlYWQiLCJ0ZW5hbnRzOnVwZGF0ZSIsInVzZXJzOioiXSwic2lkIjoiNmE3YWI3N2QtZmI5MS00ODM2LWI2NDUtNmJlZjYyNmZlZjg2IiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2NzM1NzY0NiwiZXhwIjoxNzY3NDQ0MDQ2LCJhdWQiOiJxYXNzdXJlLXBsYXRmb3JtIiwiaXNzIjoicWFzc3VyZS5haSJ9.uXlCS7ejoXjn3157h8F2I72h4niBGr37gjMIQuSf2Ds","refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3ZGIzYjA0MC03YzY0LTQ4MmQtODcwOS0xN2ZlNDc3MzM2NGQiLCJ0aWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJzaWQiOiI2YTdhYjc3ZC1mYjkxLTQ4MzYtYjY0NS02YmVmNjI2ZmVmODYiLCJ0eXBlIjoicmVmcmVzaCIsImp0aSI6IjAwZWRlZDVhLWI4MTEtNDdjNy04NDBmLWNiNjM0OWU3ZmNlYyIsImlhdCI6MTc2NzM1NzY0NiwiZXhwIjoxNzY3OTYyNDQ2LCJhdWQiOiJxYXNzdXJlLXBsYXRmb3JtIiwiaXNzIjoicWFzc3VyZS5haSJ9.ndiI9zQGEtKBoc_JgNLDi3tkVhsYumoNDU0_QQcFDlk","token_type":"Bearer","expires_in":86400,"expires_at":"2026-01-03T12:40:46.000Z"}}
+[0;32m✅ PASS - Token obtained[0m
+
+[0;34mTEST: TC-3.2.2: Login - Wrong Password[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_CREDENTIALS","message":"Invalid email or password"}}
+
+{"success":false,"error":{"code":"INVALID_CREDENTIALS","message":"Invalid email or password"}}
+
+[0;34mTEST: TC-3.2.3: Login - Non-existent User[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_CREDENTIALS","message":"Invalid email or password"}}
+
+{"success":false,"error":{"code":"INVALID_CREDENTIALS","message":"Invalid email or password"}}
+
+[0;34mTEST: TC-3.2.4: Login - Empty Password[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email and password are required"}}
+
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email and password are required"}}
+
+[0;34mTEST: TC-3.2.5: Login - Missing Email[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email and password are required"}}
+
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Email and password are required"}}
+
+----------------------------------------------------------------------
+  3.3 Token Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.3.1: Protected Route - Valid Token[0m
+Description: Should allow
+Command: curl -X GET "http://localhost:3000/api/v1/auth/me"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":{"user":{"id":"7db3b040-7c64-482d-8709-17fe4773364d","email":"admin@qassure.ai","tenant_id":"00000000-0000-0000-0000-000000000001","roles":["tenant_admin","tenant_admin"],"permissions":["ai_completions:*","api_keys:*","audit_logs:read","qms_connections:*","roles:*","tenants:read","tenants:update","users:*"]},"session":{"id":"6a7ab77d-fb91-4836-b645-6bef626fef86"}}}
+
+{"success":true,"data":{"user":{"id":"7db3b040-7c64-482d-8709-17fe4773364d","email":"admin@qassure.ai","tenant_id":"00000000-0000-0000-0000-000000000001","roles":["tenant_admin","tenant_admin"],"permissions":["ai_completions:*","api_keys:*","audit_logs:read","qms_connections:*","roles:*","tenants:read","tenants:update","users:*"]},"session":{"id":"6a7ab77d-fb91-4836-b645-6bef626fef86"}}}
+
+[0;34mTEST: TC-3.3.2: Protected Route - No Token[0m
+Description: Should deny
+Command: curl -X GET "http://localhost:3000/api/v1/auth/me"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+[0;34mTEST: TC-3.3.3: Protected Route - Invalid Token[0m
+Description: Should deny
+Command: curl -X GET "http://localhost:3000/api/v1/auth/me"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid token"}}
+
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid token"}}
+
+[0;34mTEST: TC-3.3.4: Protected Route - Malformed JWT[0m
+Description: Should deny
+Command: curl -X GET "http://localhost:3000/api/v1/auth/me"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid token"}}
+
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid token"}}
+
+[0;34mTEST: TC-3.3.5: Refresh Token - Valid[0m
+Description: Should return new tokens
+Command: curl -X POST "http://localhost:3000/api/v1/auth/refresh"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Refresh token is required"}}
+
+{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Refresh token is required"}}
+
+[0;34mTEST: TC-3.3.6: Refresh Token - Invalid[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/refresh"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid token"}}
+
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid token"}}
+
+----------------------------------------------------------------------
+  3.4 Password Reset
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.4.1: Forgot Password - Valid Email[0m
+Description: Should accept
+Command: curl -X POST "http://localhost:3000/api/v1/auth/forgot-password"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":{"success":true,"message":"If an account exists with this email, a password reset link has been sent."}}
+
+{"success":true,"data":{"success":true,"message":"If an account exists with this email, a password reset link has been sent."}}
+
+[0;34mTEST: TC-3.4.2: Forgot Password - Non-existent Email[0m
+Description: Should still return 200
+Command: curl -X POST "http://localhost:3000/api/v1/auth/forgot-password"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":{"success":true,"message":"If an account exists with this email, a password reset link has been sent."}}
+
+{"success":true,"data":{"success":true,"message":"If an account exists with this email, a password reset link has been sent."}}
+
+[0;34mTEST: TC-3.4.3: Reset Password - Invalid Token[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/reset-password"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid or expired reset token"}}
+
+{"success":false,"error":{"code":"INVALID_TOKEN","message":"Invalid or expired reset token"}}
+
+----------------------------------------------------------------------
+  3.5 Logout
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.5.1: Logout[0m
+Description: Should succeed
+Command: curl -X POST "http://localhost:3000/api/v1/auth/logout"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"message":"Logged out successfully"}
+
+{"success":true,"message":"Logged out successfully"}
+Re-logged in for subsequent tests
+
+======================================================================
+  PHASE 4: RBAC & AUTHORIZATION
+======================================================================
+
+
+----------------------------------------------------------------------
+  4.1 Role Management
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-4.1.1: Get All Roles[0m
+Description: Should return roles
+Command: curl -X GET "http://localhost:3000/api/v1/roles"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":[{"id":"84bd26b2-3970-4bf6-974e-d1d981618146","name":"Viewer","code":"viewer","description":null,"scope":"tenant","is_system":false,"created_at":"2025-12-24T06:37:02.396Z","updated_at":"2026-01-01T10:19:13.170Z"},{"id":"049b1cbe-46f3-4218-b588-82645a196795","name":"Quality Manager","code":"quality_manager","description":null,"scope":"tenant","is_system":false,"created_at":"2025-12-24T06:37:02.395Z","updated_at":"2026-01-01T10:19:13.168Z"},{"id":"d4cdacbd-e355-4541-99b8-ef4f80e8a6ae","name":"Tenant Admin","code":"tenant_admin","description":null,"scope":"tenant","is_system":true,"created_at":"2025-12-24T06:37:02.394Z","updated_at":"2026-01-01T10:19:13.168Z"},{"id":"01b4448d-f24e-49c6-b273-d12af933fbbd","name":"Super Admin","code":"super_admin","description":null,"scope":"platform","is_system":true,"created_at":"2025-12-24T06:37:02.391Z","updated_at":"2026-01-01T10:19:13.161Z"}],"pagination":{"page":1,"limit":100,"total":4,"totalPages":1,"hasMore":false}}
+
+{"success":true,"data":[{"id":"84bd26b2-3970-4bf6-974e-d1d981618146","name":"Viewer","code":"viewer","description":null,"scope":"tenant","is_system":false,"created_at":"2025-12-24T06:37:02.396Z","updated_at":"2026-01-01T10:19:13.170Z"},{"id":"049b1cbe-46f3-4218-b588-82645a196795","name":"Quality Manager","code":"quality_manager","description":null,"scope":"tenant","is_system":false,"created_at":"2025-12-24T06:37:02.395Z","updated_at":"2026-01-01T10:19:13.168Z"},{"id":"d4cdacbd-e355-4541-99b8-ef4f80e8a6ae","name":"Tenant Admin","code":"tenant_admin","description":null,"scope":"tenant","is_system":true,"created_at":"2025-12-24T06:37:02.394Z","updated_at":"2026-01-01T10:19:13.168Z"},{"id":"01b4448d-f24e-49c6-b273-d12af933fbbd","name":"Super Admin","code":"super_admin","description":null,"scope":"platform","is_system":true,"created_at":"2025-12-24T06:37:02.391Z","updated_at":"2026-01-01T10:19:13.161Z"}],"pagination":{"page":1,"limit":100,"total":4,"totalPages":1,"hasMore":false}}
+
+[0;34mTEST: TC-4.1.2: Get Roles - No Auth[0m
+Description: Should deny
+Command: curl -X GET "http://localhost:3000/api/v1/roles"
+[0;32m✅ PASS[0m
+Expected: 401
+Actual HTTP Status: 401
+Response:
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+{"success":false,"error":{"code":"MISSING_TOKEN","message":"Authentication token is required","hint":"Include Authorization: Bearer <token> header"}}
+
+[0;34mTEST: TC-4.1.3: Create Role - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/roles"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":"Validation error","details":[{"expected":"'platform-admin' | 'tenant-admin' | 'module-admin' | 'developer' | 'viewer'","received":"undefined","code":"invalid_type","path":["code"],"message":"Required"},{"expected":"'GLOBAL' | 'TENANT' | 'MODULE'","received":"undefined","code":"invalid_type","path":["scope"],"message":"Required"}]}
+
+{"success":false,"error":"Validation error","details":[{"expected":"'platform-admin' | 'tenant-admin' | 'module-admin' | 'developer' | 'viewer'","received":"undefined","code":"invalid_type","path":["code"],"message":"Required"},{"expected":"'GLOBAL' | 'TENANT' | 'MODULE'","received":"undefined","code":"invalid_type","path":["scope"],"message":"Required"}]}
+
+[0;34mTEST: TC-4.1.4: Create Role - Duplicate Name[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/roles"
+[0;31m❌ FAIL[0m
+Expected: 409
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":"Validation error","details":[{"expected":"'platform-admin' | 'tenant-admin' | 'module-admin' | 'developer' | 'viewer'","received":"undefined","code":"invalid_type","path":["code"],"message":"Required"},{"expected":"'GLOBAL' | 'TENANT' | 'MODULE'","received":"undefined","code":"invalid_type","path":["scope"],"message":"Required"}]}
+
+{"success":false,"error":"Validation error","details":[{"expected":"'platform-admin' | 'tenant-admin' | 'module-admin' | 'developer' | 'viewer'","received":"undefined","code":"invalid_type","path":["code"],"message":"Required"},{"expected":"'GLOBAL' | 'TENANT' | 'MODULE'","received":"undefined","code":"invalid_type","path":["scope"],"message":"Required"}]}
+
+[0;34mTEST: TC-4.1.5: Create Role - Missing Name[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/roles"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":"Validation error","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["name"],"message":"Required"},{"expected":"'platform-admin' | 'tenant-admin' | 'module-admin' | 'developer' | 'viewer'","received":"undefined","code":"invalid_type","path":["code"],"message":"Required"},{"expected":"'GLOBAL' | 'TENANT' | 'MODULE'","received":"undefined","code":"invalid_type","path":["scope"],"message":"Required"}]}
+
+{"success":false,"error":"Validation error","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["name"],"message":"Required"},{"expected":"'platform-admin' | 'tenant-admin' | 'module-admin' | 'developer' | 'viewer'","received":"undefined","code":"invalid_type","path":["code"],"message":"Required"},{"expected":"'GLOBAL' | 'TENANT' | 'MODULE'","received":"undefined","code":"invalid_type","path":["scope"],"message":"Required"}]}
+
+----------------------------------------------------------------------
+  4.2 Permissions
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-4.2.1: Get Permissions[0m
+Description: Should return permissions
+Command: curl -X GET "http://localhost:3000/api/v1/permissions"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read permissions","required":"permissions:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read permissions","required":"permissions:read"}}
+
+----------------------------------------------------------------------
+  4.3 API Keys
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-4.3.1: Create API Key[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/api-keys"
+[0;32m✅ PASS[0m
+Expected: 201
+Actual HTTP Status: 201
+Response:
+{"success":true,"data":{"id":"7ef6e2a2-2c3b-460a-863e-0b5d2dd79525","name":"TestKey1767357661","description":null,"key":"qas_35f23f297669481253abbdd2b73ae8a7d50e69935cd53fc099ebc4d6f9a332d3","key_prefix":"qas_35f23f29","expires_at":null,"status":"active","created_at":"2026-01-02T12:41:01.389Z","warning":"Save this key securely. It will not be shown again."}}
+
+{"success":true,"data":{"id":"7ef6e2a2-2c3b-460a-863e-0b5d2dd79525","name":"TestKey1767357661","description":null,"key":"qas_35f23f297669481253abbdd2b73ae8a7d50e69935cd53fc099ebc4d6f9a332d3","key_prefix":"qas_35f23f29","expires_at":null,"status":"active","created_at":"2026-01-02T12:41:01.389Z","warning":"Save this key securely. It will not be shown again."}}
+
+[0;34mTEST: TC-4.3.2: Get API Keys[0m
+Description: Should return keys
+Command: curl -X GET "http://localhost:3000/api/v1/api-keys"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":[{"id":"7ef6e2a2-2c3b-460a-863e-0b5d2dd79525","name":"TestKey1767357661","description":null,"key_prefix":"qas_35f23f29","expires_at":null,"status":"active","last_used_at":null,"usage_count":null,"created_at":"2026-01-02T12:41:01.389Z","updated_at":"2026-01-02T12:41:01.389Z","created_by_email":"admin@qassure.ai"},{"id":"c887d07b-3265-491b-a771-3c585f93dd70","name":"Updated API Key","description":"Updated description","key_prefix":"qas_5e5c92be","expires_at":null,"status":"revoked","last_used_at":"2026-01-01T11:10:20.596Z","usage_count":1,"created_at":"2026-01-01T11:10:18.838Z","updated_at":"2026-01-01T11:10:21.759Z","created_by_email":"superadmin@qassure.ai"},{"id":"ba5dd13c-8795-4fd8-94fc-1649a2095b12","name":"Updated API Key","description":"Updated description","key_prefix":"qas_8cefc791","expires_at":null,"status":"revoked","last_used_at":"2026-01-01T10:58:11.144Z","usage_count":1,"created_at":"2026-01-01T10:58:09.388Z","updated_at":"2026-01-01T10:58:12.258Z","created_by_email":"superadmin@qassure.ai"},{"id":"1690be96-6635-4a14-b559-b9f130741f38","name":"Updated API Key","description":"Updated description","key_prefix":"qas_57edf70f","expires_at":null,"status":"revoked","last_used_at":"2026-01-01T10:56:01.573Z","usage_count":1,"created_at":"2026-01-01T10:55:59.837Z","updated_at":"2026-01-01T10:56:02.699Z","created_by_email":"superadmin@qassure.ai"},{"id":"366c8442-0380-4d54-b782-6658930146d3","name":"TestKey1767263351","description":null,"key_prefix":"qas_93411998","expires_at":null,"status":"active","last_used_at":null,"usage_count":null,"created_at":"2026-01-01T10:29:11.904Z","updated_at":"2026-01-01T10:29:11.904Z","created_by_email":"admin@qassure.ai"},{"id":"72d4420e-b436-473a-962c-7351513f2316","name":"Test API Key","description":"For integration testing","key_prefix":"qas_13383bfc","expires_at":null,"status":"active","last_used_at":"2025-12-24T08:30:44.721Z","usage_count":1,"created_at":"2025-12-24T08:28:04.471Z","updated_at":"2025-12-24T08:28:04.471Z","created_by_email":"admin@qassure.ai"}],"pagination":{"page":1,"limit":20,"total":6,"totalPages":1,"hasMore":false}}
+
+{"success":true,"data":[{"id":"7ef6e2a2-2c3b-460a-863e-0b5d2dd79525","name":"TestKey1767357661","description":null,"key_prefix":"qas_35f23f29","expires_at":null,"status":"active","last_used_at":null,"usage_count":null,"created_at":"2026-01-02T12:41:01.389Z","updated_at":"2026-01-02T12:41:01.389Z","created_by_email":"admin@qassure.ai"},{"id":"c887d07b-3265-491b-a771-3c585f93dd70","name":"Updated API Key","description":"Updated description","key_prefix":"qas_5e5c92be","expires_at":null,"status":"revoked","last_used_at":"2026-01-01T11:10:20.596Z","usage_count":1,"created_at":"2026-01-01T11:10:18.838Z","updated_at":"2026-01-01T11:10:21.759Z","created_by_email":"superadmin@qassure.ai"},{"id":"ba5dd13c-8795-4fd8-94fc-1649a2095b12","name":"Updated API Key","description":"Updated description","key_prefix":"qas_8cefc791","expires_at":null,"status":"revoked","last_used_at":"2026-01-01T10:58:11.144Z","usage_count":1,"created_at":"2026-01-01T10:58:09.388Z","updated_at":"2026-01-01T10:58:12.258Z","created_by_email":"superadmin@qassure.ai"},{"id":"1690be96-6635-4a14-b559-b9f130741f38","name":"Updated API Key","description":"Updated description","key_prefix":"qas_57edf70f","expires_at":null,"status":"revoked","last_used_at":"2026-01-01T10:56:01.573Z","usage_count":1,"created_at":"2026-01-01T10:55:59.837Z","updated_at":"2026-01-01T10:56:02.699Z","created_by_email":"superadmin@qassure.ai"},{"id":"366c8442-0380-4d54-b782-6658930146d3","name":"TestKey1767263351","description":null,"key_prefix":"qas_93411998","expires_at":null,"status":"active","last_used_at":null,"usage_count":null,"created_at":"2026-01-01T10:29:11.904Z","updated_at":"2026-01-01T10:29:11.904Z","created_by_email":"admin@qassure.ai"},{"id":"72d4420e-b436-473a-962c-7351513f2316","name":"Test API Key","description":"For integration testing","key_prefix":"qas_13383bfc","expires_at":null,"status":"active","last_used_at":"2025-12-24T08:30:44.721Z","usage_count":1,"created_at":"2025-12-24T08:28:04.471Z","updated_at":"2025-12-24T08:28:04.471Z","created_by_email":"admin@qassure.ai"}],"pagination":{"page":1,"limit":20,"total":6,"totalPages":1,"hasMore":false}}
+
+======================================================================
+  PHASE 5: MODULE REGISTRY
+======================================================================
+
+
+----------------------------------------------------------------------
+  5.1 Module Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-5.1.1: Get All Modules[0m
+Description: Should return modules
+
+[0;34mTEST: TC-5.1.2: Get Non-existent Module[0m
+Description: Should return 404
+Command: curl -X GET "http://localhost:3000/api/v1/modules/00000000-0000-0000-0000-000000000000"
+[0;31m❌ FAIL[0m
+Expected: 404
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read modules","required":"modules:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read modules","required":"modules:read"}}
+
+[0;34mTEST: TC-5.1.3: Get Module - Invalid UUID[0m
+Description: Should return 400
+Command: curl -X GET "http://localhost:3000/api/v1/modules/invalid-uuid"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read modules","required":"modules:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read modules","required":"modules:read"}}
+
+[0;34mTEST: TC-5.1.4: Create Module - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/modules"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to create modules","required":"modules:create"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to create modules","required":"modules:create"}}
+
+[0;34mTEST: TC-5.1.5: Create Module - Missing Fields[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/modules"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to create modules","required":"modules:create"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to create modules","required":"modules:create"}}
+
+[0;34mTEST: TC-5.1.6: Get Module Status[0m
+Description: Should return status
+Command: curl -X GET "http://localhost:3000/api/v1/modules/status"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read modules","required":"modules:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read modules","required":"modules:read"}}
+
+======================================================================
+  PHASE 6: KAFKA EVENT SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  6.1 Events
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-6.1.1: Get Event Topics[0m
+Description: Should return topics
+Command: curl -X GET "http://localhost:3000/api/v1/events/topics"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/events/topics","correlationId":"1767357666446-e9ccb3eb"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/events/topics","correlationId":"1767357666446-e9ccb3eb"}
+
+[0;34mTEST: TC-6.1.2: Get Event History[0m
+Description: Should return history
+Command: curl -X GET "http://localhost:3000/api/v1/events/history"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/events/history","correlationId":"1767357667059-adad7eeb"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/events/history","correlationId":"1767357667059-adad7eeb"}
+
+======================================================================
+  PHASE 7: AI GATEWAY
+======================================================================
+
+
+----------------------------------------------------------------------
+  7.1 AI Providers
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-7.1.1: Get AI Providers[0m
+Description: Should return providers
+Command: curl -X GET "http://localhost:3000/api/v1/ai/providers"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read ai","required":"ai:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read ai","required":"ai:read"}}
+
+[0;34mTEST: TC-7.1.2: Create AI Provider - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/ai/providers"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/ai/providers","correlationId":"1767357668336-082aadd6"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/ai/providers","correlationId":"1767357668336-082aadd6"}
+
+[0;34mTEST: TC-7.1.3: Create AI Provider - Invalid Name[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/ai/providers"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/ai/providers","correlationId":"1767357668943-f1d7ee7d"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/ai/providers","correlationId":"1767357668943-f1d7ee7d"}
+
+[0;34mTEST: TC-7.1.4: Create AI Provider - Missing API Key[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/ai/providers"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/ai/providers","correlationId":"1767357669554-76aa7c1f"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/ai/providers","correlationId":"1767357669554-76aa7c1f"}
+
+----------------------------------------------------------------------
+  7.2 AI Usage
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-7.2.1: Get AI Usage Summary[0m
+Description: Should return usage
+Command: curl -X GET "http://localhost:3000/api/v1/ai/usage/summary"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/ai/usage/summary","correlationId":"1767357670191-98b40d78"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/ai/usage/summary","correlationId":"1767357670191-98b40d78"}
+
+[0;34mTEST: TC-7.2.2: Get AI Costs[0m
+Description: Should return costs
+Command: curl -X GET "http://localhost:3000/api/v1/ai/costs"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read ai","required":"ai:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read ai","required":"ai:read"}}
+
+======================================================================
+  PHASE 8: RAG & VECTOR DATABASE
+======================================================================
+
+
+----------------------------------------------------------------------
+  8.1 Knowledge Base
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-8.1.1: Get KB Collections[0m
+Description: Should return collections
+Command: curl -X GET "http://localhost:3000/api/v1/ai/knowledge-base"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/ai/knowledge-base","correlationId":"1767357671509-90492f55"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/ai/knowledge-base","correlationId":"1767357671509-90492f55"}
+
+[0;34mTEST: TC-8.1.2: Create KB Collection[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/ai/knowledge-base/collections"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/ai/knowledge-base/collections","correlationId":"1767357672144-3da31438"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/ai/knowledge-base/collections","correlationId":"1767357672144-3da31438"}
+
+[0;34mTEST: TC-8.1.3: Search KB - Empty Query[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/ai/knowledge-base/search"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/ai/knowledge-base/search","correlationId":"1767357672763-d89f6abf"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/ai/knowledge-base/search","correlationId":"1767357672763-d89f6abf"}
+
+======================================================================
+  PHASE 9: PROMPT MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  9.1 Prompts
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-9.1.1: Get All Prompts[0m
+Description: Should return prompts
+Command: curl -X GET "http://localhost:3000/api/v1/ai/prompts"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read ai","required":"ai:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read ai","required":"ai:read"}}
+
+[0;34mTEST: TC-9.1.2: Create Prompt - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/ai/prompts"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to create ai","required":"ai:create"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to create ai","required":"ai:create"}}
+
+[0;34mTEST: TC-9.1.3: Create Prompt - Missing System Prompt[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/ai/prompts"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to create ai","required":"ai:create"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to create ai","required":"ai:create"}}
+
+======================================================================
+  PHASE 10-11: QMS INTEGRATION
+======================================================================
+
+
+----------------------------------------------------------------------
+  10.1 QMS Connections
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-10.1.1: Get QMS Connections[0m
+Description: Should return connections
+Command: curl -X GET "http://localhost:3000/api/v1/qms/connections"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":[{"id":"fc818248-b9b0-47ae-8d02-719b55948adc","tenant_id":"00000000-0000-0000-0000-000000000001","name":"Veeva Vault Production","qms_type":"VEEVA_VAULT","base_url":"https://mycompany.veevavault.com","auth_type":"BASIC_AUTH","auth_config":{"password":"secret123","username":"api_user"},"sync_mode":"BIDIRECTIONAL","entity_mappings":null,"field_mappings":null,"webhook_url":null,"webhook_secret":null,"status":"ACTIVE","last_sync_at":"2025-12-25T04:54:43.322Z","last_error":null,"created_by":"c6e8eed6-c388-41f4-9223-24532fb1101f","created_at":"2025-12-25T04:46:49.012Z","updated_at":"2025-12-25T04:54:43.322Z"}],"pagination":{"page":1,"limit":100,"total":1,"totalPages":1,"hasMore":false}}
+
+{"success":true,"data":[{"id":"fc818248-b9b0-47ae-8d02-719b55948adc","tenant_id":"00000000-0000-0000-0000-000000000001","name":"Veeva Vault Production","qms_type":"VEEVA_VAULT","base_url":"https://mycompany.veevavault.com","auth_type":"BASIC_AUTH","auth_config":{"password":"secret123","username":"api_user"},"sync_mode":"BIDIRECTIONAL","entity_mappings":null,"field_mappings":null,"webhook_url":null,"webhook_secret":null,"status":"ACTIVE","last_sync_at":"2025-12-25T04:54:43.322Z","last_error":null,"created_by":"c6e8eed6-c388-41f4-9223-24532fb1101f","created_at":"2025-12-25T04:46:49.012Z","updated_at":"2025-12-25T04:54:43.322Z"}],"pagination":{"page":1,"limit":100,"total":1,"totalPages":1,"hasMore":false}}
+
+[0;34mTEST: TC-10.1.2: Create QMS - Invalid Type[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/qms/connections"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":"Validation error","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["tenant_id"],"message":"Required"},{"expected":"'VEEVA_VAULT' | 'MASTERCONTROL' | 'ARENA_PLM' | 'TRACKWISE' | 'ETQ_RELIANCE'","received":"undefined","code":"invalid_type","path":["qms_type"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["base_url"],"message":"Required"},{"expected":"'OAUTH2' | 'API_KEY' | 'BASIC_AUTH' | 'SAML'","received":"undefined","code":"invalid_type","path":["auth_type"],"message":"Required"},{"expected":"'QMS_TO_QASSURE' | 'QASSURE_TO_QMS' | 'BIDIRECTIONAL'","received":"undefined","code":"invalid_type","path":["sync_mode"],"message":"Required"},{"expected":"'ACTIVE' | 'SUSPENDED' | 'ERROR'","received":"undefined","code":"invalid_type","path":["status"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["created_by"],"message":"Required"}]}
+
+{"success":false,"error":"Validation error","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["tenant_id"],"message":"Required"},{"expected":"'VEEVA_VAULT' | 'MASTERCONTROL' | 'ARENA_PLM' | 'TRACKWISE' | 'ETQ_RELIANCE'","received":"undefined","code":"invalid_type","path":["qms_type"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["base_url"],"message":"Required"},{"expected":"'OAUTH2' | 'API_KEY' | 'BASIC_AUTH' | 'SAML'","received":"undefined","code":"invalid_type","path":["auth_type"],"message":"Required"},{"expected":"'QMS_TO_QASSURE' | 'QASSURE_TO_QMS' | 'BIDIRECTIONAL'","received":"undefined","code":"invalid_type","path":["sync_mode"],"message":"Required"},{"expected":"'ACTIVE' | 'SUSPENDED' | 'ERROR'","received":"undefined","code":"invalid_type","path":["status"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["created_by"],"message":"Required"}]}
+
+[0;34mTEST: TC-10.1.3: Create QMS - Missing URL[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/qms/connections"
+[0;32m✅ PASS[0m
+Expected: 400
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":"Validation error","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["tenant_id"],"message":"Required"},{"expected":"'VEEVA_VAULT' | 'MASTERCONTROL' | 'ARENA_PLM' | 'TRACKWISE' | 'ETQ_RELIANCE'","received":"undefined","code":"invalid_type","path":["qms_type"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["base_url"],"message":"Required"},{"expected":"'OAUTH2' | 'API_KEY' | 'BASIC_AUTH' | 'SAML'","received":"undefined","code":"invalid_type","path":["auth_type"],"message":"Required"},{"expected":"'QMS_TO_QASSURE' | 'QASSURE_TO_QMS' | 'BIDIRECTIONAL'","received":"undefined","code":"invalid_type","path":["sync_mode"],"message":"Required"},{"expected":"'ACTIVE' | 'SUSPENDED' | 'ERROR'","received":"undefined","code":"invalid_type","path":["status"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["created_by"],"message":"Required"}]}
+
+{"success":false,"error":"Validation error","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["tenant_id"],"message":"Required"},{"expected":"'VEEVA_VAULT' | 'MASTERCONTROL' | 'ARENA_PLM' | 'TRACKWISE' | 'ETQ_RELIANCE'","received":"undefined","code":"invalid_type","path":["qms_type"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["base_url"],"message":"Required"},{"expected":"'OAUTH2' | 'API_KEY' | 'BASIC_AUTH' | 'SAML'","received":"undefined","code":"invalid_type","path":["auth_type"],"message":"Required"},{"expected":"'QMS_TO_QASSURE' | 'QASSURE_TO_QMS' | 'BIDIRECTIONAL'","received":"undefined","code":"invalid_type","path":["sync_mode"],"message":"Required"},{"expected":"'ACTIVE' | 'SUSPENDED' | 'ERROR'","received":"undefined","code":"invalid_type","path":["status"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["created_by"],"message":"Required"}]}
+
+[0;34mTEST: TC-11.1.1: Get Entity Mappings[0m
+Description: Should return mappings
+Command: curl -X GET "http://localhost:3000/api/v1/qms/mappings"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/qms/mappings","correlationId":"1767357677207-e3a17eb7"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/qms/mappings","correlationId":"1767357677207-e3a17eb7"}
+
+[0;34mTEST: TC-11.1.2: Get Sync Jobs[0m
+Description: Should return jobs
+Command: curl -X GET "http://localhost:3000/api/v1/qms/sync-jobs"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read qms_sync_jobs","required":"qms_sync_jobs:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read qms_sync_jobs","required":"qms_sync_jobs:read"}}
+
+======================================================================
+  PHASE 12: CROSS-MODULE COMMUNICATION
+======================================================================
+
+
+[0;34mTEST: TC-12.1.1: Get Module Dependencies[0m
+Description: Should return dependencies
+Command: curl -X GET "http://localhost:3000/api/v1/modules/dependencies"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read modules","required":"modules:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read modules","required":"modules:read"}}
+
+======================================================================
+  PHASE 13: SECURITY & FDA PART 11
+======================================================================
+
+
+----------------------------------------------------------------------
+  13.1 E-Signatures
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-13.1.1: Create E-Signature - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/signatures"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/signatures","correlationId":"1767357679124-636ab07a"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/signatures","correlationId":"1767357679124-636ab07a"}
+
+[0;34mTEST: TC-13.1.2: Create E-Signature - Wrong Password[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/signatures"
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/signatures","correlationId":"1767357679737-3e141e7d"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/signatures","correlationId":"1767357679737-3e141e7d"}
+
+[0;34mTEST: TC-13.1.3: Create E-Signature - No Meaning[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/signatures"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/signatures","correlationId":"1767357680344-2cf9eaaf"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/signatures","correlationId":"1767357680344-2cf9eaaf"}
+
+======================================================================
+  PHASE 14: AUDIT SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  14.1 Audit Logs
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-14.1.1: Get Audit Logs[0m
+Description: Should return logs
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":[{"id":"c4a0bf7f-6d7b-4714-9eff-3e51e7a176c3","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"workflow_task","resource_id":"53a3af3e-ec98-44db-85e5-985737e62eb4","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T17:28:37.722Z","updated_at":"2025-12-31T17:28:37.722Z"},{"id":"63549746-b6ea-4506-80dd-13ae4da76266","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"workflow_task","resource_id":"95b2843d-50b8-4a37-86e8-961000152725","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T17:21:27.562Z","updated_at":"2025-12-31T17:21:27.562Z"},{"id":"c6e3d6e9-e8d3-4e26-b569-f520d5ce60ab","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"capa","resource_id":"CAPA-2025-001","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T16:35:45.981Z","updated_at":"2025-12-31T16:35:45.981Z"},{"id":"d0184a01-7c30-4af5-9f84-3289569ff425","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Scheduled database migration","new_status":"maintenance","previous_status":"running"},"metadata":null,"created_at":"2025-12-24T08:57:24.736Z","updated_at":"2025-12-24T08:57:24.736Z"},{"id":"316763ed-44a3-4c1e-a887-616cb5fc2f55","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Module started successfully","new_status":"running","previous_status":"starting"},"metadata":null,"created_at":"2025-12-24T08:56:54.436Z","updated_at":"2025-12-24T08:56:54.436Z"},{"id":"427a16b1-6882-4b05-af05-43005e2c9063","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Module start requested","new_status":"starting","previous_status":"pending"},"metadata":null,"created_at":"2025-12-24T08:56:54.432Z","updated_at":"2025-12-24T08:56:54.432Z"},{"id":"dbbb2917-56dc-4b21-b93e-f6da7faa9d00","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.register","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":null,"metadata":{"name":"Document Analyzer","version":"1.0.0","module_id":"doc-analyzer","initial_status":"pending"},"created_at":"2025-12-24T08:56:17.107Z","updated_at":"2025-12-24T08:56:17.107Z"}],"pagination":{"page":1,"limit":100,"total":7,"totalPages":1,"hasMore":false}}
+
+{"success":true,"data":[{"id":"c4a0bf7f-6d7b-4714-9eff-3e51e7a176c3","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"workflow_task","resource_id":"53a3af3e-ec98-44db-85e5-985737e62eb4","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T17:28:37.722Z","updated_at":"2025-12-31T17:28:37.722Z"},{"id":"63549746-b6ea-4506-80dd-13ae4da76266","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"workflow_task","resource_id":"95b2843d-50b8-4a37-86e8-961000152725","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T17:21:27.562Z","updated_at":"2025-12-31T17:21:27.562Z"},{"id":"c6e3d6e9-e8d3-4e26-b569-f520d5ce60ab","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"capa","resource_id":"CAPA-2025-001","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T16:35:45.981Z","updated_at":"2025-12-31T16:35:45.981Z"},{"id":"d0184a01-7c30-4af5-9f84-3289569ff425","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Scheduled database migration","new_status":"maintenance","previous_status":"running"},"metadata":null,"created_at":"2025-12-24T08:57:24.736Z","updated_at":"2025-12-24T08:57:24.736Z"},{"id":"316763ed-44a3-4c1e-a887-616cb5fc2f55","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Module started successfully","new_status":"running","previous_status":"starting"},"metadata":null,"created_at":"2025-12-24T08:56:54.436Z","updated_at":"2025-12-24T08:56:54.436Z"},{"id":"427a16b1-6882-4b05-af05-43005e2c9063","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Module start requested","new_status":"starting","previous_status":"pending"},"metadata":null,"created_at":"2025-12-24T08:56:54.432Z","updated_at":"2025-12-24T08:56:54.432Z"},{"id":"dbbb2917-56dc-4b21-b93e-f6da7faa9d00","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.register","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":null,"metadata":{"name":"Document Analyzer","version":"1.0.0","module_id":"doc-analyzer","initial_status":"pending"},"created_at":"2025-12-24T08:56:17.107Z","updated_at":"2025-12-24T08:56:17.107Z"}],"pagination":{"page":1,"limit":100,"total":7,"totalPages":1,"hasMore":false}}
+
+[0;34mTEST: TC-14.1.2: Get Audit Logs - Pagination[0m
+Description: Should return paginated
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs?page=1&limit=10"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":[{"id":"c4a0bf7f-6d7b-4714-9eff-3e51e7a176c3","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"workflow_task","resource_id":"53a3af3e-ec98-44db-85e5-985737e62eb4","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T17:28:37.722Z","updated_at":"2025-12-31T17:28:37.722Z"},{"id":"63549746-b6ea-4506-80dd-13ae4da76266","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"workflow_task","resource_id":"95b2843d-50b8-4a37-86e8-961000152725","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T17:21:27.562Z","updated_at":"2025-12-31T17:21:27.562Z"},{"id":"c6e3d6e9-e8d3-4e26-b569-f520d5ce60ab","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"capa","resource_id":"CAPA-2025-001","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T16:35:45.981Z","updated_at":"2025-12-31T16:35:45.981Z"},{"id":"d0184a01-7c30-4af5-9f84-3289569ff425","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Scheduled database migration","new_status":"maintenance","previous_status":"running"},"metadata":null,"created_at":"2025-12-24T08:57:24.736Z","updated_at":"2025-12-24T08:57:24.736Z"},{"id":"316763ed-44a3-4c1e-a887-616cb5fc2f55","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Module started successfully","new_status":"running","previous_status":"starting"},"metadata":null,"created_at":"2025-12-24T08:56:54.436Z","updated_at":"2025-12-24T08:56:54.436Z"},{"id":"427a16b1-6882-4b05-af05-43005e2c9063","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Module start requested","new_status":"starting","previous_status":"pending"},"metadata":null,"created_at":"2025-12-24T08:56:54.432Z","updated_at":"2025-12-24T08:56:54.432Z"},{"id":"dbbb2917-56dc-4b21-b93e-f6da7faa9d00","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.register","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":null,"metadata":{"name":"Document Analyzer","version":"1.0.0","module_id":"doc-analyzer","initial_status":"pending"},"created_at":"2025-12-24T08:56:17.107Z","updated_at":"2025-12-24T08:56:17.107Z"}],"pagination":{"page":1,"limit":10,"total":7,"totalPages":1,"hasMore":false}}
+
+{"success":true,"data":[{"id":"c4a0bf7f-6d7b-4714-9eff-3e51e7a176c3","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"workflow_task","resource_id":"53a3af3e-ec98-44db-85e5-985737e62eb4","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T17:28:37.722Z","updated_at":"2025-12-31T17:28:37.722Z"},{"id":"63549746-b6ea-4506-80dd-13ae4da76266","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"workflow_task","resource_id":"95b2843d-50b8-4a37-86e8-961000152725","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T17:21:27.562Z","updated_at":"2025-12-31T17:21:27.562Z"},{"id":"c6e3d6e9-e8d3-4e26-b569-f520d5ce60ab","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"electronic_signature.created","resource_type":"capa","resource_id":"CAPA-2025-001","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":"127.0.0.1","user_agent":null,"correlation_id":null,"changes":null,"metadata":null,"created_at":"2025-12-31T16:35:45.981Z","updated_at":"2025-12-31T16:35:45.981Z"},{"id":"d0184a01-7c30-4af5-9f84-3289569ff425","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Scheduled database migration","new_status":"maintenance","previous_status":"running"},"metadata":null,"created_at":"2025-12-24T08:57:24.736Z","updated_at":"2025-12-24T08:57:24.736Z"},{"id":"316763ed-44a3-4c1e-a887-616cb5fc2f55","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Module started successfully","new_status":"running","previous_status":"starting"},"metadata":null,"created_at":"2025-12-24T08:56:54.436Z","updated_at":"2025-12-24T08:56:54.436Z"},{"id":"427a16b1-6882-4b05-af05-43005e2c9063","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.status_change","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":{"reason":"Module start requested","new_status":"starting","previous_status":"pending"},"metadata":null,"created_at":"2025-12-24T08:56:54.432Z","updated_at":"2025-12-24T08:56:54.432Z"},{"id":"dbbb2917-56dc-4b21-b93e-f6da7faa9d00","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"c6e8eed6-c388-41f4-9223-24532fb1101f","action":"module.register","resource_type":"module","resource_id":"462fd0c8-a690-4d32-bdbd-fbddf4ab34df","request_method":null,"request_path":null,"request_body":null,"response_status":null,"response_body":null,"ip_address":null,"user_agent":null,"correlation_id":null,"changes":null,"metadata":{"name":"Document Analyzer","version":"1.0.0","module_id":"doc-analyzer","initial_status":"pending"},"created_at":"2025-12-24T08:56:17.107Z","updated_at":"2025-12-24T08:56:17.107Z"}],"pagination":{"page":1,"limit":10,"total":7,"totalPages":1,"hasMore":false}}
+
+[0;34mTEST: TC-14.1.3: Get Audit Logs - Invalid Page[0m
+Description: Should reject
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs?page=-1&limit=10"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 500
+Response:
+{"success":false,"error":"Failed to fetch auditlogs: OFFSET must not be negative"}
+
+{"success":false,"error":"Failed to fetch auditlogs: OFFSET must not be negative"}
+
+[0;34mTEST: TC-14.1.4: Get Audit Logs - Filter[0m
+Description: Should filter
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs?action=LOGIN"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":[],"pagination":{"page":1,"limit":100,"total":0,"totalPages":0,"hasMore":false}}
+
+{"success":true,"data":[],"pagination":{"page":1,"limit":100,"total":0,"totalPages":0,"hasMore":false}}
+
+[0;34mTEST: TC-14.1.5: Export Audit Logs[0m
+Description: Should export
+Command: curl -X GET "http://localhost:3000/api/v1/audit-logs/export?format=json"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 400
+Response:
+{"success":false,"error":"Validation failed","details":[{"path":"id","message":"Invalid uuid","code":"invalid_string"}]}
+
+{"success":false,"error":"Validation failed","details":[{"path":"id","message":"Invalid uuid","code":"invalid_string"}]}
+
+======================================================================
+  PHASE 15: DOCUMENT MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  15.1 Documents
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-15.1.1: Get All Documents[0m
+Description: Should return docs
+Command: curl -X GET "http://localhost:3000/api/v1/documents"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read document","required":"document:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read document","required":"document:read"}}
+
+[0;34mTEST: TC-15.1.2: Create Document - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/documents"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write document","required":"document:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write document","required":"document:write"}}
+
+[0;34mTEST: TC-15.1.3: Create Document - Missing Title[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/documents"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write document","required":"document:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write document","required":"document:write"}}
+
+[0;34mTEST: TC-15.1.4: Search Documents[0m
+Description: Should search
+Command: curl -X GET "http://localhost:3000/api/v1/documents/search?q=test"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read document","required":"document:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read document","required":"document:read"}}
+
+======================================================================
+  PHASE 16: TRAINING MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  16.1 Training Courses
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-16.1.1: Get Training Courses[0m
+Description: Should return courses
+Command: curl -X GET "http://localhost:3000/api/v1/training/courses"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read training","required":"training:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read training","required":"training:read"}}
+
+[0;34mTEST: TC-16.1.2: Create Course - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/training/courses"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write training","required":"training:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write training","required":"training:write"}}
+
+[0;34mTEST: TC-16.1.3: Create Course - Invalid Duration[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/training/courses"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write training","required":"training:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write training","required":"training:write"}}
+
+[0;34mTEST: TC-16.1.4: Create Course - Invalid Score[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/training/courses"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write training","required":"training:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write training","required":"training:write"}}
+
+[0;34mTEST: TC-16.2.1: Get Assignments[0m
+Description: Should return assignments
+Command: curl -X GET "http://localhost:3000/api/v1/training/assignments"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/training/assignments","correlationId":"1767357689196-0d7d8f63"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/training/assignments","correlationId":"1767357689196-0d7d8f63"}
+
+======================================================================
+  PHASE 17: CAPA MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  17.1 CAPAs
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-17.1.1: Get All CAPAs[0m
+Description: Should return CAPAs
+Command: curl -X GET "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read capa","required":"capa:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read capa","required":"capa:read"}}
+
+[0;34mTEST: TC-17.1.2: Create CAPA - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write capa","required":"capa:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write capa","required":"capa:write"}}
+
+[0;34mTEST: TC-17.1.3: Create CAPA - Invalid Type[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write capa","required":"capa:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write capa","required":"capa:write"}}
+
+[0;34mTEST: TC-17.1.4: Create CAPA - Invalid Priority[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write capa","required":"capa:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write capa","required":"capa:write"}}
+
+[0;34mTEST: TC-17.1.5: Create CAPA - Missing Title[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/capas"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write capa","required":"capa:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write capa","required":"capa:write"}}
+
+[0;34mTEST: TC-17.2.1: Get CAPA Statistics[0m
+Description: Should return stats
+Command: curl -X GET "http://localhost:3000/api/v1/capas/statistics"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read capa","required":"capa:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read capa","required":"capa:read"}}
+
+======================================================================
+  PHASE 18: SUPPLIER QUALITY
+======================================================================
+
+
+----------------------------------------------------------------------
+  18.1 Suppliers
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-18.1.1: Get All Suppliers[0m
+Description: Should return suppliers
+Command: curl -X GET "http://localhost:3000/api/v1/suppliers"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read supplier","required":"supplier:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read supplier","required":"supplier:read"}}
+
+[0;34mTEST: TC-18.1.2: Create Supplier - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/suppliers"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write supplier","required":"supplier:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write supplier","required":"supplier:write"}}
+
+[0;34mTEST: TC-18.1.3: Create Supplier - Invalid Email[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/suppliers"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write supplier","required":"supplier:write"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to write supplier","required":"supplier:write"}}
+
+======================================================================
+  PHASE 19: REPORTING & ANALYTICS
+======================================================================
+
+
+----------------------------------------------------------------------
+  19.1 Dashboard
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-19.1.1: Get Dashboard[0m
+Description: Should return dashboard
+Command: curl -X GET "http://localhost:3000/api/v1/reporting/dashboard"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read reports","required":"reports:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read reports","required":"reports:read"}}
+
+[0;34mTEST: TC-19.1.2: Get KPIs[0m
+Description: Should return KPIs
+Command: curl -X GET "http://localhost:3000/api/v1/reporting/kpis"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read reports","required":"reports:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read reports","required":"reports:read"}}
+
+----------------------------------------------------------------------
+  19.2 Reports
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-19.2.1: Get Report Definitions[0m
+Description: Should return reports
+Command: curl -X GET "http://localhost:3000/api/v1/reporting/reports"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read reports","required":"reports:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read reports","required":"reports:read"}}
+
+[0;34mTEST: TC-19.2.2: Generate Report - Valid[0m
+Description: Should generate
+Command: curl -X POST "http://localhost:3000/api/v1/reporting/reports/generate"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/reporting/reports/generate","correlationId":"1767357697485-a2cf8822"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/reporting/reports/generate","correlationId":"1767357697485-a2cf8822"}
+
+[0;34mTEST: TC-19.2.3: Generate Report - Invalid Date Range[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/reporting/reports/generate"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 404
+Response:
+{"success":false,"message":"Route not found","path":"/api/v1/reporting/reports/generate","correlationId":"1767357698099-e8d3541c"}
+
+{"success":false,"message":"Route not found","path":"/api/v1/reporting/reports/generate","correlationId":"1767357698099-e8d3541c"}
+
+[0;34mTEST: TC-19.2.4: Global Search[0m
+Description: Should search
+Command: curl -X GET "http://localhost:3000/api/v1/reporting/search?q=test"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read reports","required":"reports:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read reports","required":"reports:read"}}
+
+======================================================================
+  PHASE 20: NOTIFICATIONS
+======================================================================
+
+
+----------------------------------------------------------------------
+  20.1 Notifications
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-20.1.1: Get My Notifications[0m
+Description: Should return notifications
+Command: curl -X GET "http://localhost:3000/api/v1/notifications/me"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":[]}
+
+{"success":true,"data":[]}
+
+[0;34mTEST: TC-20.1.2: Get Unread Count[0m
+Description: Should return count
+Command: curl -X GET "http://localhost:3000/api/v1/notifications/me/unread-count"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":{"unread_count":0}}
+
+{"success":true,"data":{"unread_count":0}}
+
+----------------------------------------------------------------------
+  20.2 Preferences
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-20.2.1: Get Preferences[0m
+Description: Should return preferences
+Command: curl -X GET "http://localhost:3000/api/v1/notifications/preferences"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":{"id":"a4de74c0-6af4-48ff-ab06-0b2b9b99af74","user_id":"7db3b040-7c64-482d-8709-17fe4773364d","tenant_id":"00000000-0000-0000-0000-000000000001","in_app_enabled":true,"email_enabled":true,"email_digest":"instant","category_preferences":{"capa":{"email":true,"in_app":true},"system":{"email":false,"in_app":true},"document":{"email":true,"in_app":true},"supplier":{"email":true,"in_app":true},"training":{"email":true,"in_app":true},"workflow":{"email":true,"in_app":true}},"quiet_hours_enabled":false,"quiet_hours_start":null,"quiet_hours_end":null,"timezone":"UTC","created_at":"2026-01-01T10:29:52.229Z","updated_at":"2026-01-01T10:29:52.229Z"}}
+
+{"success":true,"data":{"id":"a4de74c0-6af4-48ff-ab06-0b2b9b99af74","user_id":"7db3b040-7c64-482d-8709-17fe4773364d","tenant_id":"00000000-0000-0000-0000-000000000001","in_app_enabled":true,"email_enabled":true,"email_digest":"instant","category_preferences":{"capa":{"email":true,"in_app":true},"system":{"email":false,"in_app":true},"document":{"email":true,"in_app":true},"supplier":{"email":true,"in_app":true},"training":{"email":true,"in_app":true},"workflow":{"email":true,"in_app":true}},"quiet_hours_enabled":false,"quiet_hours_start":null,"quiet_hours_end":null,"timezone":"UTC","created_at":"2026-01-01T10:29:52.229Z","updated_at":"2026-01-01T10:29:52.229Z"}}
+
+[0;34mTEST: TC-20.2.2: Update Preferences - Valid[0m
+Description: Should update
+Command: curl -X PUT "http://localhost:3000/api/v1/notifications/preferences"
+[0;32m✅ PASS[0m
+Expected: 200
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":{"id":"a4de74c0-6af4-48ff-ab06-0b2b9b99af74","user_id":"7db3b040-7c64-482d-8709-17fe4773364d","tenant_id":"00000000-0000-0000-0000-000000000001","in_app_enabled":true,"email_enabled":true,"email_digest":"instant","category_preferences":{"capa":{"email":true,"in_app":true},"system":{"email":false,"in_app":true},"document":{"email":true,"in_app":true},"supplier":{"email":true,"in_app":true},"training":{"email":true,"in_app":true},"workflow":{"email":true,"in_app":true}},"quiet_hours_enabled":false,"quiet_hours_start":null,"quiet_hours_end":null,"timezone":"UTC","created_at":"2026-01-01T10:29:52.229Z","updated_at":"2026-01-01T10:29:52.229Z"}}
+
+{"success":true,"data":{"id":"a4de74c0-6af4-48ff-ab06-0b2b9b99af74","user_id":"7db3b040-7c64-482d-8709-17fe4773364d","tenant_id":"00000000-0000-0000-0000-000000000001","in_app_enabled":true,"email_enabled":true,"email_digest":"instant","category_preferences":{"capa":{"email":true,"in_app":true},"system":{"email":false,"in_app":true},"document":{"email":true,"in_app":true},"supplier":{"email":true,"in_app":true},"training":{"email":true,"in_app":true},"workflow":{"email":true,"in_app":true}},"quiet_hours_enabled":false,"quiet_hours_start":null,"quiet_hours_end":null,"timezone":"UTC","created_at":"2026-01-01T10:29:52.229Z","updated_at":"2026-01-01T10:29:52.229Z"}}
+
+[0;34mTEST: TC-20.2.3: Update Preferences - Invalid Frequency[0m
+Description: Should reject
+Command: curl -X PUT "http://localhost:3000/api/v1/notifications/preferences"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 200
+Response:
+{"success":true,"data":{"id":"a4de74c0-6af4-48ff-ab06-0b2b9b99af74","user_id":"7db3b040-7c64-482d-8709-17fe4773364d","tenant_id":"00000000-0000-0000-0000-000000000001","in_app_enabled":true,"email_enabled":true,"email_digest":"instant","category_preferences":{"capa":{"email":true,"in_app":true},"system":{"email":false,"in_app":true},"document":{"email":true,"in_app":true},"supplier":{"email":true,"in_app":true},"training":{"email":true,"in_app":true},"workflow":{"email":true,"in_app":true}},"quiet_hours_enabled":false,"quiet_hours_start":null,"quiet_hours_end":null,"timezone":"UTC","created_at":"2026-01-01T10:29:52.229Z","updated_at":"2026-01-01T10:29:52.229Z"}}
+
+{"success":true,"data":{"id":"a4de74c0-6af4-48ff-ab06-0b2b9b99af74","user_id":"7db3b040-7c64-482d-8709-17fe4773364d","tenant_id":"00000000-0000-0000-0000-000000000001","in_app_enabled":true,"email_enabled":true,"email_digest":"instant","category_preferences":{"capa":{"email":true,"in_app":true},"system":{"email":false,"in_app":true},"document":{"email":true,"in_app":true},"supplier":{"email":true,"in_app":true},"training":{"email":true,"in_app":true},"workflow":{"email":true,"in_app":true}},"quiet_hours_enabled":false,"quiet_hours_start":null,"quiet_hours_end":null,"timezone":"UTC","created_at":"2026-01-01T10:29:52.229Z","updated_at":"2026-01-01T10:29:52.229Z"}}
+
+----------------------------------------------------------------------
+  20.3 Alert Rules
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-20.3.1: Get Alert Rules[0m
+Description: Should return rules
+Command: curl -X GET "http://localhost:3000/api/v1/notifications/alert-rules"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 403
+Response:
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read notifications","required":"notifications:read"}}
+
+{"success":false,"error":{"code":"FORBIDDEN","message":"You don't have permission to read notifications","required":"notifications:read"}}
+
+======================================================================
+  PHASE 21: FILE ATTACHMENTS
+======================================================================
+
+
+----------------------------------------------------------------------
+  21.1 Files
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-21.1.1: Get Storage Quota[0m
+Description: Should return quota
+Command: curl -X GET "http://localhost:3000/api/v1/files/quota"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-21.1.2: Create Share Link - Invalid Expiry[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/files/00000000-0000-0000-0000-000000000001/share"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+======================================================================
+  PHASE 22: SYSTEM CONFIGURATION
+======================================================================
+
+
+----------------------------------------------------------------------
+  22.1 Settings
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.1.1: Get All Settings[0m
+Description: Should return settings
+Command: curl -X GET "http://localhost:3000/api/v1/config/settings"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.1.2: Update Setting[0m
+Description: Should update
+Command: curl -X PUT "http://localhost:3000/api/v1/config/settings/general/platform_name"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+----------------------------------------------------------------------
+  22.2 Branding
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.2.1: Get Branding[0m
+Description: Should return branding
+Command: curl -X GET "http://localhost:3000/api/v1/config/branding"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.2.2: Update Branding - Valid[0m
+Description: Should update
+Command: curl -X PUT "http://localhost:3000/api/v1/config/branding"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.2.3: Update Branding - Invalid Color[0m
+Description: Should reject
+Command: curl -X PUT "http://localhost:3000/api/v1/config/branding"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+----------------------------------------------------------------------
+  22.3 Security
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.3.1: Get Security Policy[0m
+Description: Should return policy
+Command: curl -X GET "http://localhost:3000/api/v1/config/security"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.3.2: Update Security - Valid[0m
+Description: Should update
+Command: curl -X PUT "http://localhost:3000/api/v1/config/security"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.3.3: Update Security - Invalid Length[0m
+Description: Should reject
+Command: curl -X PUT "http://localhost:3000/api/v1/config/security"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+----------------------------------------------------------------------
+  22.4 Feature Flags
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.4.1: Get Feature Flags[0m
+Description: Should return flags
+Command: curl -X GET "http://localhost:3000/api/v1/config/features"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.4.2: Create Feature Flag - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/config/features"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.4.3: Create Flag - Invalid Rollout[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/config/features"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+----------------------------------------------------------------------
+  22.5 Webhooks
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.5.1: Get Webhooks[0m
+Description: Should return webhooks
+Command: curl -X GET "http://localhost:3000/api/v1/config/webhooks"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.5.2: Create Webhook - Valid[0m
+Description: Should create
+Command: curl -X POST "http://localhost:3000/api/v1/config/webhooks"
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.5.3: Create Webhook - Invalid URL[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/config/webhooks"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.5.4: Create Webhook - Empty Events[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/config/webhooks"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+----------------------------------------------------------------------
+  22.6 Email & SMTP
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.6.1: Get Email Templates[0m
+Description: Should return templates
+Command: curl -X GET "http://localhost:3000/api/v1/config/email-templates"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.7.1: Get SMTP Config[0m
+Description: Should return config
+Command: curl -X GET "http://localhost:3000/api/v1/config/smtp"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-22.7.2: Update SMTP - Invalid Port[0m
+Description: Should reject
+Command: curl -X PUT "http://localhost:3000/api/v1/config/smtp"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+======================================================================
+  SECURITY TESTS
+======================================================================
+
+
+----------------------------------------------------------------------
+  SQL Injection Prevention
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-SEC-1: SQL Injection in Search[0m
+Description: Should sanitize
+Command: curl -X GET "http://localhost:3000/api/v1/documents/search?q=SELECT%20*%20FROM%20users"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-SEC-2: SQL Injection in Login[0m
+Description: Should reject
+Command: curl -X POST "http://localhost:3000/api/v1/auth/login"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+----------------------------------------------------------------------
+  Pagination Edge Cases
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-PAGE-1: Large Page Number[0m
+Description: Should handle
+Command: curl -X GET "http://localhost:3000/api/v1/documents?page=99999&limit=10"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-PAGE-2: Large Limit[0m
+Description: Should cap
+Command: curl -X GET "http://localhost:3000/api/v1/documents?page=1&limit=10000"
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+[0;34mTEST: TC-PAGE-3: Zero Limit[0m
+Description: Should reject
+Command: curl -X GET "http://localhost:3000/api/v1/documents?page=1&limit=0"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+----------------------------------------------------------------------
+  UUID Validation
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-UUID-1: Malformed UUID[0m
+Description: Should reject
+Command: curl -X GET "http://localhost:3000/api/v1/documents/not-a-uuid"
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Too many requests from this IP, please try again later.
+
+======================================================================
+  TEST EXECUTION SUMMARY
+======================================================================
+
+
+======================================================================
+                    FINAL TEST RESULTS                                
+======================================================================
+
+Test Completed: Fri Jan  2 18:11:59 IST 2026
+
+Total Tests:  124
+[0;32mPassed:       36[0m
+[0;31mFailed:       88[0m
+
+Pass Rate:    29%
+
+Results saved to: qassure_test_results_20260102_181035.txt
+======================================================================

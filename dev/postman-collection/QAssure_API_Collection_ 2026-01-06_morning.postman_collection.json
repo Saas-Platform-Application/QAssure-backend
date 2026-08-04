@@ -1,0 +1,5951 @@
+{
+	"info": {
+		"_postman_id": "00788c55-8669-489f-bde8-b05f80573bde",
+		"name": "QAssure Platform API - 2026-01-06",
+		"description": "Complete API collection for QAssure Platform - Enterprise Quality Management System\n\nLast Updated: December 30, 2025\nPhases Completed: 1-10, 12\nTotal Endpoints: 130+",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48835086",
+		"_collection_link": "https://interview4tech4biz-3666547.postman.co/workspace/cost_it_right~89489571-f41b-4d4d-9740-4da5ee40bf88/collection/48835086-00788c55-8669-489f-bde8-b05f80573bde?action=share&source=collection_link&creator=48835086"
+	},
+	"item": [
+		{
+			"name": "🏥 Health & Metrics",
+			"item": [
+				{
+					"name": "Basic Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Basic health check - no authentication required"
+					},
+					"response": []
+				},
+				{
+					"name": "Detailed Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health/detailed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health",
+								"detailed"
+							]
+						},
+						"description": "Detailed health check including Database, Redis, and Kafka status"
+					},
+					"response": []
+				},
+				{
+					"name": "Prometheus Metrics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/metrics",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"metrics"
+							]
+						},
+						"description": "Prometheus metrics endpoint for monitoring"
+					},
+					"response": []
+				}
+			],
+			"description": "Health check and monitoring endpoints - No authentication required"
+		},
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Test123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user account"
+					},
+					"response": []
+				},
+				{
+					"name": "🔑 Login (Run First!)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data) {",
+									"    pm.collectionVariables.set('accessToken', jsonData.data.access_token);",
+									"    pm.collectionVariables.set('refreshToken', jsonData.data.refresh_token);",
+									"    console.log('✅ Tokens saved successfully');",
+									"    console.log('Access Token: ' + jsonData.data.access_token.substring(0, 50) + '...');",
+									"} else {",
+									"    console.log('❌ Login failed');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"superadmin@qassure.ai\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with email and password. Tokens are automatically saved to collection variables.\n\nDefault Credentials:\n- Email: superadmin@qassure.ai\n- Password: Password123!"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"verification-token-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/verify-email",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"verify-email"
+							]
+						},
+						"description": "Verify email with token received via email"
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Verification Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/resend-verification",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"resend-verification"
+							]
+						},
+						"description": "Resend email verification token"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data) {",
+									"    pm.collectionVariables.set('accessToken', jsonData.data.access_token);",
+									"    console.log('✅ Access token refreshed');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Get new access token using refresh token"
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"forgot-password"
+							]
+						},
+						"description": "Request password reset email"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"reset-token-here\",\n  \"password\": \"NewPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"reset-password"
+							]
+						},
+						"description": "Reset password with token from email"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User (Me)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Get current authenticated user info"
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Sessions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"sessions"
+							]
+						},
+						"description": "List all active sessions for current user"
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke Session",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/sessions/:sessionId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"sessions",
+								":sessionId"
+							],
+							"variable": [
+								{
+									"key": "sessionId",
+									"value": "session-uuid-here"
+								}
+							]
+						},
+						"description": "Revoke a specific session by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"current_password\": \"Password123!\",\n  \"new_password\": \"NewPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/change-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"change-password"
+							]
+						},
+						"description": "Change password for authenticated user"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Logout current session"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout All Sessions",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout-all",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout-all"
+							]
+						},
+						"description": "Logout all sessions for current user"
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/validate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"validate"
+							]
+						},
+						"description": "Validate current access token"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints - Login, Register, Password Management"
+		},
+		{
+			"name": "👥 Users",
+			"item": [
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List all users with pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-uuid-here"
+								}
+							]
+						},
+						"description": "Get user details by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Smith\",\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Create a new user"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-uuid-here"
+								}
+							]
+						},
+						"description": "Update user by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-uuid-here"
+								}
+							]
+						},
+						"description": "Delete user by ID"
+					},
+					"response": []
+				}
+			],
+			"description": "User management endpoints"
+		},
+		{
+			"name": "🏢 Tenants",
+			"item": [
+				{
+					"name": "List Tenants",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tenants",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tenants"
+							]
+						},
+						"description": "List all tenants"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tenant by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tenants/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tenants",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{tenantId}}"
+								}
+							]
+						},
+						"description": "Get tenant details by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Tenant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Acme Pharma\",\n  \"slug\": \"acme-pharma\",\n  \"status\": \"active\",\n  \"settings\": {\n    \"timezone\": \"America/New_York\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tenants",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tenants"
+							]
+						},
+						"description": "Create a new tenant organization"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Tenant",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Acme Pharmaceuticals\",\n  \"settings\": {\n    \"timezone\": \"America/Chicago\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tenants/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tenants",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{tenantId}}"
+								}
+							]
+						},
+						"description": "Update tenant by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Tenant",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tenants/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tenants",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "tenant-uuid-here"
+								}
+							]
+						},
+						"description": "Delete tenant by ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Multi-tenant organization management"
+		},
+		{
+			"name": "🎭 Roles",
+			"item": [
+				{
+					"name": "List Roles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/roles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles"
+							]
+						},
+						"description": "List all roles. Default roles: super_admin, tenant_admin, quality_manager, viewer"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Role by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/roles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "role-uuid-here"
+								}
+							]
+						},
+						"description": "Get role details by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Document Controller\",\n  \"code\": \"doc_controller\",\n  \"description\": \"Manages document lifecycle\",\n  \"scope\": \"tenant\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/roles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles"
+							]
+						},
+						"description": "Create a new role"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Role",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Senior Document Controller\",\n  \"description\": \"Manages document lifecycle with approval rights\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/roles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "role-uuid-here"
+								}
+							]
+						},
+						"description": "Update role by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Role",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/roles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "role-uuid-here"
+								}
+							]
+						},
+						"description": "Delete role by ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Role-based access control"
+		},
+		{
+			"name": "🔒 Permissions",
+			"item": [
+				{
+					"name": "List Permissions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"permissions"
+							]
+						},
+						"description": "List all permissions. Format: resource:action (e.g., users:read, users:create)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Permission by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/permissions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"permissions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "permission-uuid-here"
+								}
+							]
+						},
+						"description": "Get permission by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Permission",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"role_id\": \"role-uuid-here\",\n  \"resource\": \"documents\",\n  \"action\": \"approve\",\n  \"scope\": \"TENANT\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"permissions"
+							]
+						},
+						"description": "Create a new permission"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Permission",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"*\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/permissions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"permissions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "permission-uuid-here"
+								}
+							]
+						},
+						"description": "Update permission by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permission",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/permissions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"permissions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "permission-uuid-here"
+								}
+							]
+						},
+						"description": "Delete permission by ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Permission management - Format: resource:action"
+		},
+		{
+			"name": "👤↔️🎭 User-Roles",
+			"item": [
+				{
+					"name": "List User-Role Assignments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user-roles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-roles"
+							]
+						},
+						"description": "List all user-role assignments"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User-Role by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user-roles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-role-uuid-here"
+								}
+							]
+						},
+						"description": "Get user-role assignment by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Role to User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"user-uuid-here\",\n  \"role_id\": \"role-uuid-here\",\n  \"tenant_id\": \"{{tenantId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-roles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-roles"
+							]
+						},
+						"description": "Assign a role to a user within a tenant"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User-Role Assignment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"expires_at\": \"2025-12-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-roles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-role-uuid-here"
+								}
+							]
+						},
+						"description": "Update user-role assignment"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Role from User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user-roles/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-role-uuid-here"
+								}
+							]
+						},
+						"description": "Remove role from user"
+					},
+					"response": []
+				}
+			],
+			"description": "Assign roles to users within tenants"
+		},
+		{
+			"name": "👤↔️🏢 User-Tenants",
+			"item": [
+				{
+					"name": "List User-Tenant Assignments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user-tenants",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-tenants"
+							]
+						},
+						"description": "List all user-tenant assignments"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User-Tenant by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user-tenants/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-tenants",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-tenant-uuid-here"
+								}
+							]
+						},
+						"description": "Get user-tenant assignment by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign User to Tenant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"user-uuid-here\",\n  \"tenant_id\": \"{{tenantId}}\",\n  \"status\": \"active\",\n  \"is_primary\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-tenants",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-tenants"
+							]
+						},
+						"description": "Assign user to a tenant"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User-Tenant Assignment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"is_primary\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-tenants/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-tenants",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-tenant-uuid-here"
+								}
+							]
+						},
+						"description": "Update user-tenant assignment"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove User from Tenant",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user-tenants/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-tenants",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-tenant-uuid-here"
+								}
+							]
+						},
+						"description": "Remove user from tenant"
+					},
+					"response": []
+				}
+			],
+			"description": "Assign users to tenants"
+		},
+		{
+			"name": "🔑 API Keys",
+			"item": [
+				{
+					"name": "List API Keys",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api-keys",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys"
+							]
+						},
+						"description": "List all API keys"
+					},
+					"response": []
+				},
+				{
+					"name": "Get API Key by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "api-key-uuid-here"
+								}
+							]
+						},
+						"description": "Get API key details"
+					},
+					"response": []
+				},
+				{
+					"name": "Create API Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Integration Key\",\n  \"description\": \"API key for external integration\",\n  \"expires_at\": \"2026-12-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api-keys",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys"
+							]
+						},
+						"description": "Create a new API key"
+					},
+					"response": []
+				},
+				{
+					"name": "Update API Key",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Integration Key\",\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "api-key-uuid-here"
+								}
+							]
+						},
+						"description": "Update API key"
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke API Key",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/:id/revoke",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								":id",
+								"revoke"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "api-key-uuid-here"
+								}
+							]
+						},
+						"description": "Revoke an API key"
+					},
+					"response": []
+				},
+				{
+					"name": "Regenerate API Key",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/:id/regenerate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								":id",
+								"regenerate"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "api-key-uuid-here"
+								}
+							]
+						},
+						"description": "Regenerate API key secret"
+					},
+					"response": []
+				},
+				{
+					"name": "Validate API Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"key\": \"qak_xxxxxxxxxxxxxxxx\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/validate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								"validate"
+							]
+						},
+						"description": "Validate an API key"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete API Key",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api-keys/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-keys",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "api-key-uuid-here"
+								}
+							]
+						},
+						"description": "Delete API key"
+					},
+					"response": []
+				}
+			],
+			"description": "API key management for integrations"
+		},
+		{
+			"name": "🔑 API Key Permissions",
+			"item": [
+				{
+					"name": "Get All Permissions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api-key-permissions?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-key-permissions"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Permission by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api-key-permissions/{{permissionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-key-permissions",
+								"{{permissionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Permission",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"api_key_id\": \"{{apiKeyId}}\",\n    \"resource\": \"users\",\n    \"action\": \"read\",\n    \"scope\": \"TENANT\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api-key-permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-key-permissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Permission",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"resource\": \"users\",\n    \"action\": \"write\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api-key-permissions/{{permissionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-key-permissions",
+								"{{permissionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permission",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api-key-permissions/{{permissionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api-key-permissions",
+								"{{permissionId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Collection for managing API key permissions in QAssure."
+		},
+		{
+			"name": "📦 Modules",
+			"item": [
+				{
+					"name": "List Modules",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules"
+							]
+						},
+						"description": "List all registered modules"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Module Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules/stats",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								"stats"
+							]
+						},
+						"description": "Get module statistics by status"
+					},
+					"response": []
+				},
+				{
+					"name": "Get State Diagram",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules/states",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								"states"
+							]
+						},
+						"description": "Get module state machine diagram and transitions"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Module by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Get module details"
+					},
+					"response": []
+				},
+				{
+					"name": "Register Module",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"module_id\": \"aice-capa\",\n  \"name\": \"AiCE CAPA Module\",\n  \"description\": \"Corrective and Preventive Action management\",\n  \"version\": \"1.0.0\",\n  \"base_url\": \"http://aice-service:3001\",\n  \"health_endpoint\": \"/health\",\n  \"capabilities\": [\"capa\", \"events\", \"workflow\"],\n  \"runtime_language\":\"java\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/modules",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules"
+							]
+						},
+						"description": "Register a new module"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Module",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Updated description\",\n  \"base_url\": \"http://new-url:3001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Update module details"
+					},
+					"response": []
+				},
+				{
+					"name": "Start Module",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id/start",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id",
+								"start"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Start a module (pending → starting → running)"
+					},
+					"response": []
+				},
+				{
+					"name": "Stop Module",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id/stop",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id",
+								"stop"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Stop a module (running → stopping → stopped)"
+					},
+					"response": []
+				},
+				{
+					"name": "Restart Module",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id/restart",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id",
+								"restart"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Restart a module"
+					},
+					"response": []
+				},
+				{
+					"name": "Set Maintenance Mode",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Scheduled maintenance\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id/maintenance",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id",
+								"maintenance"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Set module to maintenance mode"
+					},
+					"response": []
+				},
+				{
+					"name": "Deprecate Module",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Replaced by newer version\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id/deprecate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id",
+								"deprecate"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Deprecate a module"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Module Version",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"version\": \"1.1.0\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id/version",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id",
+								"version"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Update module version"
+					},
+					"response": []
+				},
+				{
+					"name": "Trigger Health Check",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id/health-check",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id",
+								"health-check"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Manually trigger health check"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Health History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id/health-history",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id",
+								"health-history"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Get module health check history"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Module",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/modules/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"modules",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "module-uuid-here"
+								}
+							]
+						},
+						"description": "Delete module"
+					},
+					"response": []
+				}
+			],
+			"description": "Module registry with 8-state lifecycle management"
+		},
+		{
+			"name": "📋 Audit Logs",
+			"item": [
+				{
+					"name": "List Audit Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List audit logs with pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Audit Log by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{audit-log-uuid-here}}"
+								}
+							]
+						},
+						"description": "Get audit log entry by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Audit Log",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNDg2YTI0ZC04ZmM2LTRiYjEtOWE1Zi01ZThmMzhjNjY4ZWQiLCJlbWFpbCI6InN1cGVyYWRtaW5AcWFzc3VyZS5haSIsInRpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInJvbGVzIjpbInN1cGVyX2FkbWluIl0sInBlcm1pc3Npb25zIjpbXSwic2lkIjoiM2RkNDMzMjktNWM5OS00ZDBhLWJhMjYtNjJkM2MzMzQ2M2Q3IiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc2NzU5NTA3OSwiZXhwIjoxNzY3NjgxNDc5LCJhdWQiOiJxYXNzdXJlLXBsYXRmb3JtIiwiaXNzIjoicWFzc3VyZS5haSJ9.g9VlHbLZA_BT6Wz3nJrvrwyxyjg17SM2Wo1DaB_8uMo",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"LOGIN\",\n  \"resource_type\": \"User\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Audit Log",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{audit-log-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Audit Log",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/audit-logs/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"audit-logs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{audit-log-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "FDA 21 CFR Part 11 compliant audit trail"
+		},
+		{
+			"name": "📋 Event Logs",
+			"item": [
+				{
+					"name": "List Event Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/event-logs?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event-logs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Event Log",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"event_id\": \"evt-1234567890\",\n    \"event_type\": \"com.qassure.user.login\",\n    \"event_source\": \"/api/v1/auth/login\",\n    \"event_time\": \"2024-01-05T10:00:00Z\",\n    \"published_at\":\"2024-01-05T10:00:00Z\",\n    \"spec_version\": \"1.0\",\n    \"kafka_topic\": \"qassure.events.user\",\n    \"producer_id\": \"auth-service\",\n    \"processing_status\": \"PUBLISHED\",\n    \"retry_count\": 0,\n    \"data\": {\n        \"userId\": \"u-123\",\n        \"status\": \"success\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/event-logs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event-logs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Event Log by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/event-logs/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event-logs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{audit-log-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Event Log",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/event-logs/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event-logs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{audit-log-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Event Log",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/event-logs/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event-logs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{audit-log-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health Checks",
+			"item": [
+				{
+					"name": "Get All Health Checks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health-checks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-checks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Health Check by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health-checks/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-checks",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{health-check-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Health Check",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"module_id\": \"bfbe4673-a66e-4a49-aeec-e91d573d8faa\",\n  \"status\": \"HEALTHY\",\n  \"response_time_ms\": 150,\n  \"http_status\": 200,\n  \"error_message\": null,\n  \"consecutive_failures\": 0,\n  \"checked_at\": \"2024-01-05T10:00:00Z\",\n  \"components\": {\n      \"database\": \"up\",\n      \"redis\": \"up\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/health-checks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-checks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update healthcheck",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health-checks/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-checks",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{audit-log-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Health Check",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health-checks/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-checks",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{health-check-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health History",
+			"item": [
+				{
+					"name": "Update health history record",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health-history/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-history",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{health-history-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all health history records",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health-history",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-history"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get health history by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health-history/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-history",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{health-history-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create new health history record",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"module_id\": \"bfbe4673-a66e-4a49-aeec-e91d573d8faa\",\n  \"status\": \"HEALTHY\",\n  \"response_time_ms\": 120,\n  \"http_status\": 200,\n  \"error_message\": null,\n  \"consecutive_failures\": 0,\n  \"checked_at\": \"2026-01-05T12:00:00Z\",\n  \"components\": {\n      \"db\": \"up\",\n      \"cache\": \"up\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/health-history",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-history"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete health history record",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health-history/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health-history",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{health-history-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🤖 AI Gateway",
+			"item": [
+				{
+					"name": "List AI Providers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/providers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"providers"
+							]
+						},
+						"description": "List available AI providers (OpenAI, Anthropic, Google)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Provider Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/providers/:provider/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"providers",
+								":provider",
+								"health"
+							],
+							"variable": [
+								{
+									"key": "provider",
+									"value": "openai"
+								}
+							]
+						},
+						"description": "Check AI provider health status"
+					},
+					"response": []
+				},
+				{
+					"name": "List AI Models",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/models",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"models"
+							]
+						},
+						"description": "List available AI models"
+					},
+					"response": []
+				},
+				{
+					"name": "Get AI Gateway Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"health"
+							]
+						},
+						"description": "Overall AI gateway health status"
+					},
+					"response": []
+				},
+				{
+					"name": "Create AI Completion",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a quality management expert.\"},\n    {\"role\": \"user\", \"content\": \"What are the key elements of a CAPA?\"}\n  ],\n  \"provider\": \"openai\",\n  \"model\": \"gpt-4\",\n  \"temperature\": 0.7,\n  \"max_tokens\": 1000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/completions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"completions"
+							]
+						},
+						"description": "Create an AI completion (requires AI provider API keys)"
+					},
+					"response": []
+				},
+				{
+					"name": "List AI Completions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/completions?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"completions"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List AI completion history"
+					},
+					"response": []
+				},
+				{
+					"name": "Get AI Completion by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/completions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"completions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{completion-uuid-here}}"
+								}
+							]
+						},
+						"description": "Get AI completion details"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cost Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/costs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"costs"
+							]
+						},
+						"description": "Get AI usage cost summary"
+					},
+					"response": []
+				},
+				{
+					"name": "AI Playground",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"Hello, test message\"}\n  ],\n  \"provider\": \"openai\",\n  \"model\": \"gpt-3.5-turbo\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/playground",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"playground"
+							]
+						},
+						"description": "Test prompts without tracking in history"
+					},
+					"response": []
+				}
+			],
+			"description": "AI provider integration - OpenAI, Anthropic, Google"
+		},
+		{
+			"name": "📚 Knowledge/RAG",
+			"item": [
+				{
+					"name": "Create Collection",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"QMS Documentation\",\n  \"description\": \"Quality Management System documents\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/collections",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"collections"
+							]
+						},
+						"description": "Create a knowledge collection"
+					},
+					"response": []
+				},
+				{
+					"name": "List Collections",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/collections",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"collections"
+							]
+						},
+						"description": "List all knowledge collections"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Collection by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/collections/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"collections",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "collection-uuid-here"
+								}
+							]
+						},
+						"description": "Get collection details"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Collection",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Collection Name\",\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/collections/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"collections",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "collection-uuid-here"
+								}
+							]
+						},
+						"description": "Update collection"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Collection",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/collections/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"collections",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "collection-uuid-here"
+								}
+							]
+						},
+						"description": "Delete collection"
+					},
+					"response": []
+				},
+				{
+					"name": "List Documents in Collection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/collections/:collectionId/documents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"collections",
+								":collectionId",
+								"documents"
+							],
+							"variable": [
+								{
+									"key": "collectionId",
+									"value": "collection-uuid-here"
+								}
+							]
+						},
+						"description": "List documents in a collection"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Document",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"value": "",
+									"type": "file"
+								},
+								{
+									"key": "collection_id",
+									"value": "collection-uuid-here",
+									"type": "text"
+								},
+								{
+									"key": "title",
+									"value": "Document Title",
+									"type": "text"
+								},
+								{
+									"key": "metadata",
+									"value": "{\"category\": \"SOP\"}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/documents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"documents"
+							]
+						},
+						"description": "Upload a document to be chunked and vectorized"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Document Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/documents/:id/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"documents",
+								":id",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "document-uuid-here"
+								}
+							]
+						},
+						"description": "Get document processing status"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Document",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/documents/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"documents",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "document-uuid-here"
+								}
+							]
+						},
+						"description": "Delete document"
+					},
+					"response": []
+				},
+				{
+					"name": "Semantic Search",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"How to handle deviations?\",\n  \"limit\": 5,\n  \"collection_id\": \"collection-uuid-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"search"
+							]
+						},
+						"description": "Perform semantic search across knowledge base"
+					},
+					"response": []
+				},
+				{
+					"name": "Search with Context (RAG)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"What is the CAPA process?\",\n  \"limit\": 5,\n  \"include_context\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/search/context",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"search",
+								"context"
+							]
+						},
+						"description": "Search with RAG context for AI augmentation"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Knowledge Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/knowledge/stats",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"knowledge",
+								"stats"
+							]
+						},
+						"description": "Get knowledge base statistics"
+					},
+					"response": []
+				}
+			],
+			"description": "Vector database and RAG (Retrieval-Augmented Generation)"
+		},
+		{
+			"name": "📝 Prompt Management",
+			"item": [
+				{
+					"name": "Create Prompt Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"root-cause-analysis\",\n  \"description\": \"Analyze root cause of quality issues\",\n  \"category\": \"quality\",\n  \"template\": \"Analyze the following issue using 5-Why methodology:\\n\\nIssue: {{issue}}\\nContext: {{context}}\\n\\nProvide a detailed root cause analysis.\",\n  \"variables\": [\"issue\", \"context\"],\n  \"settings\": {\n    \"provider\": \"openai\",\n    \"model\": \"gpt-4\",\n    \"temperature\": 0.3,\n    \"max_tokens\": 2000\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts"
+							]
+						},
+						"description": "Create a new prompt template"
+					},
+					"response": []
+				},
+				{
+					"name": "List Prompts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List all prompt templates"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Prompt by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "prompt-uuid-here"
+								}
+							]
+						},
+						"description": "Get prompt template details"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Prompt",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Updated description\",\n  \"template\": \"Updated template content with {{variables}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "prompt-uuid-here"
+								}
+							]
+						},
+						"description": "Update prompt template (creates new version)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Prompt",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "prompt-uuid-here"
+								}
+							]
+						},
+						"description": "Delete prompt template"
+					},
+					"response": []
+				},
+				{
+					"name": "List Prompt Versions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts/:id/versions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								":id",
+								"versions"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "prompt-uuid-here"
+								}
+							]
+						},
+						"description": "List all versions of a prompt"
+					},
+					"response": []
+				},
+				{
+					"name": "Activate Prompt Version",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts/:id/versions/:version/activate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								":id",
+								"versions",
+								":version",
+								"activate"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "prompt-uuid-here"
+								},
+								{
+									"key": "version",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Activate a specific prompt version"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Prompt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"variables\": {\n    \"issue\": \"Batch 12345 failed dissolution testing\",\n    \"context\": \"Manufacturing date: Dec 25, Equipment: Tablet Press #3\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts/:id/test",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								":id",
+								"test"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "prompt-uuid-here"
+								}
+							]
+						},
+						"description": "Test prompt with variables (dry run)"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Prompt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"variables\": {\n    \"issue\": \"Batch 12345 failed dissolution testing\",\n    \"context\": \"Manufacturing date: Dec 25, Equipment: Tablet Press #3\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts/:id/execute",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								":id",
+								"execute"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "prompt-uuid-here"
+								}
+							]
+						},
+						"description": "Execute prompt with AI provider"
+					},
+					"response": []
+				},
+				{
+					"name": "Clone Prompt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"root-cause-analysis-v2\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/ai/prompts/:id/clone",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ai",
+								"prompts",
+								":id",
+								"clone"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "prompt-uuid-here"
+								}
+							]
+						},
+						"description": "Clone an existing prompt"
+					},
+					"response": []
+				}
+			],
+			"description": "Prompt template management with versioning"
+		},
+		{
+			"name": "🔗 QMS Integration",
+			"item": [
+				{
+					"name": "List Supported QMS Systems",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/supported",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"supported"
+							]
+						},
+						"description": "List all supported QMS systems"
+					},
+					"response": []
+				},
+				{
+					"name": "Get QMS System Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/supported/:system",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"supported",
+								":system"
+							],
+							"variable": [
+								{
+									"key": "system",
+									"value": "veeva"
+								}
+							]
+						},
+						"description": "Get details about a specific QMS system"
+					},
+					"response": []
+				},
+				{
+					"name": "Create QMS Connection",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tenant_id\": \"00000000-0000-0000-0000-000000000001\",\n  \"name\": \"Production Veeva Vault\",\n  \"qms_type\": \"VEEVA_VAULT\",\n  \"base_url\": \"https://qassure-vault.veevavault.com\",\n  \"auth_type\": \"OAUTH2\",\n  \"auth_config\": {\n    \"clientId\": \"client_123\",\n    \"clientSecret\": \"secret_abc\",\n    \"tokenEndpoint\": \"/auth/token\"\n  },\n  \"sync_mode\": \"BIDIRECTIONAL\",\n  \"webhook_url\": \"https://api.qassure.com/webhooks/veeva\",\n  \"webhook_secret\": \"wh_sec_xyz123\",\n  \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/qms/connections",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"connections"
+							]
+						},
+						"description": "Create a new QMS connection"
+					},
+					"response": []
+				},
+				{
+					"name": "List QMS Connections",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/connections",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"connections"
+							]
+						},
+						"description": "List all QMS connections"
+					},
+					"response": []
+				},
+				{
+					"name": "Get QMS Connection by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/connections/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{connection-uuid-here}}"
+								}
+							]
+						},
+						"description": "Get QMS connection details"
+					},
+					"response": []
+				},
+				{
+					"name": "Test QMS Connection",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/connections/:id/test",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								":id",
+								"test"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "connection-uuid-here"
+								}
+							]
+						},
+						"description": "Test QMS connection connectivity"
+					},
+					"response": []
+				},
+				{
+					"name": "Trigger Sync",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"entityTypes\": [\"documents\", \"workflows\"],\n  \"fullSync\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/qms/connections/:id/sync",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								":id",
+								"sync"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{connection-uuid-here}}"
+								}
+							]
+						},
+						"description": "Trigger data synchronization"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sync Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/connections/:id/sync/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								":id",
+								"sync",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{connection-uuid-here}}"
+								}
+							]
+						},
+						"description": "Get current sync status"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sync History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/connections/:id/sync/history",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								":id",
+								"sync",
+								"history"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{connection-uuid-here}}"
+								}
+							]
+						},
+						"description": "Get sync job history"
+					},
+					"response": []
+				},
+				{
+					"name": "Update QMS Connection",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/connections/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{connection-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete QMS Connection",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/connections/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{connection-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "External QMS system integration - Veeva, MasterControl, Arena, TrackWise, ETQ"
+		},
+		{
+			"name": "QMS Sync Jobs",
+			"item": [
+				{
+					"name": "Get all sync jobs",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"entityTypes\": [\"documents\", \"workflows\"],\n  \"fullSync\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-jobs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get sync job by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-jobs/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{sync-job-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create new sync job",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"connection_id\": \"7c5a53c7-e74a-472b-b477-5deecf89ae80\",\n  \"job_type\": \"INCREMENTAL\",\n  \"direction\": \"QMS_TO_QASSURE\",\n  \"status\": \"PENDING\",\n  \"entity_type\": \"CAPA\",\n  \"metadata\": {\n      \"priority\": \"high\",\n      \"retry_count\": 0\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-jobs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update sync job",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"CANCELLED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-jobs/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{sync-job-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete sync job",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-jobs/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{sync-job-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "QMS Sync Conflicts",
+			"item": [
+				{
+					"name": "Get all sync conflicts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-conflicts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get sync conflict by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-conflicts/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{sync-conflicts-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create new sync conflict",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sync_job_id\": \"28d435b3-1164-42f9-9adc-7e2aa8d5a290\",\n  \"qms_connection_id\": \"7c5a53c7-e74a-472b-b477-5deecf89ae80\",\n  \"entity_type\": \"CAPA\",\n  \"entity_id\": \"CAPA-1001\",\n  \"qms_record_id\": \"VEEVA-001\",\n  \"conflict_type\": \"FIELD_MISMATCH\",\n  \"conflict_field\": \"priority\",\n  \"qms_value\": \"High\",\n  \"qassure_value\": \"Medium\",\n  \"status\": \"PENDING\",\n  \"retry_count\": 0,\n  \"error_message\": \"Value mismatch for priority field\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-conflicts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update/resolve sync conflict",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-conflicts/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{sync-conflict-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete sync conflict",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/sync-conflicts/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{sync-conflict-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📡 Event Subscriptions",
+			"item": [
+				{
+					"name": "Create Event Subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"subscriberName\": \"AiCE Module\",\n  \"moduleCode\": \"aice\",\n  \"eventPattern\": \"capa.*\",\n  \"deliveryType\": \"kafka\",\n  \"kafkaTopic\": \"qassure.aice.events\",\n  \"filters\": {\"data.severity\": [\"critical\", \"high\"]},\n  \"description\": \"AiCE subscribes to all CAPA events\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/events/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"subscriptions"
+							]
+						},
+						"description": "Create event subscription. Delivery types: kafka, http, internal"
+					},
+					"response": []
+				},
+				{
+					"name": "List Event Subscriptions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/subscriptions?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"subscriptions"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List all event subscriptions"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Event Subscription by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/subscriptions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"subscriptions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "subscription-uuid-here"
+								}
+							]
+						},
+						"description": "Get event subscription details"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Event Subscription",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventPattern\": \"capa.created\",\n  \"filters\": {\"data.severity\": [\"critical\"]}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/events/subscriptions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"subscriptions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "subscription-uuid-here"
+								}
+							]
+						},
+						"description": "Update event subscription"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Event Subscription",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/subscriptions/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"subscriptions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "subscription-uuid-here"
+								}
+							]
+						},
+						"description": "Delete event subscription"
+					},
+					"response": []
+				},
+				{
+					"name": "Pause Subscription",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/subscriptions/:id/pause",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"subscriptions",
+								":id",
+								"pause"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "subscription-uuid-here"
+								}
+							]
+						},
+						"description": "Pause event subscription"
+					},
+					"response": []
+				},
+				{
+					"name": "Resume Subscription",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/subscriptions/:id/resume",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"subscriptions",
+								":id",
+								"resume"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "subscription-uuid-here"
+								}
+							]
+						},
+						"description": "Resume paused subscription"
+					},
+					"response": []
+				}
+			],
+			"description": "Cross-module event subscription management"
+		},
+		{
+			"name": "🔔 Webhooks",
+			"item": [
+				{
+					"name": "Create Webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"External Audit System\",\n  \"description\": \"Notify external audit system of all events\",\n  \"url\": \"https://audit-system.example.com/webhook\",\n  \"events\": [\"audit.*\", \"capa.created\", \"change.approved\"],\n  \"authType\": \"bearer\",\n  \"authConfig\": {\"token\": \"secret-token\"},\n  \"headers\": {\"X-Custom-Header\": \"QAssure\"}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/webhooks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhooks"
+							]
+						},
+						"description": "Create a new webhook. Auth types: none, bearer, basic"
+					},
+					"response": []
+				},
+				{
+					"name": "List Webhooks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/webhooks?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhooks"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List all webhooks"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Webhook by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/webhooks/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhooks",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "webhook-uuid-here"
+								}
+							]
+						},
+						"description": "Get webhook details"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Webhook",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Webhook Name\",\n  \"events\": [\"capa.*\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/webhooks/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhooks",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "webhook-uuid-here"
+								}
+							]
+						},
+						"description": "Update webhook"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Webhook",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/webhooks/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhooks",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "webhook-uuid-here"
+								}
+							]
+						},
+						"description": "Delete webhook"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Webhook",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/webhooks/:id/test",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhooks",
+								":id",
+								"test"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "webhook-uuid-here"
+								}
+							]
+						},
+						"description": "Send test event to webhook"
+					},
+					"response": []
+				},
+				{
+					"name": "Regenerate Webhook Secret",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/webhooks/:id/regenerate-secret",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhooks",
+								":id",
+								"regenerate-secret"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "webhook-uuid-here"
+								}
+							]
+						},
+						"description": "Regenerate HMAC signing secret"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Webhook Delivery History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/webhooks/:id/deliveries?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"webhooks",
+								":id",
+								"deliveries"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "webhook-uuid-here"
+								}
+							]
+						},
+						"description": "Get webhook delivery history with status and response info"
+					},
+					"response": []
+				}
+			],
+			"description": "External webhook notifications"
+		},
+		{
+			"name": "QMS Entity Mappings",
+			"item": [
+				{
+					"name": "Get all entity mappings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/entity-mappings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get entity mapping by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/entity-mappings/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{entity-mappings-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create new entity mapping",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"qms_connection_id\": \"7c5a53c7-e74a-472b-b477-5deecf89ae80\",\n  \"qms_entity_type\": \"QMS_CAPAa\",\n  \"qassure_entity_type\": \"QualityEvent\",\n  \"mapping_direction\": \"BIDIRECTIONAL\",\n  \"field_mappings\": {\n    \"title\": \"short_description\",\n    \"status\": \"state\",\n    \"priority\": \"severity\"\n  },\n  \"conflict_resolution_strategy\": \"MANUAL\",\n  \"sync_enabled\": true,\n  \"records_synced\": 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/qms/entity-mappings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update entity mapping",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/entity-mappings/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{entity-mappings-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete entity mapping",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/qms/entity-mappings/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{entity-mapping-uuid-here}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔧 CAPA Management",
+			"item": [
+				{
+					"name": "Get CAPA Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/types",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", "types"]
+						},
+						"description": "Get available CAPA types"
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA Sources",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/sources",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", "sources"]
+						},
+						"description": "Get available CAPA sources"
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA Priorities",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/priorities",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", "priorities"]
+						},
+						"description": "Get available CAPA priorities"
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA Statuses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/statuses",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", "statuses"]
+						},
+						"description": "Get available CAPA statuses"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Root Cause Methods",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/root-cause-methods",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", "root-cause-methods"]
+						},
+						"description": "Get available root cause analysis methods"
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", "dashboard"]
+						},
+						"description": "Get CAPA dashboard statistics"
+					},
+					"response": []
+				},
+				{
+					"name": "Create CAPA",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Batch 12345 Failed Dissolution Test\",\n  \"capa_type\": \"corrective\",\n  \"description\": \"Root cause analysis required for batch failure\",\n  \"source\": \"internal_audit\",\n  \"priority\": \"high\",\n  \"risk_level\": \"medium\",\n  \"problem_statement\": \"Batch 12345 failed dissolution testing with 65% release at 45 minutes\",\n  \"immediate_action\": \"Quarantine batch and investigate manufacturing process\",\n  \"owner_id\": \"user-uuid-here\",\n  \"department\": \"Quality Assurance\",\n  \"identified_date\": \"2025-01-06\",\n  \"target_date\": \"2025-02-15\",\n  \"use_8d\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/capas",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas"]
+						},
+						"description": "Create a new CAPA"
+					},
+					"response": []
+				},
+				{
+					"name": "List CAPAs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas?status=draft&limit=20&offset=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas"],
+							"query": [
+								{"key": "status", "value": "draft"},
+								{"key": "limit", "value": "20"},
+								{"key": "offset", "value": "0"}
+							]
+						},
+						"description": "List all CAPAs with filters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", ":id"],
+							"variable": [{"key": "id", "value": "capa-uuid-here"}]
+						},
+						"description": "Get CAPA details by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Update CAPA",
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated CAPA Title\",\n  \"priority\": \"critical\",\n  \"target_date\": \"2025-03-01\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/capas/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", ":id"],
+							"variable": [{"key": "id", "value": "capa-uuid-here"}]
+						},
+						"description": "Update CAPA"
+					},
+					"response": []
+				},
+				{
+					"name": "Submit CAPA",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/:id/submit",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", ":id", "submit"],
+							"variable": [{"key": "id", "value": "capa-uuid-here"}]
+						},
+						"description": "Submit CAPA for workflow"
+					},
+					"response": []
+				},
+				{
+					"name": "Update CAPA Status",
+					"request": {
+						"method": "PATCH",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"in_progress\",\n  \"comments\": \"Status updated to in progress\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/capas/:id/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", ":id", "status"],
+							"variable": [{"key": "id", "value": "capa-uuid-here"}]
+						},
+						"description": "Update CAPA status"
+					},
+					"response": []
+				},
+				{
+					"name": "Get CAPA Actions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/:id/actions",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", ":id", "actions"],
+							"variable": [{"key": "id", "value": "capa-uuid-here"}]
+						},
+						"description": "Get all actions for a CAPA"
+					},
+					"response": []
+				},
+				{
+					"name": "Add CAPA Action",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Review manufacturing batch records\",\n  \"action_type\": \"investigation\",\n  \"assigned_to\": \"user-uuid-here\",\n  \"due_date\": \"2025-01-20\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/capas/:id/actions",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", ":id", "actions"],
+							"variable": [{"key": "id", "value": "capa-uuid-here"}]
+						},
+						"description": "Add action item to CAPA"
+					},
+					"response": []
+				},
+				{
+					"name": "Update CAPA Action",
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Updated action description\",\n  \"status\": \"completed\",\n  \"completed_date\": \"2025-01-20\",\n  \"comments\": \"Action completed successfully\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/capas/:id/actions/:actionId",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", ":id", "actions", ":actionId"],
+							"variable": [
+								{"key": "id", "value": "capa-uuid-here"},
+								{"key": "actionId", "value": "action-uuid-here"}
+							]
+						},
+						"description": "Update CAPA action"
+					},
+					"response": []
+				},
+				{
+					"name": "Get 8D Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/capas/:id/8d",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", ":id", "8d"],
+							"variable": [{"key": "id", "value": "capa-uuid-here"}]
+						},
+						"description": "Get 8D report for CAPA"
+					},
+					"response": []
+				},
+				{
+					"name": "Update 8D Report Section",
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"D1: Team established with members from Quality, Manufacturing, and Engineering departments.\",\n  \"completed_by\": \"user-uuid-here\",\n  \"completed_date\": \"2025-01-06\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/capas/:id/8d/:section",
+							"host": ["{{baseUrl}}"],
+							"path": ["capas", ":id", "8d", ":section"],
+							"variable": [
+								{"key": "id", "value": "capa-uuid-here"},
+								{"key": "section", "value": "d1"}
+							]
+						},
+						"description": "Update a specific 8D report section (d1-d8)"
+					},
+					"response": []
+				}
+			],
+			"description": "Corrective and Preventive Action management"
+		},
+		{
+			"name": "🏭 Supplier Quality",
+			"item": [
+				{
+					"name": "Get Supplier Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/types",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "types"]
+						},
+						"description": "Get available supplier types"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Supplier Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "dashboard"]
+						},
+						"description": "Get supplier quality dashboard"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Approved Supplier List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/asl",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", "asl"]
+						},
+						"description": "Get approved supplier list"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Supplier",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Acme Materials Inc.\",\n  \"supplier_type\": \"raw_material\",\n  \"category\": \"chemical\",\n  \"status\": \"pending_qualification\",\n  \"contact_email\": \"contact@acme.com\",\n  \"contact_phone\": \"+1-555-0123\",\n  \"address\": \"123 Industrial Blvd, City, State 12345\",\n  \"country\": \"USA\",\n  \"regulatory_certifications\": [\"ISO 9001\", \"FDA Registered\"],\n  \"description\": \"Raw material supplier for pharmaceutical manufacturing\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/suppliers",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers"]
+						},
+						"description": "Create a new supplier"
+					},
+					"response": []
+				},
+				{
+					"name": "List Suppliers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers?status=approved&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers"],
+							"query": [
+								{"key": "status", "value": "approved"},
+								{"key": "limit", "value": "20"}
+							]
+						},
+						"description": "List suppliers with filters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Supplier by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", ":id"],
+							"variable": [{"key": "id", "value": "supplier-uuid-here"}]
+						},
+						"description": "Get supplier details"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Supplier Contact",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"title\": \"Quality Manager\",\n  \"email\": \"john.doe@acme.com\",\n  \"phone\": \"+1-555-0124\",\n  \"is_primary\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/:id/contacts",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", ":id", "contacts"],
+							"variable": [{"key": "id", "value": "supplier-uuid-here"}]
+						},
+						"description": "Add contact to supplier"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Supplier Audit",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"audit_type\": \"on_site\",\n  \"scheduled_date\": \"2025-02-15\",\n  \"auditor_id\": \"user-uuid-here\",\n  \"scope\": \"Quality Management System review\",\n  \"checklist_items\": []\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/:id/audits",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", ":id", "audits"],
+							"variable": [{"key": "id", "value": "supplier-uuid-here"}]
+						},
+						"description": "Create supplier audit"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Supplier to ASL",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"material_code\": \"MAT-001\",\n  \"material_name\": \"Active Pharmaceutical Ingredient\",\n  \"approved_date\": \"2025-01-06\",\n  \"approved_by\": \"user-uuid-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/suppliers/:id/asl",
+							"host": ["{{baseUrl}}"],
+							"path": ["suppliers", ":id", "asl"],
+							"variable": [{"key": "id", "value": "supplier-uuid-here"}]
+						},
+						"description": "Add supplier to Approved Supplier List"
+					},
+					"response": []
+				}
+			],
+			"description": "Supplier quality management and approved supplier list"
+		},
+		{
+			"name": "📊 Reporting & Analytics",
+			"item": [
+				{
+					"name": "Get Executive Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reporting/dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["reporting", "dashboard"]
+						},
+						"description": "Get executive dashboard data"
+					},
+					"response": []
+				},
+				{
+					"name": "Get KPIs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reporting/kpis",
+							"host": ["{{baseUrl}}"],
+							"path": ["reporting", "kpis"]
+						},
+						"description": "Get key performance indicators"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Trends",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reporting/trends?period=30d",
+							"host": ["{{baseUrl}}"],
+							"path": ["reporting", "trends"],
+							"query": [{"key": "period", "value": "30d"}]
+						},
+						"description": "Get trend analysis data"
+					},
+					"response": []
+				},
+				{
+					"name": "List Reports",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reporting/reports",
+							"host": ["{{baseUrl}}"],
+							"path": ["reporting", "reports"]
+						},
+						"description": "List available reports"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Report",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"filters\": {\n    \"start_date\": \"2025-01-01\",\n    \"end_date\": \"2025-01-31\",\n    \"status\": \"active\"\n  },\n  \"format\": \"json\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/reporting/reports/:id/execute",
+							"host": ["{{baseUrl}}"],
+							"path": ["reporting", "reports", ":id", "execute"],
+							"variable": [{"key": "id", "value": "report-uuid-here"}]
+						},
+						"description": "Execute a report with filters"
+					},
+					"response": []
+				},
+				{
+					"name": "Global Search",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reporting/search?q=CAPA&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["reporting", "search"],
+							"query": [
+								{"key": "q", "value": "CAPA"},
+								{"key": "limit", "value": "20"}
+							]
+						},
+						"description": "Global search across all modules"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Scheduled Report",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"report_id\": \"report-uuid-here\",\n  \"name\": \"Monthly CAPA Summary\",\n  \"schedule\": \"monthly\",\n  \"schedule_config\": {\n    \"day\": 1,\n    \"time\": \"09:00\"\n  },\n  \"recipients\": [\"user@example.com\"],\n  \"format\": \"pdf\",\n  \"enabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/reporting/scheduled",
+							"host": ["{{baseUrl}}"],
+							"path": ["reporting", "scheduled"]
+						},
+						"description": "Create a scheduled report"
+					},
+					"response": []
+				},
+				{
+					"name": "Export Report to PDF",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"filters\": {\n    \"start_date\": \"2025-01-01\",\n    \"end_date\": \"2025-01-31\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/reporting/reports/:id/export/pdf",
+							"host": ["{{baseUrl}}"],
+							"path": ["reporting", "reports", ":id", "export", "pdf"],
+							"variable": [{"key": "id", "value": "report-uuid-here"}]
+						},
+						"description": "Export report to PDF"
+					},
+					"response": []
+				}
+			],
+			"description": "Reporting, analytics, dashboards, and search"
+		},
+		{
+			"name": "🔔 Notifications",
+			"item": [
+				{
+					"name": "Get My Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/notifications/me?limit=20&offset=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["notifications", "me"],
+							"query": [
+								{"key": "limit", "value": "20"},
+								{"key": "offset", "value": "0"}
+							]
+						},
+						"description": "Get current user's notifications"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Count",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/notifications/me/unread-count",
+							"host": ["{{baseUrl}}"],
+							"path": ["notifications", "me", "unread-count"]
+						},
+						"description": "Get unread notification count"
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All as Read",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/notifications/me/read-all",
+							"host": ["{{baseUrl}}"],
+							"path": ["notifications", "me", "read-all"]
+						},
+						"description": "Mark all notifications as read"
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/notifications/:id/read",
+							"host": ["{{baseUrl}}"],
+							"path": ["notifications", ":id", "read"],
+							"variable": [{"key": "id", "value": "notification-uuid-here"}]
+						},
+						"description": "Mark specific notification as read"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Notification Preferences",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/notifications/preferences",
+							"host": ["{{baseUrl}}"],
+							"path": ["notifications", "preferences"]
+						},
+						"description": "Get user notification preferences"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Notification Preferences",
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email_enabled\": true,\n  \"push_enabled\": true,\n  \"channels\": {\n    \"capa\": [\"email\", \"in_app\"],\n    \"workflow\": [\"email\", \"push\"]\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notifications/preferences",
+							"host": ["{{baseUrl}}"],
+							"path": ["notifications", "preferences"]
+						},
+						"description": "Update notification preferences"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Notification Template",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"CAPA Assigned\",\n  \"event_type\": \"capa.assigned\",\n  \"subject\": \"CAPA {{capa_number}} Assigned to You\",\n  \"body\": \"You have been assigned to CAPA {{capa_number}}: {{title}}\",\n  \"channels\": [\"email\", \"in_app\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notifications/templates",
+							"host": ["{{baseUrl}}"],
+							"path": ["notifications", "templates"]
+						},
+						"description": "Create notification template (admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Notification",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"user-uuid-here\",\n  \"title\": \"Action Required\",\n  \"message\": \"Please review CAPA-2025-001\",\n  \"type\": \"workflow\",\n  \"priority\": \"high\",\n  \"action_url\": \"/capas/CAPA-2025-001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notifications/send",
+							"host": ["{{baseUrl}}"],
+							"path": ["notifications", "send"]
+						},
+						"description": "Send notification manually (admin)"
+					},
+					"response": []
+				}
+			],
+			"description": "Notification management and preferences"
+		},
+		{
+			"name": "📎 File Attachments",
+			"item": [
+				{
+					"name": "Upload File",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{"key": "file", "type": "file", "src": []},
+								{"key": "entity_type", "value": "capa", "type": "text"},
+								{"key": "entity_id", "value": "capa-uuid-here", "type": "text"},
+								{"key": "description", "value": "Supporting documentation", "type": "text"}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/files/upload",
+							"host": ["{{baseUrl}}"],
+							"path": ["files", "upload"]
+						},
+						"description": "Upload a single file (max 100MB)"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Multiple Files",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{"key": "files", "type": "file", "src": []},
+								{"key": "files", "type": "file", "src": []},
+								{"key": "entity_type", "value": "capa", "type": "text"},
+								{"key": "entity_id", "value": "capa-uuid-here", "type": "text"}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/files/upload/multiple",
+							"host": ["{{baseUrl}}"],
+							"path": ["files", "upload", "multiple"]
+						},
+						"description": "Upload multiple files (max 10 files)"
+					},
+					"response": []
+				},
+				{
+					"name": "List Files",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/files?entity_type=capa&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["files"],
+							"query": [
+								{"key": "entity_type", "value": "capa"},
+								{"key": "limit", "value": "20"}
+							]
+						},
+						"description": "List files with filters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get File by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/files/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["files", ":id"],
+							"variable": [{"key": "id", "value": "file-uuid-here"}]
+						},
+						"description": "Get file metadata"
+					},
+					"response": []
+				},
+				{
+					"name": "Download File",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/files/:id/download",
+							"host": ["{{baseUrl}}"],
+							"path": ["files", ":id", "download"],
+							"variable": [{"key": "id", "value": "file-uuid-here"}]
+						},
+						"description": "Download file"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Files by Entity",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/files/entity/:entity_type/:entity_id",
+							"host": ["{{baseUrl}}"],
+							"path": ["files", "entity", ":entity_type", ":entity_id"],
+							"variable": [
+								{"key": "entity_type", "value": "capa"},
+								{"key": "entity_id", "value": "capa-uuid-here"}
+							]
+						},
+						"description": "Get all files for an entity"
+					},
+					"response": []
+				},
+				{
+					"name": "Share File",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"expires_at\": \"2025-02-06T23:59:59Z\",\n  \"max_downloads\": 5,\n  \"password\": \"optional-password\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/files/:id/share",
+							"host": ["{{baseUrl}}"],
+							"path": ["files", ":id", "share"],
+							"variable": [{"key": "id", "value": "file-uuid-here"}]
+						},
+						"description": "Create shareable link for file"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Storage Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/files/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["files", "stats"]
+						},
+						"description": "Get storage statistics"
+					},
+					"response": []
+				}
+			],
+			"description": "File upload, download, and management"
+		},
+		{
+			"name": "⚙️ System Configuration",
+			"item": [
+				{
+					"name": "Get All Settings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/config/settings",
+							"host": ["{{baseUrl}}"],
+							"path": ["config", "settings"]
+						},
+						"description": "Get all system settings"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Setting",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/config/settings/:category/:key",
+							"host": ["{{baseUrl}}"],
+							"path": ["config", "settings", ":category", ":key"],
+							"variable": [
+								{"key": "category", "value": "email"},
+								{"key": "key", "value": "smtp_host"}
+							]
+						},
+						"description": "Get specific setting"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Setting",
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"value\": \"new-value\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/config/settings/:category/:key",
+							"host": ["{{baseUrl}}"],
+							"path": ["config", "settings", ":category", ":key"],
+							"variable": [
+								{"key": "category", "value": "email"},
+								{"key": "key", "value": "smtp_host"}
+							]
+						},
+						"description": "Update specific setting"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Branding",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/config/branding",
+							"host": ["{{baseUrl}}"],
+							"path": ["config", "branding"]
+						},
+						"description": "Get branding configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Branding",
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"logo_url\": \"https://example.com/logo.png\",\n  \"primary_color\": \"#0066CC\",\n  \"secondary_color\": \"#003366\",\n  \"company_name\": \"QAssure Platform\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/config/branding",
+							"host": ["{{baseUrl}}"],
+							"path": ["config", "branding"]
+						},
+						"description": "Update branding"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Feature Flags",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/config/features",
+							"host": ["{{baseUrl}}"],
+							"path": ["config", "features"]
+						},
+						"description": "Get all feature flags"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Feature Flag",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"flag_key\": \"ai_completion_enabled\",\n  \"name\": \"AI Completion\",\n  \"description\": \"Enable AI-powered completion features\",\n  \"enabled\": true,\n  \"scope\": \"tenant\",\n  \"target_tenants\": []\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/config/features",
+							"host": ["{{baseUrl}}"],
+							"path": ["config", "features"]
+						},
+						"description": "Create feature flag"
+					},
+					"response": []
+				},
+				{
+					"name": "Get SMTP Config",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/config/smtp",
+							"host": ["{{baseUrl}}"],
+							"path": ["config", "smtp"]
+						},
+						"description": "Get SMTP configuration (admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update SMTP Config",
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"host\": \"smtp.example.com\",\n  \"port\": 587,\n  \"secure\": false,\n  \"username\": \"noreply@example.com\",\n  \"password\": \"password\",\n  \"from_email\": \"noreply@example.com\",\n  \"from_name\": \"QAssure Platform\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/config/smtp",
+							"host": ["{{baseUrl}}"],
+							"path": ["config", "smtp"]
+						},
+						"description": "Update SMTP configuration (admin)"
+					},
+					"response": []
+				}
+			],
+			"description": "System configuration and settings"
+		},
+		{
+			"name": "📜 License Management",
+			"item": [
+				{
+					"name": "Get License Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/types",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "types"]
+						},
+						"description": "Get available license types"
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Licenses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/my",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "my"]
+						},
+						"description": "Get current tenant's licenses"
+					},
+					"response": []
+				},
+				{
+					"name": "Create License",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tenant_id\": \"{{tenantId}}\",\n  \"license_type\": \"enterprise\",\n  \"tier\": \"professional\",\n  \"applications\": [\"capa\", \"document_management\", \"workflow\"],\n  \"max_users\": 100,\n  \"expires_at\": \"2026-01-06T23:59:59Z\",\n  \"features\": {\n    \"ai_enabled\": true,\n    \"advanced_reporting\": true\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/licenses",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses"]
+						},
+						"description": "Create license (super admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Licenses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/licenses",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses"]
+						},
+						"description": "List all licenses (super admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get License by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", ":id"],
+							"variable": [{"key": "id", "value": "license-uuid-here"}]
+						},
+						"description": "Get license details"
+					},
+					"response": []
+				},
+				{
+					"name": "Activate License",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"license_key\": \"LIC-XXXX-XXXX-XXXX\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/licenses/activate",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "activate"]
+						},
+						"description": "Activate license with license key"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Feature Access",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"feature\": \"ai_completion\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/licenses/check-feature",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "check-feature"]
+						},
+						"description": "Check if feature is available"
+					},
+					"response": []
+				},
+				{
+					"name": "Get License Usage",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/:id/usage",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", ":id", "usage"],
+							"variable": [{"key": "id", "value": "license-uuid-here"}]
+						},
+						"description": "Get license usage statistics"
+					},
+					"response": []
+				}
+			],
+			"description": "License management and activation"
+		},
+		{
+			"name": "💳 Billing",
+			"item": [
+				{
+					"name": "Get Pricing Plans",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/pricing-plans",
+							"host": ["{{baseUrl}}"],
+							"path": ["billing", "pricing-plans"]
+						},
+						"description": "Get all pricing plans"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Pricing Plan",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Professional Plan\",\n  \"code\": \"professional\",\n  \"description\": \"Professional tier with advanced features\",\n  \"price_monthly\": 999.00,\n  \"price_yearly\": 9990.00,\n  \"features\": {\n    \"max_users\": 100,\n    \"ai_enabled\": true,\n    \"advanced_reporting\": true\n  },\n  \"applications\": [\"capa\", \"document_management\", \"workflow\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/billing/pricing-plans",
+							"host": ["{{baseUrl}}"],
+							"path": ["billing", "pricing-plans"]
+						},
+						"description": "Create pricing plan (super admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "List Invoices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/invoices?status=paid&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["billing", "invoices"],
+							"query": [
+								{"key": "status", "value": "paid"},
+								{"key": "limit", "value": "20"}
+							]
+						},
+						"description": "List invoices"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Invoice",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tenant_id\": \"{{tenantId}}\",\n  \"invoice_number\": \"INV-2025-001\",\n  \"due_date\": \"2025-02-06\",\n  \"items\": [\n    {\n      \"description\": \"Professional Plan - Monthly\",\n      \"quantity\": 1,\n      \"unit_price\": 999.00,\n      \"total\": 999.00\n    }\n  ],\n  \"subtotal\": 999.00,\n  \"tax\": 0.00,\n  \"total\": 999.00\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/billing/invoices",
+							"host": ["{{baseUrl}}"],
+							"path": ["billing", "invoices"]
+						},
+						"description": "Create invoice (super admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/invoices/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["billing", "invoices", ":id"],
+							"variable": [{"key": "id", "value": "invoice-uuid-here"}]
+						},
+						"description": "Get invoice details"
+					},
+					"response": []
+				},
+				{
+					"name": "Record Payment",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoice_id\": \"invoice-uuid-here\",\n  \"amount\": 999.00,\n  \"payment_method\": \"credit_card\",\n  \"payment_date\": \"2025-01-06\",\n  \"transaction_id\": \"TXN-123456\",\n  \"notes\": \"Payment received via Stripe\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/billing/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["billing", "payments"]
+						},
+						"description": "Record payment (super admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Billing Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/summary",
+							"host": ["{{baseUrl}}"],
+							"path": ["billing", "summary"]
+						},
+						"description": "Get billing summary for tenant"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Revenue Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/billing/revenue?period=monthly",
+							"host": ["{{baseUrl}}"],
+							"path": ["billing", "revenue"],
+							"query": [{"key": "period", "value": "monthly"}]
+						},
+						"description": "Get revenue summary (super admin)"
+					},
+					"response": []
+				}
+			],
+			"description": "Billing, invoices, and payments"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Collection-level tests - Run after every request",
+					"// ================================================",
+					"",
+					"// Log request name and status for debugging",
+					"console.log(`[${pm.info.requestName}] Status: ${pm.response.code} ${pm.response.status}`);",
+					"",
+					"// Check response time is under 3000ms",
+					"pm.test(\"Response time is under 3000ms\", function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+					"});",
+					"",
+					"// Verify no server errors (5xx status codes)",
+					"pm.test(\"No server errors (5xx)\", function () {",
+					"    pm.expect(pm.response.code).to.be.below(500);",
+					"});",
+					"",
+					"// Log response time for monitoring",
+					"console.log(`[${pm.info.requestName}] Response time: ${pm.response.responseTime}ms`);"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "tenantId",
+			"value": "00000000-0000-0000-0000-000000000001",
+			"type": "string"
+		}
+	]
+}

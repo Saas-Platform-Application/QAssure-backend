@@ -1,0 +1,2589 @@
+{
+  "info": {
+    "_postman_id": "d2ee3dd7-22c5-43bd-93f7-72a46b3f4ec5",
+    "name": "QAssure File Attachment Service",
+    "description": "Production-ready Postman collection for the QAssure File Attachment Service.\n\n## Authentication\nThis collection uses **Combined Auth** (JWT + API Key) via SSO Launch Token Flow.\n\n## Setup — Run These First (Folder 1)\n1. **Step 1 — Login**: Gets user JWT (`tenant_token`)\n2. **Step 2 — Launch Module**: Gets launch token from module launch URL\n3. **Step 3 — Verify Launch Token**: Gets module session JWT (`module_jwt`)\n\nAfter Step 3, all subsequent requests use Combined Auth:\n- `Authorization: Bearer {{module_jwt}}`\n- `X-API-Key: {{api_key}}`\n\n## Key Changes from Previous Version\n- SSO Launch Token Flow replaces simple login\n- Combined Auth (JWT + API Key) on all authenticated endpoints\n- source_module correctly set to module code (e.g., 'coc') not 'platform'\n- uploaded_by is real user UUID from JWT\n- List Files and Entity Files return JSON arrays (no pagination wrapper)\n- Stats endpoint returns 4 sections: quota, files, by_entity, by_module\n- User details now include department, designation, user_category\n\n## Endpoint Coverage: 17 endpoints + 3 setup + security/permission tests\n\n## Pre-requisite\nCreate test files before running:\n```\necho 'test content for upload' > /tmp/test-upload.txt\necho 'version 2 content' > /tmp/test-upload-v2.txt\necho 'multi file A' > /tmp/multi-a.txt\necho 'multi file B' > /tmp/multi-b.txt\n```",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "48835086"
+  },
+  "item": [
+    {
+      "name": "01. Setup — SSO Launch Flow",
+      "item": [
+        {
+          "name": "Step 1 — Login (get user JWT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Has token in response', function() {",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    pm.expect(jsonData.data.token).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Has user details with department', function() {",
+                  "    pm.expect(jsonData.data.user).to.have.property('email');",
+                  "    if (jsonData.data.user.department) {",
+                  "        pm.expect(jsonData.data.user.department).to.be.a('string');",
+                  "    }",
+                  "    if (jsonData.data.user.designation) {",
+                  "        pm.expect(jsonData.data.user.designation).to.be.a('string');",
+                  "    }",
+                  "    if (jsonData.data.user.user_category) {",
+                  "        pm.expect(jsonData.data.user.user_category).to.be.a('string');",
+                  "    }",
+                  "});",
+                  "",
+                  "// Capture tenant_token for Step 2",
+                  "pm.collectionVariables.set('tenant_token', jsonData.data.token);",
+                  "console.log('✅ tenant_token captured');"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "// {\n//   \"email\": \"polumuri.suresh@ltts.com\",\n//   \"password\": \"Password123!\"\n// }\n{\n  \"email\": \"tenant8admin@gmail.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login as tenant admin to get user JWT.\nCaptures: tenant_token\n\nCredentials: tenantadmin@pharmacorp.com / SecurePass123!"
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 — Launch Module (get launch token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Has launch_url', function() {",
+                  "    pm.expect(jsonData.data).to.have.property('launch_url');",
+                  "    pm.expect(jsonData.data.launch_url).to.include('token=');",
+                  "});",
+                  "",
+                  "// Extract launch_token from launch_url query parameter",
+                  "var launchUrl = jsonData.data.launch_url;",
+                  "var launchToken = launchUrl.split('token=')[1];",
+                  "if (launchToken && launchToken.indexOf('&') > -1) {",
+                  "    launchToken = launchToken.split('&')[0];",
+                  "}",
+                  "",
+                  "pm.collectionVariables.set('launch_token', launchToken);",
+                  "console.log('✅ launch_token captured: ' + launchToken.substring(0, 20) + '...');"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tenant_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/modules/{{coc_module_id}}/launch",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "modules",
+                "{{coc_module_id}}",
+                "launch"
+              ]
+            },
+            "description": "Launch the CoC module to get a launch token.\nUses tenant_token from Step 1.\nCaptures: launch_token (extracted from launch_url query param)"
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 — Verify Launch Token (get module JWT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Has module session token', function() {",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    pm.expect(jsonData.data.token).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Has user details with department info', function() {",
+                  "    if (jsonData.data.user) {",
+                  "        pm.expect(jsonData.data.user).to.have.property('email');",
+                  "        // Verify department, designation, user_category fields present",
+                  "        if (jsonData.data.user.department !== undefined) {",
+                  "            console.log('User department: ' + jsonData.data.user.department);",
+                  "        }",
+                  "        if (jsonData.data.user.designation !== undefined) {",
+                  "            console.log('User designation: ' + jsonData.data.user.designation);",
+                  "        }",
+                  "        if (jsonData.data.user.user_category !== undefined) {",
+                  "            console.log('User category: ' + jsonData.data.user.user_category);",
+                  "        }",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Has tenant details', function() {",
+                  "    if (jsonData.data.tenant) {",
+                  "        pm.expect(jsonData.data.tenant).to.have.property('id');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Has permissions', function() {",
+                  "    if (jsonData.data.permissions) {",
+                  "        pm.expect(jsonData.data.permissions).to.be.an('array');",
+                  "    }",
+                  "});",
+                  "",
+                  "// Capture module_jwt for all subsequent Combined Auth requests",
+                  "pm.collectionVariables.set('module_jwt', jsonData.data.token);",
+                  "console.log('✅ module_jwt captured — Combined Auth ready');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{launch_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/modules/verify-launch-token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "modules",
+                "verify-launch-token"
+              ]
+            },
+            "description": "Verify launch token to get module session JWT (24h expiry).\nUses X-API-Key (NOT Bearer token).\nCaptures: module_jwt\n\nResponse includes: token, user details (with department, designation, user_category), tenant details, permissions.\n\nAfter this step, use Combined Auth on all requests:\n- Authorization: Bearer {{module_jwt}}\n- X-API-Key: {{api_key}}"
+          },
+          "response": []
+        }
+      ],
+      "description": "Three-step SSO flow to establish Combined Auth (JWT + API Key).\nRun these sequentially before any other requests.\n\nFlow: Login → Launch Module → Verify Launch Token → Combined Auth ready"
+    },
+    {
+      "name": "02. File Operations — Combined Auth",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', function() {",
+                  "    pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Has file ID', function() {",
+                  "    pm.expect(res.data.id).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Has SHA-256 checksum', function() {",
+                  "    pm.expect(res.data.checksum).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('source_module is coc (not platform)', function() {",
+                  "    pm.expect(res.data.source_module).to.eql('coc');",
+                  "    pm.test(\"Has source_module_id (UUID)\", function() {",
+                  "        pm.expect(res.data.source_module_id).to.be.a(\"string\");",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('uploaded_by_email is real user', function() {",
+                  "    pm.expect(res.data.uploaded_by_email).to.include('@pharmacorp.com');",
+                  "});",
+                  "",
+                  "pm.test('file_size is integer', function() {",
+                  "    pm.expect(res.data.file_size).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('tenant-scoped path', function() {",
+                  "    pm.expect(res.data.file_path).to.include(pm.collectionVariables.get('tenant_id'));",
+                  "});",
+                  "",
+                  "pm.test('version is 1', function() {",
+                  "    pm.expect(res.data.version).to.eql(1);",
+                  "});",
+                  "",
+                  "pm.test('is_current_version is true', function() {",
+                  "    pm.expect(res.data.is_current_version).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Has category_id if provided', function() {",
+                  "    var catId = pm.collectionVariables.get('category_id');",
+                  "    if (catId) {",
+                  "        pm.expect(res.data.category_id).to.eql(catId);",
+                  "    }",
+                  "});",
+                  "",
+                  "// Capture file_id for subsequent requests",
+                  "pm.collectionVariables.set('file_id', res.data.id);",
+                  "console.log('✅ file_id captured: ' + res.data.id);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "description": "Create file first: echo 'test content for upload' > /tmp/test-upload.txt",
+                  "type": "file",
+                  "src": "postman-cloud:///1f1179a1-4a6e-4380-bd1c-d1777a9784d8"
+                },
+                {
+                  "key": "entity_type",
+                  "value": "{{entity_type}}",
+                  "type": "text"
+                },
+                {
+                  "key": "entity_id",
+                  "value": "{{entity_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Test file upload via Postman — Combined Auth",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "supplier documents",
+                  "type": "text"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{category_id}}",
+                  "description": "Optional: String ID from module",
+                  "type": "text"
+                },
+                {
+                  "key": "tags",
+                  "value": "sop,quality",
+                  "description": "Comma-separated string or JSON array: [\"sop\",\"quality\"]",
+                  "type": "text"
+                },
+                {
+                  "key": "metadata",
+                  "value": "{\"department\":\"QA\",\"priority\":\"high\"}",
+                  "description": "JSON string for JSONB field",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/files/upload",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "upload"
+              ]
+            },
+            "description": "Upload a single file with Combined Auth.\n\nExpected: source_module='coc', uploaded_by=real user UUID from JWT.\n\nRequired fields: file (binary), entity_type, entity_id\nOptional: description, category, tags, metadata\n\nBlocked extensions: .exe, .bat, .cmd, .sh, .ps1, .msi, .dll, .com, .scr, .vbs, .js\nMax file size: 100MB"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Multiple Files (up to 10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Returns array of results', function() {",
+                  "    pm.expect(res.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Each result has success status', function() {",
+                  "    res.data.forEach(function(item) {",
+                  "        pm.expect(item).to.have.property('success');",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('Successful files have source_module coc', function() {",
+                  "    res.data.forEach(function(item) {",
+                  "        if (item.success && item.file) {",
+                  "            pm.expect(item.file.source_module).to.eql('coc');",
+                  "        }",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "description": "Create: echo 'multi file A' > /tmp/multi-a.txt",
+                  "type": "file",
+                  "src": "postman-cloud:///1f1163e5-0a37-48b0-8e88-c55aef6b9656"
+                },
+                {
+                  "key": "files",
+                  "description": "Create: echo 'multi file B' > /tmp/multi-b.txt",
+                  "type": "file",
+                  "src": "postman-cloud:///1f1163e5-d824-4d40-95c8-ef4f1fc44e14"
+                },
+                {
+                  "key": "entity_type",
+                  "value": "{{entity_type}}",
+                  "type": "text"
+                },
+                {
+                  "key": "entity_id",
+                  "value": "{{entity_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Test file upload via Postman — Combined Auth",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "supplier documents",
+                  "type": "text"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{category_id}}",
+                  "description": "Optional: String ID from module",
+                  "type": "text"
+                },
+                {
+                  "key": "tags",
+                  "value": "sop,quality",
+                  "type": "text"
+                },
+                {
+                  "key": "metadata",
+                  "value": "{\"department\":\"QA\",\"priority\":\"high\"}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/files/upload/multiple",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "upload",
+                "multiple"
+              ]
+            },
+            "description": "Upload up to 10 files in a single request.\nField name MUST be 'files' (not 'file').\nAll files share the same entity_type and entity_id.\nFiles uploaded in parallel via Promise.all — per-file success/error status."
+          },
+          "response": []
+        },
+        {
+          "name": "List Files (default)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Response is JSON array (NOT paginated wrapper)', function() {",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Files have required fields', function() {",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.expect(jsonData[0]).to.have.property('id');",
+                  "        pm.expect(jsonData[0]).to.have.property('original_name');",
+                  "        pm.expect(jsonData[0]).to.have.property('source_module');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files?limit=10&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "List files with pagination.\n\nIMPORTANT: Returns a JSON ARRAY, NOT { data: [], pagination: {} }.\nOnly returns active files: deleted_at IS NULL AND is_current_version = true."
+          },
+          "response": []
+        },
+        {
+          "name": "List Files (with filters)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Response is JSON array', function() {",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('All files have source_module=coc', function() {",
+                  "    jsonData.forEach(function(file) {",
+                  "        pm.expect(file.source_module).to.eql('coc');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files?source_module=coc-new&sort_by=created_at&sort_order=DESC",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files"
+              ],
+              "query": [
+                {
+                  "key": "source_module",
+                  "value": "coc-new"
+                },
+                {
+                  "key": "sort_by",
+                  "value": "created_at"
+                },
+                {
+                  "key": "sort_order",
+                  "value": "DESC"
+                },
+                {
+                  "key": "category_id",
+                  "value": "MOD-CAT-001",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List files filtered by source_module=coc, sorted by created_at DESC.\n\nAvailable filters: source_module, mime_type, entity_type, category, category_id, search (ILIKE on original_name), sort_by, sort_order, created_after, created_before."
+          },
+          "response": []
+        },
+        {
+          "name": "Get File by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Has original_name', function() {",
+                  "    pm.expect(res.data.original_name).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('file_size is integer', function() {",
+                  "    pm.expect(res.data.file_size).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Has uploaded_by_email', function() {",
+                  "    pm.expect(res.data.uploaded_by_email).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('source_module is coc', function() {",
+                  "    pm.expect(res.data.source_module).to.eql('coc');",
+                  "    pm.test(\"Has source_module_id (UUID)\", function() {",
+                  "        pm.expect(res.data.source_module_id).to.be.a(\"string\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/{{file_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "{{file_id}}"
+              ]
+            },
+            "description": "Get single file by ID.\nReturns full file object with uploaded_by_email via LEFT JOIN users.\nRedis cached (300s TTL)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update File Metadata",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Description updated', function() {",
+                  "    pm.expect(res.data.description).to.eql('Updated description via Combined Auth');",
+                  "});",
+                  "",
+                  "pm.test('Category updated', function() {",
+                  "    pm.expect(res.data.category).to.eql('SOP Documents');",
+                  "});",
+                  "",
+                  "pm.test('Tags updated', function() {",
+                  "    pm.expect(res.data.tags).to.include('updated');",
+                  "    pm.expect(res.data.tags).to.include('reviewed');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description via Combined Auth\",\n  \"category_id\": \"{{category_id}}\",\n  \"tags\": [\"updated\", \"reviewed\"],\n  \"metadata\": {\"reviewed_by\": \"auditor1\", \"review_date\": \"2026-02-28\"}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/files/{{file_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "{{file_id}}"
+              ]
+            },
+            "description": "Update file metadata.\nAllowed fields ONLY: description, category, tags (cast as text[]), metadata (cast as JSONB).\nReturns error 'No valid fields to update' if no recognized fields provided."
+          },
+          "response": []
+        },
+        {
+          "name": "Download File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Disposition: attachment', function() {",
+                  "    var cd = pm.response.headers.get('Content-Disposition');",
+                  "    pm.expect(cd).to.include('attachment');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/{{file_id}}/download",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "{{file_id}}",
+                "download"
+              ]
+            },
+            "description": "Download file binary.\nContent-Disposition: attachment; filename=\"original_name.ext\"\nLogs access in file_access_logs (action: 'download')."
+          },
+          "response": []
+        },
+        {
+          "name": "Preview File (Inline)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Disposition: inline', function() {",
+                  "    var cd = pm.response.headers.get('Content-Disposition');",
+                  "    pm.expect(cd).to.include('inline');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/{{file_id}}/preview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "{{file_id}}",
+                "preview"
+              ]
+            },
+            "description": "Preview file inline in browser.\nContent-Disposition: inline; filename=\"original_name.ext\"\nLogs access in file_access_logs (action: 'preview')."
+          },
+          "response": []
+        }
+      ],
+      "description": "Core file CRUD operations using Combined Auth (JWT + API Key).\nAll requests use:\n- Authorization: Bearer {{module_jwt}}\n- X-API-Key: {{api_key}}\n\nsource_module will be 'coc' (from module identity), NOT 'platform'.\nuploaded_by will be real user UUID from JWT."
+    },
+    {
+      "name": "03. Versioning — Combined Auth",
+      "item": [
+        {
+          "name": "Upload New Version",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', function() {",
+                  "    pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Version incremented', function() {",
+                  "    pm.expect(res.data.version).to.be.above(1);",
+                  "});",
+                  "",
+                  "pm.test('Is current version', function() {",
+                  "    pm.expect(res.data.is_current_version).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Has previous_version_id', function() {",
+                  "    pm.expect(res.data.previous_version_id).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('source_module is coc', function() {",
+                  "    pm.expect(res.data.source_module).to.eql('coc');",
+                  "    pm.test(\"Has source_module_id (UUID)\", function() {",
+                  "        pm.expect(res.data.source_module_id).to.be.a(\"string\");",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('uploaded_by_email is real user', function() {",
+                  "    pm.expect(res.data.uploaded_by_email).to.include('@pharmacorp.com');",
+                  "});",
+                  "",
+                  "// Update file_id to new version for subsequent requests",
+                  "pm.collectionVariables.set('file_id', res.data.id);",
+                  "console.log('✅ file_id updated to new version: ' + res.data.id);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "description": "Create: echo 'version 2 content' > /tmp/test-upload-v2.txt",
+                  "type": "file",
+                  "src": "postman-cloud:///1f1179a1-4a6e-4380-bd1c-d1777a9784d8"
+                },
+                {
+                  "key": "description",
+                  "value": "Version 2 — updated content",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "evidence",
+                  "type": "text"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{category_id}}",
+                  "description": "Optional: String ID from module",
+                  "type": "text"
+                },
+                {
+                  "key": "tags",
+                  "value": "v2,reviewed",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/files/{{file_id}}/versions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "{{file_id}}",
+                "versions"
+              ]
+            },
+            "description": "Upload a new version of an existing file.\nCreates new record with version = previous + 1.\nOld record marked as is_current_version = false.\nLinked via previous_version_id."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Version History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Has version history array', function() {",
+                  "    pm.expect(res.data).to.be.an('array');",
+                  "    pm.expect(res.data.length).to.be.above(1);",
+                  "});",
+                  "",
+                  "pm.test('Versions ordered ascending', function() {",
+                  "    var versions = res.data;",
+                  "    for (var i = 1; i < versions.length; i++) {",
+                  "        pm.expect(versions[i].version).to.be.above(versions[i-1].version);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Each version has uploaded_by_email', function() {",
+                  "    res.data.forEach(function(ver) {",
+                  "        pm.expect(ver).to.have.property('uploaded_by_email');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/{{file_id}}/versions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "{{file_id}}",
+                "versions"
+              ]
+            },
+            "description": "Get complete version history for a file.\nUses recursive CTE traversing previous_version_id chain.\nOrdered by version ASC.\nEach entry includes: id, version, file_size, checksum, original_name, uploaded_by_email, created_at."
+          },
+          "response": []
+        }
+      ],
+      "description": "File versioning operations.\nVersion upload creates a NEW file record with incremented version.\nOld record stays with is_current_version = false."
+    },
+    {
+      "name": "04. Sharing — Combined Auth",
+      "item": [
+        {
+          "name": "Create Share Link",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', function() {",
+                  "    pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Has share_token (64-char hex)', function() {",
+                  "    pm.expect(res.data.share_token).to.be.a('string');",
+                  "    pm.expect(res.data.share_token.length).to.eql(64);",
+                  "});",
+                  "",
+                  "pm.test('Has share_url', function() {",
+                  "    pm.expect(res.data.share_url).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Has expires_at', function() {",
+                  "    pm.expect(res.data.expires_at).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('max_downloads is 5', function() {",
+                  "    pm.expect(res.data.max_downloads).to.eql(5);",
+                  "});",
+                  "",
+                  "// Capture share_id and share_token",
+                  "pm.collectionVariables.set('share_id', res.data.id);",
+                  "pm.collectionVariables.set('share_token', res.data.share_token);",
+                  "console.log('✅ share_id captured: ' + res.data.id);",
+                  "console.log('✅ share_token captured: ' + res.data.share_token.substring(0, 16) + '...');"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"share_type\": \"link\",\n  \"permissions\": \"download\",\n  \"expires_in_hours\": 24,\n  \"max_downloads\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/files/{{file_id}}/share",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "{{file_id}}",
+                "share"
+              ]
+            },
+            "description": "Create a share link for a file.\nToken is 64-char hex generated by crypto.randomBytes(32).\n\nBody fields: share_type, permissions, expires_at OR expires_in_hours, max_downloads, shared_with_user_id, shared_with_email.\n\nCaptures: share_id, share_token."
+          },
+          "response": []
+        },
+        {
+          "name": "Access Shared File (PUBLIC — No Auth)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Has Content-Disposition header', function() {",
+                  "    var cd = pm.response.headers.get('Content-Disposition');",
+                  "    pm.expect(cd).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Has Content-Type header', function() {",
+                  "    var ct = pm.response.headers.get('Content-Type');",
+                  "    pm.expect(ct).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/files/shared/{{share_token}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "shared",
+                "{{share_token}}"
+              ]
+            },
+            "description": "Access a shared file via public token.\nCOMPLETELY PUBLIC — zero authentication headers.\n\nValidates: token exists, not expired, download limit not reached.\nIncrements current_downloads atomically.\n\n⚠️ Run this BEFORE 'Revoke Share'."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Share Link",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Share revoked successfully', function() {",
+                  "    pm.expect(res.success).to.be.true;",
+                  "    pm.expect(res.message).to.include('revoked');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/shares/{{share_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "shares",
+                "{{share_id}}"
+              ]
+            },
+            "description": "Revoke a share link.\nSets is_active = false.\nInvalidates Redis cache for the share token.\n\n⚠️ Run 'Access Shared File' BEFORE this request."
+          },
+          "response": []
+        }
+      ],
+      "description": "File sharing with token-based access.\nIMPORTANT: Test 'Access Shared File' BEFORE 'Revoke Share'."
+    },
+    {
+      "name": "05. Entity & Stats — Combined Auth",
+      "item": [
+        {
+          "name": "Get Files by Entity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Response is JSON array (NOT paginated wrapper)', function() {",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/entity/{{entity_type}}/{{entity_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "entity",
+                "{{entity_type}}",
+                "{{entity_id}}"
+              ]
+            },
+            "description": "Get all files linked to a specific entity.\nReturns a JSON ARRAY (NOT a paginated wrapper).\nUsed by Document Service, CAPA module, Training module, etc."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Storage Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Stats has 4 sections', function() {",
+                  "    pm.expect(res.data).to.have.property('quota');",
+                  "    pm.expect(res.data).to.have.property('files');",
+                  "    pm.expect(res.data).to.have.property('by_entity');",
+                  "    pm.expect(res.data).to.have.property('by_module');",
+                  "});",
+                  "",
+                  "pm.test('Quota section has expected fields', function() {",
+                  "    pm.expect(res.data.quota).to.have.property('max_storage');",
+                  "    pm.expect(res.data.quota).to.have.property('used_storage');",
+                  "    pm.expect(res.data.quota).to.have.property('available');",
+                  "    pm.expect(res.data.quota).to.have.property('usage_percent');",
+                  "});",
+                  "",
+                  "pm.test('Files section has counts', function() {",
+                  "    pm.expect(res.data.files).to.have.property('total');",
+                  "});",
+                  "",
+                  "pm.test('by_entity is array', function() {",
+                  "    pm.expect(res.data.by_entity).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('by_module is array', function() {",
+                  "    pm.expect(res.data.by_module).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "stats"
+              ]
+            },
+            "description": "Get storage statistics.\nReturns 4 sections inside data:\n- quota: max_storage, used_storage, available, usage_percent\n- files: total, images, pdfs, documents\n- by_entity: [{entity_type, count, size}]\n- by_module: [{source_module, count, size}]"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Storage Quota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Has quota fields', function() {",
+                  "    pm.expect(res.data).to.have.property('max_storage_bytes');",
+                  "    pm.expect(res.data).to.have.property('used_storage_bytes');",
+                  "    pm.expect(res.data).to.have.property('file_count');",
+                  "    pm.expect(res.data).to.have.property('max_file_size_bytes');",
+                  "    pm.expect(res.data).to.have.property('blocked_extensions');",
+                  "    pm.expect(res.data).to.have.property('usage_percentage');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/quota",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "quota"
+              ]
+            },
+            "description": "Get current storage quota status.\nReturns: max_storage_bytes, used_storage_bytes, file_count, max_file_size_bytes, allowed_mime_types, blocked_extensions, usage_percentage."
+          },
+          "response": []
+        }
+      ],
+      "description": "Entity file retrieval and storage statistics."
+    },
+    {
+      "name": "06. Admin Operations — Combined Auth",
+      "item": [
+        {
+          "name": "Update Quota (Admin Only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Quota updated', function() {",
+                  "    pm.expect(res.data).to.have.property('max_storage_bytes');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"max_storage_bytes\": 21474836480,\n  \"max_file_size_bytes\": 209715200\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/files/quota",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "quota"
+              ]
+            },
+            "description": "Update storage quota (ADMIN ONLY — requires files:admin permission).\nAllowed fields: max_storage_bytes, max_file_size_bytes, allowed_mime_types (TEXT[]), blocked_extensions (TEXT[])."
+          },
+          "response": []
+        }
+      ],
+      "description": "Admin-only operations requiring files:admin permission."
+    },
+    {
+      "name": "07. Cleanup",
+      "item": [
+        {
+          "name": "Soft Delete File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('File deleted (soft)', function() {",
+                  "    pm.expect(res.success).to.be.true;",
+                  "    pm.expect(res.message).to.include('deleted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/{{file_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "{{file_id}}"
+              ]
+            },
+            "description": "Soft delete — sets deleted_at = NOW().\nPostgreSQL trigger auto-decrements quota.\nFile remains on disk for potential recovery."
+          },
+          "response": []
+        },
+        {
+          "name": "Hard Delete File (Permanent)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('File permanently deleted', function() {",
+                  "    pm.expect(res.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/{{file_id}}?hard=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "{{file_id}}"
+              ],
+              "query": [
+                {
+                  "key": "hard",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Hard delete — PERMANENTLY removes:\n- Database record\n- Physical file from storage\n- Thumbnail if exists\n\nIrreversible. Returns 404 on subsequent GET."
+          },
+          "response": []
+        }
+      ],
+      "description": "Delete test files. Run soft delete first, then hard delete if needed."
+    },
+    {
+      "name": "08. Security & Validation",
+      "item": [
+        {
+          "name": "Invalid UUID → 400 (not 500)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', function() {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "",
+                  "pm.test('Error code is INVALID_ID_FORMAT', function() {",
+                  "    pm.expect(res.error).to.have.property('code');",
+                  "    pm.expect(res.error.code).to.eql('INVALID_ID_FORMAT');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/not-a-uuid",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "not-a-uuid"
+              ]
+            },
+            "description": "validateUUID middleware returns 400 INVALID_ID_FORMAT for malformed UUIDs.\nShould NOT return a 500 or leak PostgreSQL errors."
+          },
+          "response": []
+        },
+        {
+          "name": "No Auth Token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', function() {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/files",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files"
+              ]
+            },
+            "description": "Request with no authentication headers.\nExpected: 401 Unauthorized."
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid Token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', function() {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid_token_12345"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files"
+              ]
+            },
+            "description": "Request with invalid/expired JWT.\nExpected: 401 Unauthorized."
+          },
+          "response": []
+        },
+        {
+          "name": "Error Sanitization (no DB leaks)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', function() {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('No database internals leaked', function() {",
+                  "    var body = pm.response.text();",
+                  "    pm.expect(body).to.not.include('pg_');",
+                  "    pm.expect(body).to.not.include('constraint');",
+                  "    pm.expect(body).to.not.include('SELECT');",
+                  "    pm.expect(body).to.not.include('INSERT');",
+                  "    pm.expect(body).to.not.include('file_attachments');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/not-a-valid-uuid-format",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "not-a-valid-uuid-format"
+              ]
+            },
+            "description": "Verify error sanitization.\nError responses must never expose constraint names, table structures, or query details."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload without file → VALIDATION_ERROR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', function() {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation error for missing file', function() {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.error.message).to.include('No file uploaded');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "entity_type",
+                  "value": "documents",
+                  "type": "text"
+                },
+                {
+                  "key": "entity_id",
+                  "value": "{{entity_id}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/files/upload",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "upload"
+              ]
+            },
+            "description": "Upload request without a file attached.\nExpected: 400 VALIDATION_ERROR 'No file uploaded'."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload without entity fields → VALIDATION_ERROR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', function() {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation error for missing entity fields', function() {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.error.message).to.include('entity_type and entity_id are required');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman-cloud:///1f1163e5-0a37-48b0-8e88-c55aef6b9656"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/files/upload",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "upload"
+              ]
+            },
+            "description": "Upload request with file but no entity_type/entity_id.\nExpected: 400 VALIDATION_ERROR 'entity_type and entity_id are required'."
+          },
+          "response": []
+        }
+      ],
+      "description": "Security validation tests.\nThese test error handling and input validation."
+    },
+    {
+      "name": "09. Auth Mode Tests",
+      "item": [
+        {
+          "name": "JWT Only — List Files (source_module=platform)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON array', function() {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tenant_token}}",
+                "description": "JWT only — no X-API-Key"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files?limit=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Test JWT-only auth mode.\nsource_module will be 'platform' for JWT-only requests.\nUser permissions (files:read) enforced."
+          },
+          "response": []
+        },
+        {
+          "name": "API Key + X-Tenant-ID — List Files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON array', function() {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "description": "API Key — no JWT"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "description": "Required when using API Key without JWT"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files?limit=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Test API Key + X-Tenant-ID auth mode.\nModule gets full access bypass on authorize().\nsource_module from req.user.moduleCode or 'api_key' fallback.\nNo user context — for system/cron operations."
+          },
+          "response": []
+        },
+        {
+          "name": "API Key without X-Tenant-ID → MISSING_TENANT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', function() {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('Error code is MISSING_TENANT', function() {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.error.code).to.eql('MISSING_TENANT');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}",
+                "description": "API Key without X-Tenant-ID"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files"
+              ]
+            },
+            "description": "Test API Key without required X-Tenant-ID header.\nExpected: 400 MISSING_TENANT."
+          },
+          "response": []
+        }
+      ],
+      "description": "Test different authentication modes.\nJWT Only, Combined (JWT + API Key), API Key + X-Tenant-ID."
+    },
+    {
+      "name": "10. Dropdown Filters",
+      "item": [
+        {
+          "name": "Get Filter Options",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var res = pm.response.json();",
+                  "pm.test('Has dropdown options arrays', function() {",
+                  "    pm.expect(res.data.categories).to.be.an('array');",
+                  "    pm.expect(res.data.tags).to.be.an('array');",
+                  "    pm.expect(res.data.metadata_keys).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/files/filter-options",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "files",
+                "filter-options"
+              ]
+            },
+            "description": "Get unique categories, tags, and metadata keys found in files to populate dropdown filters."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10. Storage Buckets Config",
+      "item": [
+        {
+          "name": "List Storage Buckets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/storage-buckets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets"
+              ]
+            },
+            "description": "List all storage buckets. SuperAdmin sees all; standard tenant gets their own/assigned."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Local Storage Bucket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"bucket_id\", id); console.log(\"✅ bucket_id: \" + id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Local Bucket\",\n  \"description\": \"Local filesystem storage bucket\",\n  \"storage_type\": \"local\",\n  \"local_path\": \"./uploads\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/storage-buckets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets"
+              ]
+            },
+            "description": "Create a new local filesystem storage bucket. Enforces SuperAdmin or storage_buckets:write permission."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Azure Storage Bucket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "var id = (jsonData.data && jsonData.data.id) ? jsonData.data.id : jsonData.id;",
+                  "if (id) { pm.collectionVariables.set(\"bucket_id\", id); console.log(\"✅ bucket_id: \" + id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Azure Bucket\",\n  \"description\": \"Azure Blob storage bucket\",\n  \"storage_type\": \"azure\",\n  \"azure_account\": \"testaccount\",\n  \"azure_container\": \"testcontainer\",\n  \"azure_sas_token\": \"testsastoken\",\n  \"azure_url\": \"https://testaccount.blob.core.windows.net\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/storage-buckets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets"
+              ]
+            },
+            "description": "Create a new Azure Blob storage bucket. Enforces SuperAdmin or storage_buckets:write permission."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Storage Bucket by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/storage-buckets/{{bucket_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets",
+                "{{bucket_id}}"
+              ]
+            },
+            "description": "Get storage bucket details by its UUID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Storage Bucket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test Bucket\",\n  \"description\": \"Updated description\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/storage-buckets/{{bucket_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets",
+                "{{bucket_id}}"
+              ]
+            },
+            "description": "Update an existing storage bucket."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Storage Bucket to Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenant_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/storage-buckets/{{bucket_id}}/assign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets",
+                "{{bucket_id}}",
+                "assign"
+              ]
+            },
+            "description": "Assign bucket to a tenant [superAdmin]."
+          },
+          "response": []
+        },
+        {
+          "name": "Share Own Bucket with Tenant (Assign Self)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenant_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/storage-buckets/{{bucket_id}}/assign-self",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets",
+                "{{bucket_id}}",
+                "assign-self"
+              ]
+            },
+            "description": "Super admin shares own bucket with another tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant Active Bucket",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/storage-buckets/tenant/{{tenant_id}}/active",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets",
+                "tenant",
+                "{{tenant_id}}",
+                "active"
+              ]
+            },
+            "description": "Get active bucket for tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant Bucket Assignment History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/storage-buckets/tenant/{{tenant_id}}/history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets",
+                "tenant",
+                "{{tenant_id}}",
+                "history"
+              ]
+            },
+            "description": "Get assignment history for tenant [superAdmin]."
+          },
+          "response": []
+        },
+        {
+          "name": "Unassign Tenant Storage Bucket",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/storage-buckets/tenant/{{tenant_id}}/unassign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets",
+                "tenant",
+                "{{tenant_id}}",
+                "unassign"
+              ]
+            },
+            "description": "Unassign bucket from tenant [superAdmin]."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Storage Bucket",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{module_jwt}}"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/storage-buckets/{{bucket_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "storage-buckets",
+                "{{bucket_id}}"
+              ]
+            },
+            "description": "Soft-delete storage bucket [superAdmin only]."
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage and assign dynamic, multi-tenant storage buckets."
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string",
+      "description": {
+        "content": "API base URL (includes /api/v1)",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "tenant_token",
+      "value": "",
+      "type": "string",
+      "description": {
+        "content": "User JWT from Step 1 Login",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "launch_token",
+      "value": "",
+      "type": "string",
+      "description": {
+        "content": "Launch token extracted from Step 2 launch_url",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "module_jwt",
+      "value": "",
+      "type": "string",
+      "description": {
+        "content": "Module session JWT from Step 3 Verify Launch Token (24h expiry)",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "api_key",
+      "value": "qas_testkey1234567890abcdef1234567890abcdef1234567890abcdef12345678",
+      "type": "string",
+      "description": {
+        "content": "Module API key for CoC module",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "tenant_id",
+      "value": "c0000000-0000-0000-0000-000000000001",
+      "type": "string",
+      "description": {
+        "content": "Test tenant UUID (Pharma Corp)",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "coc_module_id",
+      "value": "f0000000-0000-0000-0000-000000000001",
+      "type": "string",
+      "description": {
+        "content": "CoC module UUID for launch endpoint",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "file_id",
+      "value": "",
+      "type": "string",
+      "description": {
+        "content": "Auto-captured from upload response",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "share_id",
+      "value": "",
+      "type": "string",
+      "description": {
+        "content": "Auto-captured from create share response",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "share_token",
+      "value": "",
+      "type": "string",
+      "description": {
+        "content": "Auto-captured from create share response (64-char hex)",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "entity_type",
+      "value": "documents",
+      "type": "string",
+      "description": {
+        "content": "Default entity type for testing",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "entity_id",
+      "value": "00000000-0000-0000-0000-000000000001",
+      "type": "string",
+      "description": {
+        "content": "Entity UUID to link files to (use valid document UUID from your system)",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "category_id",
+      "value": "CAT-001",
+      "type": "string",
+      "description": {
+        "content": "String ID for file category (previously UUID)",
+        "type": "text/plain"
+      }
+    },
+    {
+      "key": "bucket_id",
+      "value": "",
+      "type": "string",
+      "description": {
+        "content": "Auto-captured from storage bucket creation",
+        "type": "text/plain"
+      }
+    }
+  ]
+}

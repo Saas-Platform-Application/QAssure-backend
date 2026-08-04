@@ -1,0 +1,35 @@
+apiVersion: v2
+name: qassure
+description: QAssure Platform - Enterprise Quality Management System
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - qms
+  - quality-management
+  - fda-compliance
+  - pharmaceutical
+  - biotech
+maintainers:
+  - name: QAssure Team
+    email: devops@qassure.ai
+home: https://qassure.ai
+sources:
+  - https://github.com/qassure/platform
+dependencies:
+  - name: postgresql
+    version: "12.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: "17.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: kafka
+    version: "26.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: kafka.enabled
+  - name: elasticsearch
+    version: "19.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: elasticsearch.enabled

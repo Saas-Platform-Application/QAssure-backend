@@ -1,0 +1,406 @@
+/**
+ * Google Gemini Provider - QAssure Platform
+ * Supports Google Generative AI (Gemini) for completions and embeddings.
+ * Auto-detected from GOOGLE_AI_API_KEY environment variable.
+ */
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { BaseAIProvider } = require('./base-provider');
+const { AIProviderError } = require('./openai.provider');
+
+class GeminiProvider extends BaseAIProvider {
+  constructor(config = {}) {
+    super(config);
+    this.name = 'gemini';
+    this.displayName = 'Google Gemini';
+    this.client = null;
+
+    // Available models
+    this.completionModels = [
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-lite',
+      'gemini-1.5-pro',
+      'gemini-1.5-flash'
+    ];
+
+    this.models = [];
+    this.defaultModel = null;
+
+    // Pricing per 1K tokens (USD) — approximate
+    this.pricing = {
+      'gemini-2.5-flash': { input: 0.0003, output: 0.0025 },
+      'gemini-2.5-flash-lite': { input: 0.0001, output: 0.0004 },
+      'gemini-2.0-flash': { input: 0.0001, output: 0.0004 },
+      'gemini-2.0-flash-lite': { input: 0.00005, output: 0.0002 },
+      'gemini-1.5-pro': { input: 0.00125, output: 0.005 },
+      'gemini-1.5-flash': { input: 0.000075, output: 0.0003 }
+    };
+
+    // Embedding models
+    this.embeddingModels = ['gemini-embedding-001', 'gemini-embedding-2-preview'];
+    this.defaultEmbeddingModel = 'gemini-embedding-001';
+    this.embeddingDimensions = 768;
+    // Gemini 2.0 Flash supports native multimodal (images, PDFs)
+    this.supportsMultimodal = true;
+    this.supportedMimeTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf'
+    ];
+  }
+
+  /**
+   * Initialize the provider
+   */
+  async initialize() {
+    const apiKey = this.config.apiKey || process.env.GOOGLE_AI_API_KEY;
+
+    if (!apiKey) {
+      console.warn('[Gemini] No API key configured (checked GOOGLE_AI_API_KEY) - provider disabled');
+      this.isEnabled = false;
+      return false;
+    }
+
+    try {
+      this.client = new GoogleGenerativeAI(apiKey);
+      this.models = this.completionModels;
+      this.defaultModel = this.config.defaultModel || this.defaultModel || 'gemini-2.0-flash';
+      this.isEnabled = true;
+      console.log('[Gemini] ✅ Initialized');
+      return true;
+    } catch (error) {
+      console.error('[Gemini] ❌ Initialization failed:', error.message);
+      this.isEnabled = false;
+      return false;
+    }
+  }
+
+  /**
+   * Health check
+   */
+  async healthCheck() {
+    if (!this.isEnabled || !this.client) {
+      return { healthy: false, error: 'Provider not initialized' };
+    }
+
+    try {
+      const start = Date.now();
+      const model = this.client.getGenerativeModel({ model: this.defaultModel });
+      await model.generateContent('ping');
+      const latency = Date.now() - start;
+
+      return {
+        healthy: true,
+        latency_ms: latency,
+        provider: this.name
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        error: error.message,
+        provider: this.name
+      };
+    }
+  }
+
+  /**
+   * Create a chat completion
+   */
+  async createCompletion(options) {
+    if (!this.isEnabled || !this.client) {
+      throw new Error('Gemini provider is not enabled');
+    }
+
+    const errors = this.validateOptions(options);
+    if (errors.length > 0) {
+      throw new Error(`Validation failed: ${errors.join(', ')}`);
+    }
+
+    const modelName = options.model || this.defaultModel;
+    const start = Date.now();
+
+    try {
+      const model = this.client.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: options.temperature ?? 0.7,
+          maxOutputTokens: options.max_tokens || 2048,
+          topP: options.top_p ?? 1
+        }
+      });
+
+      // Convert OpenAI-style messages to Gemini format
+      const { systemInstruction, contents } = this._convertMessages(options.messages);
+
+      let result;
+      if (systemInstruction) {
+        // Use chat with system instruction
+        const modelWithSystem = this.client.getGenerativeModel({
+          model: modelName,
+          systemInstruction,
+          generationConfig: {
+            temperature: options.temperature ?? 0.7,
+            maxOutputTokens: options.max_tokens || 2048,
+            topP: options.top_p ?? 1
+          }
+        });
+        result = await modelWithSystem.generateContent({ contents });
+      } else {
+        result = await model.generateContent({ contents });
+      }
+
+      const response = result.response;
+      const content = response.text();
+      const latency = Date.now() - start;
+
+      // Gemini usage metadata
+      const usage = response.usageMetadata || {};
+      const promptTokens = usage.promptTokenCount || 0;
+      const completionTokens = usage.candidatesTokenCount || 0;
+      const totalTokens = usage.totalTokenCount || promptTokens + completionTokens;
+      const cost = this.calculateCost(modelName, promptTokens, completionTokens);
+
+      return this.formatResponse({
+        id: `gemini_${Date.now()}`,
+        content,
+        usage: {
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: totalTokens
+        },
+        finish_reason: response.candidates?.[0]?.finishReason || 'STOP'
+      }, {
+        model: modelName,
+        cost,
+        latency_ms: latency
+      });
+    } catch (error) {
+      console.error('[Gemini] Completion error:', error.message);
+      throw this._handleError(error);
+    }
+  }
+
+  /**
+   * Create a streaming completion
+   */
+  async createStreamingCompletion(options, onChunk) {
+    if (!this.isEnabled || !this.client) {
+      throw new Error('Gemini provider is not enabled');
+    }
+
+    const modelName = options.model || this.defaultModel;
+    const start = Date.now();
+    let fullContent = '';
+
+    try {
+      const model = this.client.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: options.temperature ?? 0.7,
+          maxOutputTokens: options.max_tokens || 2048
+        }
+      });
+
+      const { contents } = this._convertMessages(options.messages);
+      const result = await model.generateContentStream({ contents });
+
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        fullContent += text;
+
+        if (onChunk && text) {
+          onChunk({ content: text, done: false });
+        }
+      }
+
+      const latency = Date.now() - start;
+
+      if (onChunk) {
+        onChunk({ content: '', done: true, fullContent, latency_ms: latency });
+      }
+
+      return {
+        content: fullContent,
+        model: modelName,
+        provider: this.name,
+        latency_ms: latency
+      };
+    } catch (error) {
+      throw this._handleError(error);
+    }
+  }
+
+  /**
+   * Create embeddings using Gemini's text-embedding-004
+   */
+  async createEmbedding(input, model = null) {
+    if (!this.isEnabled || !this.client) {
+      throw new Error('Gemini provider is not enabled');
+    }
+
+    const embeddingModel = model || this.defaultEmbeddingModel;
+
+    try {
+      const geminiModel = this.client.getGenerativeModel({ model: embeddingModel });
+      const inputs = Array.isArray(input) ? input : [input];
+
+      // Gemini embeds one at a time — batch manually
+      const embeddings = [];
+      for (const text of inputs) {
+        const result = await geminiModel.embedContent(text);
+        embeddings.push(result.embedding.values);
+      }
+
+      return {
+        embeddings,
+        model: embeddingModel,
+        usage: { total_tokens: inputs.reduce((sum, t) => sum + Math.ceil(t.length / 4), 0) },
+        provider: this.name
+      };
+    } catch (error) {
+      console.error('[Gemini] Embedding error:', error.message);
+      throw this._handleError(error);
+    }
+  }
+
+  /**
+   * Create a multimodal completion with file/image input.
+   * Gemini natively processes PDFs and images via inlineData.
+   *
+   * options.files = [{ mimeType: 'image/png', data: <base64string> }]
+   * options.messages = standard OpenAI-style messages array
+   */
+  async createMultimodalCompletion(options) {
+    if (!this.isEnabled || !this.client) {
+      throw new Error('Gemini provider is not enabled');
+    }
+
+    const modelName = options.model || this.defaultModel;
+    const start = Date.now();
+
+    try {
+      const { systemInstruction, contents } = this._convertMessages(options.messages);
+
+      // Append file parts to the last user message
+      if (options.files && options.files.length > 0) {
+        const lastUserMsg = [...contents].reverse().find(c => c.role === 'user');
+        if (lastUserMsg) {
+          for (const file of options.files) {
+            lastUserMsg.parts.push({
+              inlineData: {
+                mimeType: file.mimeType,
+                data: file.data  // base64 string
+              }
+            });
+          }
+        }
+      }
+
+      const generationConfig = {
+        temperature: options.temperature ?? 0.7,
+        maxOutputTokens: options.max_tokens || 4096,
+        topP: options.top_p ?? 1
+      };
+
+      let result;
+      if (systemInstruction) {
+        const model = this.client.getGenerativeModel({
+          model: modelName,
+          systemInstruction,
+          generationConfig
+        });
+        result = await model.generateContent({ contents });
+      } else {
+        const model = this.client.getGenerativeModel({
+          model: modelName,
+          generationConfig
+        });
+        result = await model.generateContent({ contents });
+      }
+
+      const response = result.response;
+      const content = response.text();
+      const latency = Date.now() - start;
+
+      const usage = response.usageMetadata || {};
+      const promptTokens = usage.promptTokenCount || 0;
+      const completionTokens = usage.candidatesTokenCount || 0;
+      const totalTokens = usage.totalTokenCount || promptTokens + completionTokens;
+      const cost = this.calculateCost(modelName, promptTokens, completionTokens);
+
+      return this.formatResponse({
+        id: `gemini_mm_${Date.now()}`,
+        content,
+        usage: {
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: totalTokens
+        },
+        finish_reason: response.candidates?.[0]?.finishReason || 'STOP'
+      }, {
+        model: modelName,
+        cost,
+        latency_ms: latency
+      });
+    } catch (error) {
+      console.error('[Gemini] Multimodal completion error:', error.message);
+      throw this._handleError(error);
+    }
+  }
+
+  /**
+   * Convert OpenAI-style messages to Gemini format
+   */
+  _convertMessages(messages) {
+    let systemInstruction = null;
+    const contents = [];
+
+    for (const msg of messages) {
+      if (msg.role === 'system') {
+        systemInstruction = msg.content;
+      } else {
+        contents.push({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }]
+        });
+      }
+    }
+
+    // Gemini requires at least one message
+    if (contents.length === 0) {
+      contents.push({ role: 'user', parts: [{ text: 'Hello' }] });
+    }
+
+    // Gemini requires first message to be from user
+    if (contents[0].role === 'model') {
+      contents.unshift({ role: 'user', parts: [{ text: '...' }] });
+    }
+
+    return { systemInstruction, contents };
+  }
+
+  /**
+   * Handle and transform errors
+   */
+  _handleError(error) {
+    if (error.status === 429 || error.message?.includes('RATE_LIMIT')) {
+      return new AIProviderError('RATE_LIMITED', 'Gemini rate limit exceeded', this.name);
+    }
+    if (error.status === 401 || error.status === 403 || error.message?.includes('API_KEY')) {
+      return new AIProviderError('AUTH_FAILED', 'Gemini authentication failed', this.name);
+    }
+    if (error.status === 503 || error.message?.includes('UNAVAILABLE')) {
+      return new AIProviderError('SERVICE_UNAVAILABLE', 'Gemini service unavailable', this.name);
+    }
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+      return new AIProviderError('CONNECTION_FAILED', 'Failed to connect to Gemini', this.name);
+    }
+    if (error.message?.includes('SAFETY')) {
+      return new AIProviderError('CONTENT_FILTERED', 'Content blocked by Gemini safety filters', this.name);
+    }
+
+    return new AIProviderError('PROVIDER_ERROR', error.message, this.name);
+  }
+}
+
+module.exports = { GeminiProvider };

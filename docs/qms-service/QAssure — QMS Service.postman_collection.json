@@ -1,0 +1,1095 @@
+{
+	"info": {
+		"_postman_id": "caca0f90-ef31-482d-88bb-cfda4091abcf",
+		"name": "QAssure — QMS Service",
+		"description": "API collection for QAssure QMS Connection and Sync Service.\n\nBase URL: http://localhost:3000/api/v1\n\nAuth: Bearer JWT Token\n\nFolders included:\n- Auth: Helper login endpoints to save the jwt_token\n- Lookups: Static reference data for supported EQMS adapters\n- Connections CRUD: Create, list, get, update, delete QMS connections\n- Entity Mappings CRUD: Create, list, get, update, delete field transformations\n- Sync Jobs CRUD: Create, list, get, update, delete sync job states\n- Sync Conflicts CRUD: Create, list, get, update, delete sync conflict events\n- Connections Operations: Connectivity tests, schemas, active configs\n- Sync Operations: Triggering background sync jobs, status, cancel, and resolve conflicts",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Token saved');",
+									"}",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@pharmacorp.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user credentials to retrieve JWT token and auto-populate the jwt_token variable."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📋 Lookups",
+			"item": [
+				{
+					"name": "List Supported Systems",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/supported",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"supported"
+							]
+						},
+						"description": "Fetch supported external QMS adapters."
+					},
+					"response": []
+				},
+				{
+					"name": "Get System Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/supported/veeva",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"supported",
+								"veeva"
+							]
+						},
+						"description": "Fetch connection schema details for Veeva Vault."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🗄️ Connections CRUD",
+			"item": [
+				{
+					"name": "Create Connection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('connection_id', jsonData.data.id);",
+									"    console.log('✅ Connection ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Connection created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenant_id\": \"{{tenant_id}}\",\n    \"name\": \"Veeva QMS Connector\",\n    \"qms_type\": \"VEEVA_VAULT\",\n    \"base_url\": \"https://pharmacorp-vault.veevacontent.com\",\n    \"auth_type\": \"BASIC_AUTH\",\n    \"auth_config\": {\n        \"username\": \"api_connector\",\n        \"password\": \"VeevaSecret2026\"\n    },\n    \"sync_mode\": \"BIDIRECTIONAL\",\n    \"status\": \"ACTIVE\",\n    \"created_by\": \"{{user_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/connections",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections"
+							]
+						},
+						"description": "Create a new QMS connection configuration."
+					},
+					"response": []
+				},
+				{
+					"name": "List Connections",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections?page=1&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Fetch all QMS connections for the current tenant."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Connection by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}"
+							]
+						},
+						"description": "Fetch connection metadata by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Connection",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Veeva Vault Premium QMS\",\n    \"sync_mode\": \"BIDIRECTIONAL\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}"
+							]
+						},
+						"description": "Update specific connection attributes."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Connection",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}"
+							]
+						},
+						"description": "Deletes the connection configuration."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🗺️ Entity Mappings CRUD",
+			"item": [
+				{
+					"name": "Create Entity Mapping",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('mapping_id', jsonData.data.id);",
+									"    console.log('✅ Mapping ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Mapping created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenant_id\": \"{{tenant_id}}\",\n    \"qms_connection_id\": \"{{connection_id}}\",\n    \"qms_entity_type\": \"document\",\n    \"qassure_entity_type\": \"document\",\n    \"mapping_direction\": \"BIDIRECTIONAL\",\n    \"field_mappings\": [\n        {\n            \"source_field\": \"external_title\",\n            \"target_field\": \"title\",\n            \"type\": \"string\"\n        }\n    ],\n    \"transformation_rules\": {},\n    \"validation_rules\": {},\n    \"conflict_resolution_strategy\": \"MANUAL\",\n    \"sync_enabled\": true,\n    \"sync_frequency\": \"HOURLY\",\n    \"records_synced\": 0,\n    \"created_by\": \"{{user_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/entity-mappings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings"
+							]
+						},
+						"description": "Create a new entity mapping config for field transformations."
+					},
+					"response": []
+				},
+				{
+					"name": "List Entity Mappings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/entity-mappings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings"
+							]
+						},
+						"description": "List all active entity mappings."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Entity Mapping by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/entity-mappings/{{mapping_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings",
+								"{{mapping_id}}"
+							]
+						},
+						"description": "Fetch a specific entity mapping definition."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Entity Mapping",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sync_enabled\": false,\n    \"sync_frequency\": \"DAILY\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/entity-mappings/{{mapping_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings",
+								"{{mapping_id}}"
+							]
+						},
+						"description": "Update config parameters for entity mapping."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Entity Mapping",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/entity-mappings/{{mapping_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"entity-mappings",
+								"{{mapping_id}}"
+							]
+						},
+						"description": "Remove mapping rules."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔄 Sync Jobs CRUD",
+			"item": [
+				{
+					"name": "Create Sync Job",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('job_id', jsonData.data.id);",
+									"    console.log('✅ Job ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Job created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"connection_id\": \"{{connection_id}}\",\n    \"job_type\": \"INCREMENTAL\",\n    \"direction\": \"QMS_TO_QASSURE\",\n    \"status\": \"PENDING\",\n    \"entity_type\": \"document\",\n    \"triggered_by\": \"{{user_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/sync-jobs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs"
+							]
+						},
+						"description": "Creates a sync job record in the database tracking ledger."
+					},
+					"response": []
+				},
+				{
+					"name": "List Sync Jobs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/sync-jobs?page=1&limit=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Fetch all historical and current sync jobs."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sync Job by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/sync-jobs/{{job_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs",
+								"{{job_id}}"
+							]
+						},
+						"description": "Fetch specific sync job metrics."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Sync Job",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"COMPLETED\",\n    \"records_total\": 100,\n    \"records_processed\": 100,\n    \"records_created\": 98,\n    \"records_failed\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/sync-jobs/{{job_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs",
+								"{{job_id}}"
+							]
+						},
+						"description": "Update specific sync job status details."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Sync Job",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/sync-jobs/{{job_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-jobs",
+								"{{job_id}}"
+							]
+						},
+						"description": "Remove a sync job record from ledger history."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "⚠️ Sync Conflicts CRUD",
+			"item": [
+				{
+					"name": "Create Sync Conflict",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('conflict_id', jsonData.data.id);",
+									"    console.log('✅ Conflict ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Conflict created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenant_id\": \"{{tenant_id}}\",\n    \"sync_job_id\": \"{{job_id}}\",\n    \"qms_connection_id\": \"{{connection_id}}\",\n    \"entity_type\": \"document\",\n    \"entity_id\": \"doc-999\",\n    \"qms_record_id\": \"ext-doc-123\",\n    \"conflict_type\": \"FIELD_MISMATCH\",\n    \"conflict_field\": \"title\",\n    \"qms_value\": \"Veeva Document Title v2\",\n    \"qassure_value\": \"QAssure Document Title v1\",\n    \"status\": \"PENDING\",\n    \"retry_count\": 0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/sync-conflicts",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts"
+							]
+						},
+						"description": "Log a data conflict detected during record mapping synchronization."
+					},
+					"response": []
+				},
+				{
+					"name": "List Sync Conflicts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/sync-conflicts?page=1&limit=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Retrieve listed data synchronization conflicts."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sync Conflict by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/sync-conflicts/{{conflict_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts",
+								"{{conflict_id}}"
+							]
+						},
+						"description": "Fetch a specific conflict's detailed record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Sync Conflict",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"RESOLVED\",\n    \"resolution_strategy\": \"QMS_WINS\",\n    \"resolved_by\": \"{{user_id}}\",\n    \"resolution_notes\": \"Overwritten with Veeva Value automatically.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/sync-conflicts/{{conflict_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts",
+								"{{conflict_id}}"
+							]
+						},
+						"description": "Manually update or override conflict resolutions."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Sync Conflict",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/sync-conflicts/{{conflict_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync-conflicts",
+								"{{conflict_id}}"
+							]
+						},
+						"description": "Remove conflict records from monitoring list."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔌 Connections Operations",
+			"item": [
+				{
+					"name": "Test Connection",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"test"
+							]
+						},
+						"description": "Validates connection details and API token response of the target EQMS."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Entity Fields",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/fields/capa",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"fields",
+								"capa"
+							]
+						},
+						"description": "Get fields available on external entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Mappings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/mappings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"mappings"
+							]
+						},
+						"description": "Fetch list of active field transformation translations."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Mappings",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mappings\": [\n        {\n            \"source_field\": \"external_id\",\n            \"target_field\": \"source_record_id\",\n            \"transformation\": \"direct\",\n            \"is_required\": true\n        },\n        {\n            \"source_field\": \"severity\",\n            \"target_field\": \"priority\",\n            \"transformation\": \"map_priority\",\n            \"default_value\": \"medium\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/mappings/capa",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"mappings",
+								"capa"
+							]
+						},
+						"description": "Overwrites field mapping definitions for CAPAs."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sync Configuration",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/sync-config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"sync-config"
+							]
+						},
+						"description": "Fetch scheduling settings."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Sync Configuration",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sync_interval_minutes\": 60,\n    \"active_entities\": [\"capa\", \"deviation\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/sync-config",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"sync-config"
+							]
+						},
+						"description": "Updates interval timers and entity scopes."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "⚡ Sync Operations",
+			"item": [
+				{
+					"name": "Trigger Sync Job",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.job_id) {",
+									"    pm.collectionVariables.set('job_id', jsonData.data.job_id);",
+									"    console.log('✅ Job ID saved');",
+									"}",
+									"pm.test('Sync job triggered', function () {",
+									"    pm.response.to.have.status(202).or.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"job_type\": \"incremental\",\n    \"direction\": \"inbound\",\n    \"entity_types\": [\"capa\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/sync",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"sync"
+							]
+						},
+						"description": "Triggers a background data sync job."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sync Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/sync/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"sync",
+								"status"
+							]
+						},
+						"description": "Fetch progress status."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sync History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/sync/history?limit=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"sync",
+								"history"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get chronological logs of sync runs."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sync Errors",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/connections/{{connection_id}}/sync/errors",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"connections",
+								"{{connection_id}}",
+								"sync",
+								"errors"
+							]
+						},
+						"description": "Fetch sync failures."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sync Job details (Operation)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/sync/jobs/{{job_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync",
+								"jobs",
+								"{{job_id}}"
+							]
+						},
+						"description": "Fetch status details of a specific sync job."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Sync Job (Operation)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/qms/sync/jobs/{{job_id}}/cancel",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"sync",
+								"jobs",
+								"{{job_id}}",
+								"cancel"
+							]
+						},
+						"description": "Cancels a running sync job."
+					},
+					"response": []
+				},
+				{
+					"name": "Resolve Conflict (Operation)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"resolution\": \"source_wins\",\n    \"notes\": \"Override with external record values.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/qms/conflicts/{{conflict_id}}/resolve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"qms",
+								"conflicts",
+								"{{conflict_id}}",
+								"resolve"
+							]
+						},
+						"description": "Resolves a detected sync conflict using source_wins or target_wins."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "connection_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "mapping_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "job_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "conflict_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "tenant_id",
+			"value": "e0000000-1111-2222-3333-444444444444",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "u0000000-1111-2222-3333-444444444444",
+			"type": "string"
+		}
+	]
+}

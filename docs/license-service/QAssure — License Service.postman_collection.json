@@ -1,0 +1,457 @@
+{
+	"info": {
+		"_postman_id": "caca0f90-ef31-482d-88bb-cfda4091abcd",
+		"name": "QAssure — License Service",
+		"description": "API collection for QAssure License Service.\n\nBase URL: http://localhost:3000/api/v1\n\nAuth: Bearer JWT Token\n\nFolders included:\n- Auth: Helper login endpoints to save the jwt_token\n- Lookups: Static reference data (types, tiers, applications)\n- Tenant Operations: Activations, validations, and feature check endpoints\n- Super Admin CRUD: Full management, updates, revocations, and audit trace lookups",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Token saved');",
+									"}",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@pharmacorp.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user credentials to retrieve JWT token and auto-populate the jwt_token variable."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📋 Lookups",
+			"item": [
+				{
+					"name": "Get License Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/licenses/types",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"types"
+							]
+						},
+						"description": "Fetch static license type definitions."
+					},
+					"response": []
+				},
+				{
+					"name": "Get License Tiers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/licenses/tiers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"tiers"
+							]
+						},
+						"description": "Fetch tier definitions."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Licensable Applications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/licenses/applications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"applications"
+							]
+						},
+						"description": "Fetch standard app modules."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🏢 Tenant Operations",
+			"item": [
+				{
+					"name": "Get My Tenant Licenses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/licenses/my",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"my"
+							]
+						},
+						"description": "Fetch all licenses belonging to the authenticated user's tenant."
+					},
+					"response": []
+				},
+				{
+					"name": "Activate License",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"license_key\": \"{{license_key}}\",\n    \"instance_id\": \"prod-instance-01\",\n    \"device_fingerprint\": \"df-7f8e025a-4bcf-4a30\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/licenses/activate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"activate"
+							]
+						},
+						"description": "Register and bind a license key to the tenant instance."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate License",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"license_id\": \"{{license_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/licenses/validate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"validate"
+							]
+						},
+						"description": "Validates if the license has expired or is blocked."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Feature Access",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"license_id\": \"{{license_id}}\",\n    \"feature\": \"cer_generation\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/licenses/check-feature",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"check-feature"
+							]
+						},
+						"description": "Check whether a module capability is active."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🛡️ Super Admin CRUD",
+			"item": [
+				{
+					"name": "Create License",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('license_id', jsonData.data.id);",
+									"    pm.collectionVariables.set('license_key', jsonData.data.license_key);",
+									"    console.log('✅ License ID and Key saved');",
+									"}",
+									"pm.test('Created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenant_id\": \"c0000000-0000-0000-0000-000000000001\",\n    \"license_type\": \"subscription\",\n    \"tier\": \"professional\",\n    \"application\": \"aice\",\n    \"expires_at\": \"2027-06-26T12:00:00.000Z\",\n    \"limits\": {\n        \"max_users\": 25,\n        \"max_storage_gb\": 100\n    },\n    \"features\": [\"cer_generation\", \"literature_search\"],\n    \"notes\": \"Standard professional tier setup\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/licenses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses"
+							]
+						},
+						"description": "Generate a new license key with tier constraints."
+					},
+					"response": []
+				},
+				{
+					"name": "List All Licenses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/licenses?limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Fetch page list of all licenses across tenants."
+					},
+					"response": []
+				},
+				{
+					"name": "Get License by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/licenses/{{license_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"{{license_id}}"
+							]
+						},
+						"description": "Fetch detailed parameters of a license."
+					},
+					"response": []
+				},
+				{
+					"name": "Update License",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"limits\": {\n        \"max_users\": 30,\n        \"max_storage_gb\": 150\n    },\n    \"features\": [\"cer_generation\", \"literature_search\", \"meta_analysis\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/licenses/{{license_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"{{license_id}}"
+							]
+						},
+						"description": "Modifies features or limit configuration allocations."
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke License",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"Non-payment of professional tier subscription\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/licenses/{{license_id}}/revoke",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"{{license_id}}",
+								"revoke"
+							]
+						},
+						"description": "Revokes the license, setting status to revoked and blocking access."
+					},
+					"response": []
+				},
+				{
+					"name": "Get License Usage",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/licenses/{{license_id}}/usage",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"{{license_id}}",
+								"usage"
+							]
+						},
+						"description": "Returns allocated limits vs MTD actual counts."
+					},
+					"response": []
+				},
+				{
+					"name": "Get License Audit Trail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/licenses/{{license_id}}/audit",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"licenses",
+								"{{license_id}}",
+								"audit"
+							]
+						},
+						"description": "Fetch chronological audit logs for the license."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "license_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "license_key",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

@@ -1,0 +1,522 @@
+{
+	"info": {
+		"_postman_id": "sup-service-2026-001",
+		"name": "QAssure — Supplier Service",
+		"description": "API collection for QAssure Supplier Quality Management Service.\n\nBase URL: http://localhost:3000/api/v1\n\nAuth: Bearer JWT Token (auto-populated by Login request)\n\nFolders included:\n- Auth: Login endpoint to capture and store jwt_token collection variable\n- Lookups: Static reference data (types, categories, statuses, audit types)\n- Supplier CRUD: Create, read, update, and list suppliers\n- Workflow: Submit for qualification workflow and status patch\n- Contacts: Adding and fetching supplier contacts\n- Audits: Creating, listing, and completing supplier audits\n- Scorecards: Creating and fetching performance scorecards\n- ASL: Approved Supplier List management\n- Dashboard: Real-time quality dashboard metrics",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Token saved to collection variable');",
+									"}",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.token);",
+									"    console.log('✅ Token saved to collection variable (alt field)');",
+									"}",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@pharmacorp.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Authenticate and auto-populate jwt_token collection variable."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📋 Lookups",
+			"item": [
+				{
+					"name": "Get Supplier Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/types",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "types"]
+						},
+						"description": "Fetch static supplier type classifications: manufacturer, distributor, service_provider, raw_material, contract_manufacturer, logistics."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Supplier Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/categories",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "categories"]
+						},
+						"description": "Fetch static category classifications: critical, major, minor."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Supplier Statuses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/statuses",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "statuses"]
+						},
+						"description": "Fetch static lifecycle statuses: pending, qualified, approved, conditional, suspended, disqualified."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Audit Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/audit-types",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "audit-types"]
+						},
+						"description": "Fetch static audit type classifications: initial, periodic, for_cause, follow_up, desktop."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🏭 Supplier CRUD",
+			"item": [
+				{
+					"name": "1. Create Supplier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('supplier_id', jsonData.data.id);",
+									"    console.log('✅ Supplier ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Supplier created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"PharmaChem Raw Materials Ltd.\",\n    \"legal_name\": \"PharmaChem Incorporated\",\n    \"supplier_type\": \"raw_material\",\n    \"category\": \"critical\",\n    \"risk_level\": \"high\",\n    \"primary_contact_name\": \"Sarah Johnson\",\n    \"primary_contact_email\": \"sarah.johnson@pharmachem.com\",\n    \"primary_contact_phone\": \"+1-800-555-1234\",\n    \"website\": \"https://www.pharmachem.com\",\n    \"address_line1\": \"100 Industrial Parkway\",\n    \"city\": \"Raleigh\",\n    \"state\": \"NC\",\n    \"country\": \"USA\",\n    \"postal_code\": \"27601\",\n    \"tax_id\": \"EIN-98-7654321\",\n    \"products_services\": [\"Active Pharmaceutical Ingredients\", \"Excipients\"],\n    \"certifications\": [\n        {\n            \"name\": \"ISO 9001:2015\",\n            \"issuing_body\": \"BSI Group\",\n            \"expiry_date\": \"2027-06-30\"\n        }\n    ],\n    \"quality_agreement_signed\": true,\n    \"quality_agreement_date\": \"2026-01-15\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers"]
+						},
+						"description": "Create a new supplier. Auto-generates supplier_code (SUP-XXXXX) if not provided. Status defaults to 'pending'. Saves supplier_id to collection variable."
+					},
+					"response": []
+				},
+				{
+					"name": "2. List Suppliers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers?status=pending&limit=50",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers"],
+							"query": [
+								{ "key": "status", "value": "pending" },
+								{ "key": "category", "value": "critical", "disabled": true },
+								{ "key": "supplier_type", "value": "raw_material", "disabled": true },
+								{ "key": "risk_level", "value": "high", "disabled": true },
+								{ "key": "search", "value": "pharma", "disabled": true },
+								{ "key": "limit", "value": "50" },
+								{ "key": "offset", "value": "0", "disabled": true }
+							]
+						},
+						"description": "List all suppliers with optional filters: status, category, supplier_type, risk_level, search term. Supports pagination via limit and offset."
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get Supplier by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}"]
+						},
+						"description": "Retrieve full supplier details including contacts array, latest scorecard, address, certifications, and audit dates."
+					},
+					"response": []
+				},
+				{
+					"name": "4. Update Supplier",
+					"request": {
+						"method": "PUT",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"risk_level\": \"medium\",\n    \"certifications\": [\n        {\n            \"name\": \"ISO 9001:2015\",\n            \"issuing_body\": \"BSI Group\",\n            \"expiry_date\": \"2028-06-30\"\n        },\n        {\n            \"name\": \"GMP Certificate\",\n            \"issuing_body\": \"FDA\",\n            \"expiry_date\": \"2027-12-31\"\n        }\n    ],\n    \"quality_agreement_signed\": true,\n    \"quality_agreement_date\": \"2026-06-30\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}"]
+						},
+						"description": "Update supplier profile fields. Only allowed fields are updated; others are ignored. Writes audit log entry."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "⚡ Workflow Actions",
+			"item": [
+				{
+					"name": "Submit for Qualification",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/submit",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "submit"]
+						},
+						"description": "Submits a pending supplier to trigger the supplier_approval workflow. Status transitions from 'pending' to 'qualified'. Stores workflow_instance_id."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Supplier Status",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"approved\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "status"]
+						},
+						"description": "Manually update supplier lifecycle status. Valid values: pending, qualified, approved, conditional, suspended, disqualified. When set to 'approved', auto-sets approved_date and expiry_date (+1 year). Triggers notification to quality managers."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👤 Contacts",
+			"item": [
+				{
+					"name": "Get Supplier Contacts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/contacts",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "contacts"]
+						},
+						"description": "Fetch all contacts for a supplier, ordered by is_primary DESC, then name alphabetically."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Supplier Contact",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('contact_id', jsonData.data.id);",
+									"    console.log('✅ Contact ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Contact added successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"David Chen\",\n    \"title\": \"Quality Manager\",\n    \"email\": \"david.chen@pharmachem.com\",\n    \"phone\": \"+1-800-555-5678\",\n    \"mobile\": \"+1-919-555-9012\",\n    \"contact_type\": \"quality\",\n    \"is_primary\": false,\n    \"notes\": \"Primary quality contact for audit coordination\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/contacts",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "contacts"]
+						},
+						"description": "Add a new contact record to the supplier. contact_type options: primary, quality, sales, technical, emergency."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔍 Audits",
+			"item": [
+				{
+					"name": "Get Supplier Audits",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/audits",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "audits"]
+						},
+						"description": "Fetch all audits for a supplier ordered by scheduled_date DESC."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Supplier Audit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('audit_id', jsonData.data.id);",
+									"    console.log('✅ Audit ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Audit created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"audit_type\": \"periodic\",\n    \"audit_scope\": \"Full facility audit covering documentation, process controls, personnel training, and equipment qualification\",\n    \"scheduled_date\": \"2026-08-15\",\n    \"lead_auditor_id\": \"{{user_id}}\",\n    \"audit_team\": [\n        { \"user_id\": \"{{user_id}}\", \"name\": \"Alice QA\", \"role\": \"Lead Auditor\" },\n        { \"user_id\": \"{{user_id}}\", \"name\": \"Bob Eng\", \"role\": \"Technical Expert\" }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/audits",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "audits"]
+						},
+						"description": "Schedule a new supplier audit. Auto-generates audit_number (SA-YYYY-XXXX). Status defaults to 'planned'. Saves audit_id to collection variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Audit",
+					"request": {
+						"method": "PUT",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actual_date\": \"2026-08-16\",\n    \"findings_count\": 3,\n    \"major_findings\": 1,\n    \"minor_findings\": 2,\n    \"observations\": 0,\n    \"overall_rating\": \"conditional\",\n    \"score\": 72.5,\n    \"executive_summary\": \"Facility generally well maintained. One major finding related to documentation gaps in change control records.\",\n    \"strengths\": \"Excellent personnel training records. Clean facility.\",\n    \"weaknesses\": \"Change control documentation incomplete for 2 recent process changes.\",\n    \"recommendations\": \"Implement revised change control SOP within 30 days.\",\n    \"capa_required\": true,\n    \"next_audit_date\": \"2027-02-15\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/audits/{{audit_id}}/complete",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "audits", "{{audit_id}}", "complete"]
+						},
+						"description": "Complete an audit with findings summary, rating, score, and next audit date. Automatically updates the parent supplier's last_audit_date and next_audit_date."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Scorecards",
+			"item": [
+				{
+					"name": "Get Supplier Scorecards",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/scorecards",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "scorecards"]
+						},
+						"description": "Fetch all performance scorecards for a supplier ordered by period_end DESC."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Performance Scorecard",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('scorecard_id', jsonData.data.id);",
+									"    console.log('✅ Scorecard ID saved: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Scorecard created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"period_start\": \"2026-01-01\",\n    \"period_end\": \"2026-06-30\",\n    \"quality_score\": 88,\n    \"defect_rate\": 0.0012,\n    \"lot_acceptance_rate\": 98.5,\n    \"complaints_count\": 1,\n    \"delivery_score\": 92,\n    \"on_time_delivery_rate\": 96.2,\n    \"lead_time_adherence\": 94.0,\n    \"service_score\": 85,\n    \"responsiveness_score\": 88.0,\n    \"documentation_score\": 82.0,\n    \"cost_score\": 78,\n    \"price_competitiveness\": 78.0,\n    \"notes\": \"Solid performance in H1 2026. Minor dip in cost competitiveness vs. market benchmark.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/scorecards",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "scorecards"]
+						},
+						"description": "Create a performance scorecard for a period. Auto-calculates overall_score using weighted formula: (quality×0.4 + delivery×0.3 + service×0.2 + cost×0.1). Assigns grade A-F. Updates supplier's current_score and score_grade."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "✅ Approved Supplier List (ASL)",
+			"item": [
+				{
+					"name": "Get Approved Supplier List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/asl?status=active",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "asl"],
+							"query": [
+								{ "key": "status", "value": "active" },
+								{ "key": "material_category", "value": "API", "disabled": true }
+							]
+						},
+						"description": "Fetch the tenant's Approved Supplier List. Supports filtering by material_category and status."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Supplier to ASL",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"material_category\": \"API\",\n    \"material_codes\": [\"RM-4901\", \"RM-4902\", \"RM-5001\"],\n    \"approval_scope\": \"Approved for manufacture and supply of Active Pharmaceutical Ingredients in bulk form\",\n    \"restrictions\": \"Must provide CoA for each batch. Temperature-controlled shipping required (2-8°C).\",\n    \"approved_date\": \"2026-06-30\",\n    \"expiry_date\": \"2027-06-30\",\n    \"review_date\": \"2027-01-01\",\n    \"notes\": \"Approved following successful periodic audit SA-2026-0001.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/suppliers/{{supplier_id}}/asl",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "{{supplier_id}}", "asl"]
+						},
+						"description": "Add a supplier to the Approved Supplier List for a specific material_category. Unique constraint: one ASL entry per (supplier_id, material_category)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📈 Dashboard",
+			"item": [
+				{
+					"name": "Get Supplier Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/suppliers/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["suppliers", "dashboard"]
+						},
+						"description": "Fetch real-time supplier quality dashboard metrics: approved/pending/qualification/suspended counts, expiring_soon (within 30 days), critical suppliers, average score, and by-grade breakdown."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": { "type": "text/javascript", "exec": [""] }
+		},
+		{
+			"listen": "test",
+			"script": { "type": "text/javascript", "exec": [""] }
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:3000/api/v1", "type": "string" },
+		{ "key": "jwt_token", "value": "", "type": "string" },
+		{ "key": "supplier_id", "value": "", "type": "string" },
+		{ "key": "contact_id", "value": "", "type": "string" },
+		{ "key": "audit_id", "value": "", "type": "string" },
+		{ "key": "scorecard_id", "value": "", "type": "string" },
+		{ "key": "user_id", "value": "replace-with-valid-user-uuid", "type": "string" }
+	]
+}

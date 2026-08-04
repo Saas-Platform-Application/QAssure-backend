@@ -1,0 +1,2095 @@
+{
+	"info": {
+		"_postman_id": "f4ffd098-bc4d-407d-a1e0-a8c60656410c",
+		"name": "QAssure — Reporting & Analytics Service",
+		"description": "All 27 Report Service endpoints verified against live system on 28-Feb-2026.\n\nBase URL: http://localhost:3000/api/v1\n\nAuth: Supports THREE authentication modes:\n(a) JWT only — QAssure UI users via Authorization: Bearer header\n(b) JWT + API Key combined — Module on behalf of user (after SSO launch). JWT from verify-launch-token + X-API-Key. User permissions enforced. Audit trail shows real user.\n(c) API Key + X-Tenant-ID — Module system/cron operations. Full module-level access. No user context.\n\nTenant: Pharma Corp (c0000000-0000-0000-0000-000000000001)\n\nEndpoints covered:\n- Dashboard (1): GET /reporting/dashboard\n- KPIs (1): GET /reporting/kpis\n- Trends (1): GET /reporting/trends\n- Reports (3): list, get, execute\n- Search (3): global search, health, reindex\n- Audit Logs (1): GET /reporting/audit-logs\n- Scheduled Reports (6): CRUD + run + delete\n- Exports (7): PDF/Excel for reports + dashboard, list, download, delete, cleanup\n- Security (2): no auth, invalid JWT\n- Auth modes (2): API Key only, Combined\n\nArchitecture notes:\n- Export files are tenant-isolated: exports/{tenant_id}/\n- All exports tracked in report_history with output_path\n- Scheduled report execution generates export files (PDF/Excel)\n- Daily cleanup cron purges files >30 days\n- Cleanup admin endpoint: DELETE /exports/cleanup",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48835086"
+	},
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login — Tenant Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Token saved');",
+									"}",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.token);",
+									"    console.log('✅ Token saved (alt field)');",
+									"}",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@pharmacorp.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Tenant Admin. Token is auto-saved to collection variable jwt_token.\n\nCredentials: admin@pharmacorp.com / Admin@123\nPermissions: *:* (full access including reports:read, reports:write)"
+					},
+					"response": []
+				},
+				{
+					"name": "Login — Super Admin (LTTS)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"}",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"testadmin@ltts.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Super Admin. Bypasses permission checks."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔗 SSO Launch + Combined Auth",
+			"item": [
+				{
+					"name": "Step 1 — Login (get user JWT for launch)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Login token saved');",
+									"}",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"tenant9admin@gmail.com\",\n    \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as tenant user. This simulates the QAssure UI login before module launch.\nToken auto-saved to jwt_token variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 — Launch Module (get launch token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.launch_url) {",
+									"    var url = jsonData.data.launch_url;",
+									"    var token = url.split('token=')[1];",
+									"    if (token) {",
+									"        pm.collectionVariables.set('launch_token', token);",
+									"        console.log('✅ Launch token saved: ' + token.substring(0, 20) + '...');",
+									"    }",
+									"}",
+									"",
+									"pm.test('Launch successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.launch_url).to.include('token=');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/{{coc_module_id}}/launch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{coc_module_id}}",
+								"launch"
+							]
+						},
+						"description": "Launch COC module for current user. Returns launch_url with token parameter.\nUses jwt_token from Step 1 (collection-level Bearer auth).\nLaunch token is a one-time token valid for ~60 seconds."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3 — Verify Launch Token (get module JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('module_jwt', jsonData.data.token);",
+									"    console.log('✅ Module session JWT saved');",
+									"    console.log('   User: ' + jsonData.data.user.email);",
+									"    console.log('   Tenant: ' + jsonData.data.tenant.name);",
+									"    console.log('   Permissions: ' + jsonData.data.permissions.length + ' permissions');",
+									"    console.log('   Expires: ' + jsonData.data.expires_at);",
+									"}",
+									"",
+									"pm.test('Verify successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.token).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"token\": \"{{launch_token}}\"}"
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/verify-launch-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"verify-launch-token"
+							]
+						},
+						"description": "Module backend exchanges launch token for session JWT.\n⚠️ Uses coc_api_key (NOT api_key)\n⚠️ Field name is 'token' (NOT 'launch_token')\n⚠️ X-Tenant-ID is NOT needed — tenant derived from launch token\n\nResponse includes: user, tenant, access, permissions, module, token (24h expiry)\n\nRun Step 2 immediately before this — launch tokens expire in ~60 seconds."
+					},
+					"response": []
+				}
+			],
+			"description": "Complete SSO launch flow for module developers (LTTS).\n\nFlow: Login → Launch Module → Verify Launch Token (gets JWT) → Use JWT + API Key for all platform calls.\n\nThis is the RECOMMENDED mode for all user-context operations.\n✅ Audit trail records real user identity\n✅ User permissions enforced\n✅ Module identity tracked for source attribution\n⚠️ Uses coc_api_key variable (NOT api_key)\n⚠️ X-Tenant-ID is NOT needed — tenant derived from JWT\n\nRun Steps 1-3 first to set up module_jwt, then run any endpoint."
+		},
+		{
+			"name": "📊 Dashboard & KPIs",
+			"item": [
+				{
+					"name": "1. GET Executive Dashboard",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"dashboard"
+							]
+						},
+						"description": "Returns aggregated quality metrics across all modules.\nRequires: reports:read (via authorize('reports','read'))\n\nResponse fields:\n- generated_at: ISO timestamp\n- tenant_id: UUID\n- capa: { open, overdue, critical, closed_30d, new_30d, avg_days_to_close, on_time_rate }\n- training: { total_assignments, completed, in_progress, overdue, compliance_rate }\n- documents: { total, effective, draft, in_review, review_overdue, review_upcoming, currency_rate }\n- suppliers: { total, approved, pending, suspended, expiring_soon, avg_score }\n- health_score: 0-100 composite score\n\nVerified: 200, health_score=100, 13 documents (5 draft, 3 effective)"
+					},
+					"response": []
+				},
+				{
+					"name": "2. GET KPIs",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/kpis",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"kpis"
+							]
+						},
+						"description": "Returns 10 KPI definitions with live values.\nRequires: reports:read\n\nResponse per KPI: id, code, name, description, module, value, target, unit, status (on_target/warning/neutral)\n\nSeeded KPIs: capa_open_count, capa_overdue_count, capa_ontime_rate, training_compliance, training_overdue_count, docs_due_review, docs_currency_rate, supplier_approved_count, supplier_avg_score, supplier_expiring"
+					},
+					"response": []
+				},
+				{
+					"name": "3. GET Trends",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/trends?period=yearly",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"trends"
+							],
+							"query": [
+								{
+									"key": "period",
+									"value": "yearly",
+									"description": "Default: monthly"
+								},
+								{
+									"key": "months",
+									"value": "6",
+									"description": "Default: 6. Number of months to look back.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns monthly trend data for CAPA and training.\nRequires: reports:read\n\nResponse: { period, data: [{ period: 'YYYY-MM', capas_opened, capas_closed, training_completed, training_assigned }] }\n\nVerified: 200, 6 monthly buckets"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📋 Report Definitions & Execution",
+			"item": [
+				{
+					"name": "4. GET Report Definitions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.length > 0) {",
+									"    pm.collectionVariables.set('report_id', jsonData.data[0].id);",
+									"    console.log('✅ First report ID saved: ' + jsonData.data[0].id);",
+									"    console.log('   Reports found: ' + jsonData.data.length);",
+									"    jsonData.data.forEach(function(r) {",
+									"        console.log('   - ' + r.code + ': ' + r.name);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/reports",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"reports"
+							]
+						},
+						"description": "Returns all active report definitions for tenant.\nRequires: reports:read\n\n6 seeded reports:\n1. capa_summary — CAPA Summary Report\n2. exec_dashboard — Executive Dashboard\n3. monthly_quality — Monthly Quality Metrics\n4. doc_review_status — Document Review Status\n5. supplier_scorecard — Supplier Scorecard\n6. training_compliance — Training Compliance\n\nFirst report ID auto-saved to report_id variable."
+					},
+					"response": []
+				},
+				{
+					"name": "5. GET Report by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/reports/{{report_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"reports",
+								"{{report_id}}"
+							]
+						},
+						"description": "Returns full report definition object.\nRequires: reports:read\n\nFields: id, tenant_id, code, name, description, category, data_source, default_parameters, output_columns, is_active, created_at, updated_at"
+					},
+					"response": []
+				},
+				{
+					"name": "6. POST Execute Report",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reporting/reports/{{report_id}}/execute",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"reports",
+								"{{report_id}}",
+								"execute"
+							]
+						},
+						"description": "Executes report and returns data.\nRequires: reports:read\n\nResponse: { report: 'CAPA Summary Report', generated_at: ISO, data: [...] }\n\nAlso logs execution to report_history table.\n\nNote: CAPA Summary returns empty array if no CAPAs in DB."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔍 Search & Elasticsearch",
+			"item": [
+				{
+					"name": "7. GET Global Search",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/search?q=test&limit=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "test",
+									"description": "Search query — searches across documents, CAPAs, suppliers, training"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Default: 20"
+								}
+							]
+						},
+						"description": "Full-text search across all QAssure entities via Elasticsearch.\nRequires: reports:read\n\nFalls back to PostgreSQL ILIKE if ES unavailable.\nReturns results with highlights from ES.\n\nVerified: 200, 6 documents found for q=test"
+					},
+					"response": []
+				},
+				{
+					"name": "8. GET Search Health",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/search/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"search",
+								"health"
+							]
+						},
+						"description": "Returns Elasticsearch cluster health status.\nRequires: reports:read\n\nResponse: ES cluster status, index count, node info.\nStatus 'yellow' is normal for single-node dev clusters.\n\nVerified: 200, status=yellow, healthy=true"
+					},
+					"response": []
+				},
+				{
+					"name": "9. POST Reindex CAPAs",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/search/reindex/capas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"search",
+								"reindex",
+								"capas"
+							]
+						},
+						"description": "Triggers full reindex of CAPAs into Elasticsearch.\nRequires: reports:write\n\nResponse: { indexed: N } where N = number of CAPAs reindexed.\n\nVerified: 200, indexed=0 (no CAPAs in seed data)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📝 Audit Logs",
+			"item": [
+				{
+					"name": "10. GET Audit Logs",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/audit-logs?limit=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"audit-logs"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50",
+									"description": "Default: 50"
+								},
+								{
+									"key": "entity_type",
+									"value": "document",
+									"description": "Filter by entity type",
+									"disabled": true
+								},
+								{
+									"key": "user_id",
+									"value": "",
+									"description": "Filter by user UUID",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns audit log entries from Elasticsearch.\nRequires: reports:read\n\nReturns empty array if no audit events have been indexed.\nVerified: 200, empty array (no audit logs in ES)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "⏰ Scheduled Reports",
+			"item": [
+				{
+					"name": "11. POST Create Scheduled Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('scheduled_id', jsonData.data.id);",
+									"    console.log('✅ Scheduled report created: ' + jsonData.data.id);",
+									"    console.log('   Next run: ' + jsonData.data.next_run_at);",
+									"}",
+									"",
+									"pm.test('Created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.next_run_at).to.not.be.null;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"report_definition_id\": \"{{report_id}}\",\n    \"name\": \"Daily CAPA Summary\",\n    \"schedule_type\": \"daily\",\n    \"schedule_config\": {\"hour\": 8, \"minute\": 0},\n    \"recipients\": [{\"email\": \"tenant8admin@gmail.com\"}],\n    \"output_format\": \"pdf\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled"
+							]
+						},
+						"description": "Creates a scheduled report with auto-calculated next_run_at.\nRequires: reports:write\n\nFields:\n- report_definition_id: UUID (required)\n- name: string (required)\n- schedule_type: daily|weekly|monthly|quarterly\n- schedule_config: { hour, minute, day_of_week (for weekly), day_of_month (for monthly) }\n- recipients: [{ email }]\n- output_format: pdf|excel\n- include_charts: boolean (default true)\n\nID auto-saved to scheduled_id variable.\n\nVerified: 201, next_run_at calculated correctly"
+					},
+					"response": []
+				},
+				{
+					"name": "12. GET List Scheduled Reports",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled?is_active=true&limit=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled"
+							],
+							"query": [
+								{
+									"key": "is_active",
+									"value": "true",
+									"description": "Filter by active status"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns all scheduled reports for tenant.\nRequires: reports:read\n\nIncludes report_name and report_code from joined report_definitions."
+					},
+					"response": []
+				},
+				{
+					"name": "13. GET Scheduled Report by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled/{{scheduled_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled",
+								"{{scheduled_id}}"
+							]
+						},
+						"description": "Returns single scheduled report with report_name/report_code joins.\nRequires: reports:read"
+					},
+					"response": []
+				},
+				{
+					"name": "14. PUT Update Scheduled Report",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Weekly CAPA Summary\",\n    \"schedule_type\": \"weekly\",\n    \"schedule_config\": {\"hour\": 8, \"minute\": 0, \"day_of_week\": 1},\n    \"output_format\": \"excel\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled/{{scheduled_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled",
+								"{{scheduled_id}}"
+							]
+						},
+						"description": "Updates scheduled report. Recalculates next_run_at if schedule changes.\nRequires: reports:write\n\nAllowed fields: name, schedule_type, schedule_config, recipients, output_format, include_charts, is_active\n\nVerified: 200, daily→weekly, next_run_at recalculated"
+					},
+					"response": []
+				},
+				{
+					"name": "15. POST Run Scheduled Report Now",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.export) {",
+									"    pm.collectionVariables.set('export_filename', jsonData.data.export.filename);",
+									"    console.log('✅ Report executed with export file');",
+									"    console.log('   File: ' + jsonData.data.export.filename);",
+									"    console.log('   Size: ' + jsonData.data.export.size_bytes + ' bytes');",
+									"    console.log('   Download: ' + jsonData.data.export.download_path);",
+									"}",
+									"",
+									"pm.test('Execution successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.export).to.not.be.undefined;",
+									"    pm.expect(jsonData.data.export.filename).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled/{{scheduled_id}}/run",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled",
+								"{{scheduled_id}}",
+								"run"
+							]
+						},
+						"description": "Manually triggers scheduled report execution.\nRequires: reports:read\n\nNow generates export file in tenant-isolated directory.\nResponse includes export metadata: { filename, format, size_bytes, history_id, download_path }\n\nFile saved to: exports/{tenant_id}/{filename}\nExecution logged to report_history with output_path.\n\nExport filename auto-saved to export_filename variable.\n\nVerified: 200, generates Excel file in tenant dir"
+					},
+					"response": []
+				},
+				{
+					"name": "16. DELETE Scheduled Report",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled/{{scheduled_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled",
+								"{{scheduled_id}}"
+							]
+						},
+						"description": "Deletes scheduled report and its report_history records.\nRequires: reports:write\n\nDeletes report_history first (FK has no CASCADE), then scheduled_report.\n\nVerified: 200, no FK constraint violation even after execution"
+					},
+					"response": []
+				},
+				{
+					"name": "Run Scheduled Report Now",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}",
+								"type": "text"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled/:id/run",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled",
+								":id",
+								"run"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{scheduled_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Full CRUD + manual execution for scheduled reports.\nScheduled reports generate export files (PDF/Excel) on execution.\nFiles saved to tenant-isolated directory: exports/{tenant_id}/\nExecution logged to report_history with output_path.\n\nRun in order: Create → List → Get → Update → Run → Delete"
+		},
+		{
+			"name": "📤 Exports",
+			"item": [
+				{
+					"name": "17. POST Export Report to PDF",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('PDF export successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var contentType = pm.response.headers.get('Content-Type');",
+									"    console.log('✅ PDF exported: ' + pm.response.responseSize + ' bytes');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reporting/reports/{{report_id}}/export/pdf",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"reports",
+								"{{report_id}}",
+								"export",
+								"pdf"
+							]
+						},
+						"description": "Executes report and returns PDF file download.\nRequires: reports:read\n\nFile saved to exports/{tenant_id}/ and tracked in report_history.\nResponse is binary PDF file stream via res.download().\n\nVerified: 200, ~2,097 bytes PDF with header, metrics, page numbers"
+					},
+					"response": []
+				},
+				{
+					"name": "18. POST Export Report to Excel",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reporting/reports/{{report_id}}/export/excel",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"reports",
+								"{{report_id}}",
+								"export",
+								"excel"
+							]
+						},
+						"description": "Executes report and returns Excel file download.\nRequires: reports:read\n\nMulti-sheet workbook: Report Data + Report Info (metadata).\nStyled headers, alternating row colors, auto-filter.\n\nVerified: 200, ~6,582 bytes XLSX"
+					},
+					"response": []
+				},
+				{
+					"name": "19. GET Dashboard Export PDF",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/dashboard/export/pdf",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"dashboard",
+								"export",
+								"pdf"
+							]
+						},
+						"description": "Exports executive dashboard as PDF.\nRequires: reports:read\n\nIncludes health score, CAPA/Training/Document/Supplier metrics sections.\n\nVerified: 200, ~2,729 bytes"
+					},
+					"response": []
+				},
+				{
+					"name": "20. GET Dashboard Export Excel",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/dashboard/export/excel",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"dashboard",
+								"export",
+								"excel"
+							]
+						},
+						"description": "Exports executive dashboard as Excel.\nRequires: reports:read\n\nMulti-sheet: Summary + CAPA + Training + Documents + Suppliers + Report Info.\nStyled headers with blue theme.\n\nVerified: 200, ~11,113 bytes"
+					},
+					"response": []
+				},
+				{
+					"name": "21. GET List Exports",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.length > 0) {",
+									"    var latest = jsonData.data[0];",
+									"    pm.collectionVariables.set('export_filename', latest.filename);",
+									"    console.log('✅ Exports found: ' + jsonData.data.length);",
+									"    console.log('   Latest: ' + latest.filename + ' (' + latest.size_bytes + ' bytes)');",
+									"    console.log('   Isolated: ' + latest.isolated);",
+									"}",
+									"",
+									"pm.test('List exports successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/exports",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"exports"
+							]
+						},
+						"description": "Lists all export files for tenant.\nRequires: reports:read\n\nResponse per file: filename, type (pdf/excel), size_bytes, created_at, path, isolated (true=tenant dir, false=legacy)\n\nTenant-scoped: shows files from exports/{tenant_id}/ plus legacy flat exports/.\nSorted by created_at descending.\n\nLatest filename auto-saved to export_filename variable."
+					},
+					"response": []
+				},
+				{
+					"name": "22. GET Download Export",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/exports/download/{{export_filename}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"exports",
+								"download",
+								"{{export_filename}}"
+							]
+						},
+						"description": "Downloads export file by filename.\nRequires: reports:read\n\nChecks tenant-isolated directory first, falls back to legacy flat directory.\nReturns binary file stream.\n\nVerified: 200, correct file size"
+					},
+					"response": []
+				},
+				{
+					"name": "23. DELETE Export File",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/exports/{{export_filename}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"exports",
+								"{{export_filename}}"
+							]
+						},
+						"description": "Deletes export file with tenant ownership check.\nRequires: reports:write\n\nAlso cleans up report_history.output_path reference.\n\n⚠️ This deletes the file saved in export_filename variable. Run List Exports again to get a new filename if needed."
+					},
+					"response": []
+				},
+				{
+					"name": "24. DELETE Cleanup Old Exports (Admin)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/exports/cleanup?max_age_days=30",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"exports",
+								"cleanup"
+							],
+							"query": [
+								{
+									"key": "max_age_days",
+									"value": "30",
+									"description": "Default: 30. Delete files older than this many days."
+								}
+							]
+						},
+						"description": "Admin endpoint: purges export files older than max_age_days.\nRequires: reports:write\n\nCleans up both tenant-isolated and legacy directories.\nAlso nullifies stale report_history.output_path references.\nAlso runs automatically via daily cron at midnight.\n\nResponse: { deleted: N, errors: N }\n\nVerified: 200, { deleted: 0, errors: 0 }"
+					},
+					"response": []
+				}
+			],
+			"description": "PDF and Excel export generation + file management.\nAll exports are tenant-isolated: exports/{tenant_id}/\nAll exports tracked in report_history with output_path, output_format, file_size_bytes.\n\nExport types:\n- Report exports: POST /reports/:id/export/pdf or /excel\n- Dashboard exports: GET /dashboard/export/pdf or /excel\n- File management: list, download, delete, cleanup"
+		},
+		{
+			"name": "🔑 API Key Only (System/Cron Mode)",
+			"item": [
+				{
+					"name": "API Key — Dashboard",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "X-Tenant-ID",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"dashboard"
+							]
+						},
+						"description": "Dashboard via API Key only.\n⚠️ Requires X-Tenant-ID header for tenant scoping.\n\nVerified: 200, tenant_id populated, 13 documents, health_score=100"
+					},
+					"response": []
+				},
+				{
+					"name": "API Key — List Reports",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "X-Tenant-ID",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/reports",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"reports"
+							]
+						},
+						"description": "List report definitions via API Key.\nVerified: 200, 6 reports returned"
+					},
+					"response": []
+				},
+				{
+					"name": "API Key — List Exports",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "X-Tenant-ID",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/exports",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"exports"
+							]
+						},
+						"description": "List exports via API Key. Returns tenant-scoped files.\nVerified: 200"
+					},
+					"response": []
+				},
+				{
+					"name": "API Key — Missing X-Tenant-ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"dashboard"
+							]
+						},
+						"description": "API Key without X-Tenant-ID.\n\nBehavior: Passes auth (no hard reject) but tenantId=null.\nDashboard returns zeros for all metrics since queries run unscoped.\n\n⚠️ For module-linked API keys, always include X-Tenant-ID header.\nverify-launch-token is the ONLY endpoint that doesn't need it (tenant from launch token body)."
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for module system operations via X-API-Key + X-Tenant-ID headers.\nUsed for: cron jobs, background sync, system operations with no user context.\nAPI Key has full module-level access — bypasses user permission checks.\nAudit trail records module identity, not a specific user.\n\n⚠️ For user-context operations, use Combined Auth (JWT + API Key) instead — see SSO Launch folder."
+		},
+		{
+			"name": "🛡️ Security Tests",
+			"item": [
+				{
+					"name": "25. No Auth — 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Returns 401 without auth', function () {",
+									"    pm.response.to.have.status(401);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error.code).to.eql('MISSING_TOKEN');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reporting/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"dashboard"
+							]
+						},
+						"description": "No auth headers at all.\nExpected: 401 { code: 'MISSING_TOKEN', message: 'Authentication token is required', hint: '...' }\n\nVerified: 401 MISSING_TOKEN"
+					},
+					"response": []
+				},
+				{
+					"name": "26. Invalid JWT — 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Returns 401 with invalid JWT', function () {",
+									"    pm.response.to.have.status(401);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error.code).to.eql('INVALID_TOKEN');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid.jwt.token"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"dashboard"
+							]
+						},
+						"description": "Malformed JWT.\nExpected: 401 { code: 'INVALID_TOKEN' }\n\nVerified: 401 INVALID_TOKEN"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🚀 Full Lifecycle (Run in Order)",
+			"item": [
+				{
+					"name": "Step 1 — Dashboard",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Dashboard returns health score', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.data.health_score).to.be.a('number');",
+									"    console.log('✅ Health Score: ' + jsonData.data.health_score);",
+									"    console.log('   Documents: ' + jsonData.data.documents.total);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"dashboard"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 — KPIs",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('KPIs returned', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    console.log('✅ KPIs: ' + jsonData.data.length);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/kpis",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"kpis"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3 — Execute Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Report executed', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.data.report).to.be.a('string');",
+									"    console.log('✅ Report: ' + jsonData.data.report);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reporting/reports/{{report_id}}/execute",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"reports",
+								"{{report_id}}",
+								"execute"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 4 — Export PDF",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('PDF exported', function () {",
+									"    pm.response.to.have.status(200);",
+									"    console.log('✅ PDF: ' + pm.response.responseSize + ' bytes');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reporting/reports/{{report_id}}/export/pdf",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"reports",
+								"{{report_id}}",
+								"export",
+								"pdf"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 5 — Create Schedule",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('scheduled_id', jsonData.data.id);",
+									"    console.log('✅ Schedule created: ' + jsonData.data.id);",
+									"}",
+									"pm.test('Schedule created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"report_definition_id\": \"{{report_id}}\",\n    \"name\": \"Lifecycle Test Schedule\",\n    \"schedule_type\": \"daily\",\n    \"schedule_config\": {\"hour\": 8, \"minute\": 0},\n    \"recipients\": [{\"email\": \"admin@pharmacorp.com\"}],\n    \"output_format\": \"pdf\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 6 — Run Schedule (generates file)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.export) {",
+									"    pm.collectionVariables.set('export_filename', jsonData.data.export.filename);",
+									"    console.log('✅ File generated: ' + jsonData.data.export.filename);",
+									"}",
+									"pm.test('Schedule ran with file output', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.data.export.filename).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled/{{scheduled_id}}/run",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled",
+								"{{scheduled_id}}",
+								"run"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 7 — List Exports (verify file)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test('Exports listed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.data.length).to.be.greaterThan(0);",
+									"    var isolated = jsonData.data.filter(function(f) { return f.isolated === true; });",
+									"    console.log('✅ Total exports: ' + jsonData.data.length + ' (' + isolated.length + ' tenant-isolated)');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/exports",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"exports"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 8 — Download Export",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('File downloaded', function () {",
+									"    pm.response.to.have.status(200);",
+									"    console.log('✅ Downloaded: ' + pm.response.responseSize + ' bytes');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/exports/download/{{export_filename}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"exports",
+								"download",
+								"{{export_filename}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 9 — Delete Schedule",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Schedule deleted', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.message).to.include('deleted');",
+									"    console.log('✅ Deleted (no FK error)');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reporting/scheduled/{{scheduled_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reporting",
+								"scheduled",
+								"{{scheduled_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Run these requests sequentially to test complete reporting workflow:\n\n1. Dashboard → 2. KPIs → 3. Trends → 4. List Reports → 5. Execute Report → 6. Export PDF → 7. Export Excel → 8. Create Schedule → 9. Run Schedule → 10. Download Export → 11. Delete Schedule → 12. Cleanup\n\nPre-requisite: Run SSO Launch Steps 1-3 first to set up module_jwt."
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1"
+		},
+		{
+			"key": "prod_url",
+			"value": "https://backendqassure.tech4bizsolutions.com/api/v1"
+		},
+		{
+			"key": "jwt_token",
+			"value": ""
+		},
+		{
+			"key": "api_key",
+			"value": "qas_f1555aa2d24ac69a39a377b814d1af3f75029d92da981e6460fc6781a60d7d9e",
+			"description": {
+				"content": "AiCE Test Module API Key. Used for API Key-only (system/cron) tests.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "tenant_id",
+			"value": "c0000000-0000-0000-0000-000000000001"
+		},
+		{
+			"key": "module_jwt",
+			"value": "",
+			"description": {
+				"content": "JWT obtained from verify-launch-token response. Used for combined JWT + API Key mode.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "launch_token",
+			"value": "",
+			"description": {
+				"content": "Module launch token from SSO redirect.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "coc_api_key",
+			"value": "qas_testkey1234567890abcdef1234567890abcdef1234567890abcdef12345678",
+			"description": {
+				"content": "COC Module API Key. Used for SSO launch + combined auth tests.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "coc_module_id",
+			"value": "f0000000-0000-0000-0000-000000000001",
+			"description": {
+				"content": "COC Module UUID for launch endpoint.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "report_id",
+			"value": "44a18872-db30-4612-a70d-9636545dd4a9",
+			"description": {
+				"content": "CAPA Summary Report definition ID (seeded).",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "scheduled_id",
+			"value": "",
+			"description": {
+				"content": "Last created scheduled report ID.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "export_filename",
+			"value": "",
+			"description": {
+				"content": "Last exported file name for download/delete tests.",
+				"type": "text/plain"
+			}
+		}
+	]
+}

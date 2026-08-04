@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qassure-config
+  namespace: qassure
+  labels:
+    app.kubernetes.io/name: qassure
+    app.kubernetes.io/component: config
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  API_PREFIX: "/api/v1"
+  
+  # Database
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "qassure_prod"
+  DB_SSL: "true"
+  
+  # Redis
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  
+  # Kafka
+  KAFKA_BROKERS: "kafka-0.kafka-headless:9092,kafka-1.kafka-headless:9092,kafka-2.kafka-headless:9092"
+  KAFKA_CLIENT_ID: "qassure-api"
+  KAFKA_GROUP_ID: "qassure-consumers"
+  
+  # Elasticsearch
+  ELASTICSEARCH_URL: "http://elasticsearch-service:9200"
+  
+  # JWT
+  JWT_EXPIRES_IN: "24h"
+  JWT_REFRESH_EXPIRES_IN: "7d"
+  
+  # CORS
+  CORS_ORIGIN: "https://app.qassure.ai"
+  
+  # Logging
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  
+  # Feature Flags
+  ENABLE_WEBSOCKET: "true"
+  ENABLE_KAFKA: "true"
+  ENABLE_ELASTICSEARCH: "true"

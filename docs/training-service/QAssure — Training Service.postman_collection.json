@@ -1,0 +1,533 @@
+{
+  "info": {
+    "name": "QAssure — Training Service",
+    "_postman_id": "qassure-training-v1",
+    "description": "Complete API collection for the QAssure Training Management Service. Base URL: {{baseUrl}}/api/v1/training",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "token", "value": "YOUR_JWT_TOKEN_HERE", "type": "string" },
+    { "key": "tenantId", "value": "", "type": "string" },
+    { "key": "courseId", "value": "", "type": "string" },
+    { "key": "assignmentId", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "competencyId", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const res = pm.response.json();",
+                  "  if (res.data && res.data.access_token) {",
+                  "    pm.collectionVariables.set('token', res.data.access_token);",
+                  "    console.log('token set:', res.data.access_token);",
+                  "  }",
+                  "  if (res.data && res.data.tenant_id) {",
+                  "    pm.collectionVariables.set('tenantId', res.data.tenant_id);",
+                  "  }",
+                  "  if (res.data && res.data.user && res.data.user.id) {",
+                  "    pm.collectionVariables.set('userId', res.data.user.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@qassure.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Static Data",
+      "item": [
+        {
+          "name": "Get Course Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/types", "host": ["{{baseUrl}}"], "path": ["api","v1","training","types"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/categories", "host": ["{{baseUrl}}"], "path": ["api","v1","training","categories"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Statuses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/statuses", "host": ["{{baseUrl}}"], "path": ["api","v1","training","statuses"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard (My Scope)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/dashboard", "host": ["{{baseUrl}}"], "path": ["api","v1","training","dashboard"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard (Tenant-Wide)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/dashboard?all=true", "host": ["{{baseUrl}}"], "path": ["api","v1","training","dashboard"], "query": [{ "key": "all", "value": "true" }] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Expiring Certifications (30 days)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/expiring-certifications", "host": ["{{baseUrl}}"], "path": ["api","v1","training","expiring-certifications"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Expiring Certifications (Custom Days)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/expiring-certifications?days_ahead=60", "host": ["{{baseUrl}}"], "path": ["api","v1","training","expiring-certifications"], "query": [{ "key": "days_ahead", "value": "60" }] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "My Training",
+      "item": [
+        {
+          "name": "Get My Assignments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/my/assignments", "host": ["{{baseUrl}}"], "path": ["api","v1","training","my","assignments"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Assignments (Filter by Status)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/training/my/assignments?status=assigned&limit=20&offset=0",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","training","my","assignments"],
+              "query": [{ "key": "status", "value": "assigned" }, { "key": "limit", "value": "20" }, { "key": "offset", "value": "0" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Training Records",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/my/records", "host": ["{{baseUrl}}"], "path": ["api","v1","training","my","records"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "Create Course (Minimal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('courseId', body.data.id);",
+                  "  console.log('courseId set:', body.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_code\": \"QMS-001\",\n  \"title\": \"Quality Management Basics\",\n  \"course_type\": \"online\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/courses", "host": ["{{baseUrl}}"], "path": ["api","v1","training","courses"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course (Full)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_code\": \"GMP-001\",\n  \"title\": \"GMP Fundamentals\",\n  \"description\": \"Comprehensive GMP training for all manufacturing staff.\",\n  \"course_type\": \"classroom\",\n  \"category\": \"compliance\",\n  \"duration_hours\": 8,\n  \"passing_score\": 75,\n  \"max_attempts\": 2,\n  \"prerequisites\": [],\n  \"required_for_roles\": [\"operator\", \"quality_technician\"],\n  \"required_for_departments\": [\"manufacturing\"],\n  \"requires_recertification\": true,\n  \"recertification_months\": 12,\n  \"content_url\": \"https://lms.example.com/gmp-001\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/courses", "host": ["{{baseUrl}}"], "path": ["api","v1","training","courses"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/courses", "host": ["{{baseUrl}}"], "path": ["api","v1","training","courses"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Courses (With Filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/training/courses?status=active&category=compliance&course_type=online&search=GMP&limit=10&offset=0",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","training","courses"],
+              "query": [
+                { "key": "status", "value": "active" },
+                { "key": "category", "value": "compliance" },
+                { "key": "course_type", "value": "online" },
+                { "key": "search", "value": "GMP" },
+                { "key": "limit", "value": "10" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/courses/{{courseId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","training","courses","{{courseId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Quality Management Basics v2\",\n  \"status\": \"active\",\n  \"passing_score\": 85,\n  \"description\": \"Updated course description.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/courses/{{courseId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","training","courses","{{courseId}}"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "Assign Training (with due_days)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('assignmentId', body.data.id);",
+                  "  console.log('assignmentId set:', body.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": \"{{courseId}}\",\n  \"user_id\": \"{{userId}}\",\n  \"reason\": \"new_hire\",\n  \"due_days\": 14\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/assignments", "host": ["{{baseUrl}}"], "path": ["api","v1","training","assignments"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Training (with due_date)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": \"{{courseId}}\",\n  \"user_id\": \"{{userId}}\",\n  \"reason\": \"recertification\",\n  \"due_date\": \"2026-09-30\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/assignments", "host": ["{{baseUrl}}"], "path": ["api","v1","training","assignments"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Assignment by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/assignments/{{assignmentId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","training","assignments","{{assignmentId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Start Training",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/assignments/{{assignmentId}}/start", "host": ["{{baseUrl}}"], "path": ["api","v1","training","assignments","{{assignmentId}}","start"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Training (Pass)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 92\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/assignments/{{assignmentId}}/complete", "host": ["{{baseUrl}}"], "path": ["api","v1","training","assignments","{{assignmentId}}","complete"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Training (Fail)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 55\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/assignments/{{assignmentId}}/complete", "host": ["{{baseUrl}}"], "path": ["api","v1","training","assignments","{{assignmentId}}","complete"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Training (With Signature)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 88,\n  \"signature_id\": \"YOUR_SIGNATURE_UUID\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/assignments/{{assignmentId}}/complete", "host": ["{{baseUrl}}"], "path": ["api","v1","training","assignments","{{assignmentId}}","complete"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Competencies",
+      "item": [
+        {
+          "name": "Create Competency (Default Levels)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('competencyId', body.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"GMP Compliance\",\n  \"description\": \"Understanding and application of GMP requirements\",\n  \"category\": \"regulatory\",\n  \"role_requirements\": {\n    \"operator\": 2,\n    \"quality_manager\": 4\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/competencies", "host": ["{{baseUrl}}"], "path": ["api","v1","training","competencies"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Competency (Custom Levels)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Statistical Process Control\",\n  \"category\": \"technical\",\n  \"levels\": [\n    { \"level\": 1, \"name\": \"Aware\", \"description\": \"Knows SPC exists\" },\n    { \"level\": 2, \"name\": \"User\", \"description\": \"Can read control charts\" },\n    { \"level\": 3, \"name\": \"Practitioner\", \"description\": \"Can set up control charts\" },\n    { \"level\": 4, \"name\": \"Expert\", \"description\": \"Can train others on SPC\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/competencies", "host": ["{{baseUrl}}"], "path": ["api","v1","training","competencies"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Competency Matrix (All)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/competencies", "host": ["{{baseUrl}}"], "path": ["api","v1","training","competencies"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Competency Matrix (By User)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/training/competencies?user_id={{userId}}",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","training","competencies"],
+              "query": [{ "key": "user_id", "value": "{{userId}}" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Competency",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_level\": 2,\n  \"target_level\": 3,\n  \"evidence\": \"Demonstrated understanding during SOP review audit on 2026-06-29\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/training/competencies/{{userId}}/{{competencyId}}",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","training","competencies","{{userId}}","{{competencyId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "item": [
+        {
+          "name": "Create Course — Missing Fields (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Only Title\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/courses", "host": ["{{baseUrl}}"], "path": ["api","v1","training","courses"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course — Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/courses/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["api","v1","training","courses","00000000-0000-0000-0000-000000000000"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Start Assignment — Invalid Status (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/assignments/{{assignmentId}}/start", "host": ["{{baseUrl}}"], "path": ["api","v1","training","assignments","{{assignmentId}}","start"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Training — No Score (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/assignments/{{assignmentId}}/complete", "host": ["{{baseUrl}}"], "path": ["api","v1","training","assignments","{{assignmentId}}","complete"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Competency — Duplicate Name (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"GMP Compliance\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/training/competencies", "host": ["{{baseUrl}}"], "path": ["api","v1","training","competencies"] }
+          },
+          "response": []
+        },
+        {
+          "name": "No Auth Token (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/training/courses", "host": ["{{baseUrl}}"], "path": ["api","v1","training","courses"] }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

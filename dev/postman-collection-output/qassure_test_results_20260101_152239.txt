@@ -1,0 +1,1998 @@
+QAssure.ai API Test Report
+Generated: Thu Jan  1 15:22:39 IST 2026
+Base URL: http://localhost:3000/api/v1
+
+
+======================================================================
+  QASSURE.AI COMPREHENSIVE API TEST REPORT
+======================================================================
+
+Test Started: Thu Jan  1 15:22:39 IST 2026
+Base URL: http://localhost:3000/api/v1
+
+======================================================================
+  PHASE 1: CORE INFRASTRUCTURE
+======================================================================
+
+
+----------------------------------------------------------------------
+  1.1 Health Check Endpoints
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-1.1.1: Basic Health Check[0m
+Description: Verify server is running
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/health'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-1.1.2: Detailed Health Check[0m
+Description: Verify all components status
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/health/detailed'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-1.1.3: Invalid Endpoint[0m
+Description: Should return 404 for non-existent endpoint
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/nonexistent-endpoint'
+[0;31m❌ FAIL[0m
+Expected: 404
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 2: REDIS & SESSION MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  2.1 Cache Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-2.1.1: Cache Health[0m
+Description: Verify Redis connection
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/health/detailed'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 3: AUTHENTICATION SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  3.1 User Registration
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.1.1: Register with Valid Data[0m
+Description: Should create new user
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "testuser_1767261159@qassure.ai",
+    "password": "SecurePass123!",
+    "firstName": "Test",
+    "lastName": "User"
+}' 'http://localhost:3000/api/v1/auth/register'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.2: Register with Weak Password (No Uppercase)[0m
+Description: Should reject weak password
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "testuser2@qassure.ai",
+    "password": "weakpass123!",
+    "firstName": "Test",
+    "lastName": "User"
+}' 'http://localhost:3000/api/v1/auth/register'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.3: Register with Weak Password (No Numbers)[0m
+Description: Should reject password without numbers
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "testuser3@qassure.ai",
+    "password": "WeakPassword!",
+    "firstName": "Test",
+    "lastName": "User"
+}' 'http://localhost:3000/api/v1/auth/register'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.4: Register with Weak Password (No Special Chars)[0m
+Description: Should reject password without special characters
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "testuser4@qassure.ai",
+    "password": "WeakPass123",
+    "firstName": "Test",
+    "lastName": "User"
+}' 'http://localhost:3000/api/v1/auth/register'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.5: Register with Weak Password (Too Short)[0m
+Description: Should reject password less than 8 characters
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "testuser5@qassure.ai",
+    "password": "Sh0rt!",
+    "firstName": "Test",
+    "lastName": "User"
+}' 'http://localhost:3000/api/v1/auth/register'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.6: Register with Invalid Email Format[0m
+Description: Should reject invalid email
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "invalid-email",
+    "password": "SecurePass123!",
+    "firstName": "Test",
+    "lastName": "User"
+}' 'http://localhost:3000/api/v1/auth/register'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.7: Register with Missing Required Fields[0m
+Description: Should reject missing fields
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "testuser6@qassure.ai"
+}' 'http://localhost:3000/api/v1/auth/register'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.1.8: Register with Duplicate Email[0m
+Description: Should reject duplicate email
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "admin@qassure.ai",
+    "password": "SecurePass123!",
+    "firstName": "Test",
+    "lastName": "User"
+}' 'http://localhost:3000/api/v1/auth/register'
+[0;31m❌ FAIL[0m
+Expected: 409
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  3.2 User Login
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.2.1: Login with Valid Credentials[0m
+Description: Should return tokens
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "admin@qassure.ai",
+    "password": "Admin123!"
+}' 'http://localhost:3000/api/v1/auth/login'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+Extracted Access Token: ...
+
+[0;34mTEST: TC-3.2.2: Login with Wrong Password[0m
+Description: Should reject invalid credentials
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "admin@qassure.ai",
+    "password": "WrongPassword123!"
+}' 'http://localhost:3000/api/v1/auth/login'
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.2.3: Login with Non-existent User[0m
+Description: Should reject non-existent user
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "nonexistent@qassure.ai",
+    "password": "SecurePass123!"
+}' 'http://localhost:3000/api/v1/auth/login'
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.2.4: Login with Empty Password[0m
+Description: Should reject empty password
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "admin@qassure.ai",
+    "password": ""
+}' 'http://localhost:3000/api/v1/auth/login'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.2.5: Login with Missing Email[0m
+Description: Should reject missing email
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "password": "SecurePass123!"
+}' 'http://localhost:3000/api/v1/auth/login'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  3.3 Token Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.3.1: Access Protected Route with Valid Token[0m
+Description: Should allow access
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/auth/me'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.3.2: Access Protected Route without Token[0m
+Description: Should deny access
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/auth/me'
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.3.3: Access Protected Route with Invalid Token[0m
+Description: Should deny access
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Authorization: Bearer invalid-token-here' -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/auth/me'
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.3.4: Access Protected Route with Expired Token Format[0m
+Description: Should deny access
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZXhwIjoxfQ.invalid' -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/auth/me'
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.3.5: Refresh Token with Valid Refresh Token[0m
+Description: Should return new tokens
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"refreshToken": ""}' 'http://localhost:3000/api/v1/auth/refresh'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.3.6: Refresh Token with Invalid Refresh Token[0m
+Description: Should reject invalid token
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"refreshToken": "invalid-refresh-token"}' 'http://localhost:3000/api/v1/auth/refresh'
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  3.4 Password Reset
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.4.1: Request Password Reset for Valid Email[0m
+Description: Should send reset email
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "admin@qassure.ai"
+}' 'http://localhost:3000/api/v1/auth/forgot-password'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.4.2: Request Password Reset for Non-existent Email[0m
+Description: Should still return 200 (security)
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "email": "nonexistent@qassure.ai"
+}' 'http://localhost:3000/api/v1/auth/forgot-password'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-3.4.3: Reset Password with Invalid Token[0m
+Description: Should reject invalid token
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "token": "invalid-reset-token",
+    "password": "NewSecurePass123!"
+}' 'http://localhost:3000/api/v1/auth/reset-password'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  3.5 Logout
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-3.5.1: Logout with Valid Token[0m
+Description: Should logout successfully
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/auth/logout'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 4: RBAC & AUTHORIZATION
+======================================================================
+
+
+----------------------------------------------------------------------
+  4.1 Role Management
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-4.1.1: Get All Roles[0m
+Description: Should return list of roles
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/roles'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-4.1.2: Get Roles without Authentication[0m
+Description: Should deny access
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/roles'
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-4.1.3: Create Role with Valid Data[0m
+Description: Should create new role
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Test Role 1767261162",
+    "description": "Test role for edge case testing",
+    "permissions": ["users:read", "modules:read"]
+}' 'http://localhost:3000/api/v1/roles'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-4.1.4: Create Role with Duplicate Name[0m
+Description: Should reject duplicate
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Admin",
+    "description": "Duplicate admin role"
+}' 'http://localhost:3000/api/v1/roles'
+[0;31m❌ FAIL[0m
+Expected: 409
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-4.1.5: Create Role with Missing Name[0m
+Description: Should reject missing name
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "description": "Role without name"
+}' 'http://localhost:3000/api/v1/roles'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  4.2 Permission Management
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-4.2.1: Get All Permissions[0m
+Description: Should return list of permissions
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/permissions'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  4.3 API Key Management
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-4.3.1: Create API Key[0m
+Description: Should create new API key
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Test API Key 1767261163",
+    "expiresInDays": 30
+}' 'http://localhost:3000/api/v1/api-keys'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-4.3.2: Get API Keys[0m
+Description: Should return list of API keys
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/api-keys'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 5: MODULE REGISTRY & LIFECYCLE
+======================================================================
+
+
+----------------------------------------------------------------------
+  5.1 Module Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-5.1.1: Get All Modules[0m
+Description: Should return list of modules
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/modules'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-5.1.2: Get Single Module[0m
+Description: Should return module details
+
+[0;34mTEST: TC-5.1.3: Get Non-existent Module[0m
+Description: Should return 404
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/modules/00000000-0000-0000-0000-000000000000'
+[0;31m❌ FAIL[0m
+Expected: 404
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-5.1.4: Get Module with Invalid UUID[0m
+Description: Should return 400
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/modules/invalid-uuid'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-5.1.5: Create Module with Valid Data[0m
+Description: Should create module
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Test Module 1767261164",
+    "moduleKey": "test_module_1767261164",
+    "description": "Test module for edge case testing",
+    "version": "1.0.0"
+}' 'http://localhost:3000/api/v1/modules'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-5.1.6: Create Module with Missing Required Fields[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "description": "Module without name"
+}' 'http://localhost:3000/api/v1/modules'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  5.2 Module Status
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-5.2.1: Get Module Status[0m
+Description: Should return status of all modules
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/modules/status'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 6: KAFKA EVENT SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  6.1 Event Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-6.1.1: Get Event Topics[0m
+Description: Should return list of topics
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/events/topics'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-6.1.2: Get Event History[0m
+Description: Should return event history
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/events/history'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 7: AI GATEWAY
+======================================================================
+
+
+----------------------------------------------------------------------
+  7.1 AI Provider Management
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-7.1.1: Get All AI Providers[0m
+Description: Should return list of providers
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/ai/providers'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-7.1.2: Create AI Provider with Valid Data[0m
+Description: Should create provider
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "providerName": "openai",
+    "displayName": "Test OpenAI 1767261165",
+    "apiKey": "sk-test-key-12345",
+    "defaultModel": "gpt-4",
+    "rateLimitPerMinute": 100,
+    "costPer1mInputTokens": 30,
+    "costPer1mOutputTokens": 60
+}' 'http://localhost:3000/api/v1/ai/providers'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-7.1.3: Create AI Provider with Invalid Provider Name[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "providerName": "invalid_provider",
+    "displayName": "Invalid Provider",
+    "apiKey": "test-key"
+}' 'http://localhost:3000/api/v1/ai/providers'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-7.1.4: Create AI Provider with Missing API Key[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "providerName": "openai",
+    "displayName": "No API Key Provider"
+}' 'http://localhost:3000/api/v1/ai/providers'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  7.2 AI Usage & Cost Tracking
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-7.2.1: Get AI Usage Summary[0m
+Description: Should return usage stats
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/ai/usage/summary'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-7.2.2: Get AI Cost Report[0m
+Description: Should return cost report
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/ai/costs'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-7.2.3: Get AI Usage with Date Filter[0m
+Description: Should return filtered usage
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/ai/usage?startDate=2025-01-01&endDate=2025-12-31'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 8: RAG & VECTOR DATABASE
+======================================================================
+
+
+----------------------------------------------------------------------
+  8.1 Knowledge Base Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-8.1.1: Get Knowledge Base Collections[0m
+Description: Should return collections
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/ai/knowledge-base'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-8.1.2: Create Knowledge Base Collection[0m
+Description: Should create collection
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Test Collection 1767261166",
+    "description": "Test collection for edge cases"
+}' 'http://localhost:3000/api/v1/ai/knowledge-base/collections'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-8.1.3: Search Knowledge Base with Empty Query[0m
+Description: Should handle empty query
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "query": ""
+}' 'http://localhost:3000/api/v1/ai/knowledge-base/search'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 9: PROMPT MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  9.1 Prompt Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-9.1.1: Get All Prompts[0m
+Description: Should return list of prompts
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/ai/prompts'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-9.1.2: Create Prompt with Valid Data[0m
+Description: Should create prompt
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Test Prompt 1767261166",
+    "category": "general",
+    "systemPrompt": "You are a helpful assistant.",
+    "userPromptTemplate": "Please help with: {{query}}",
+    "modelId": "gpt-4"
+}' 'http://localhost:3000/api/v1/ai/prompts'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-9.1.3: Create Prompt with Missing System Prompt[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Incomplete Prompt",
+    "category": "general"
+}' 'http://localhost:3000/api/v1/ai/prompts'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-9.1.4: Get Prompt Versions[0m
+Description: Should return version history
+
+======================================================================
+  PHASE 10: QMS INTEGRATION FRAMEWORK
+======================================================================
+
+
+----------------------------------------------------------------------
+  10.1 QMS Connection Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-10.1.1: Get QMS Connections[0m
+Description: Should return list of connections
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/qms/connections'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-10.1.2: Create QMS Connection with Invalid Type[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Invalid QMS",
+    "qmsType": "invalid_qms_type",
+    "apiUrl": "https://invalid.qms.com"
+}' 'http://localhost:3000/api/v1/qms/connections'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-10.1.3: Create QMS Connection with Missing URL[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "No URL QMS",
+    "qmsType": "veeva_vault"
+}' 'http://localhost:3000/api/v1/qms/connections'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-10.1.4: Test QMS Connection with Non-existent ID[0m
+Description: Should return 404
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/qms/connections/00000000-0000-0000-0000-000000000000/test'
+[0;31m❌ FAIL[0m
+Expected: 404
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 11: QMS ADAPTERS
+======================================================================
+
+
+----------------------------------------------------------------------
+  11.1 Entity Mapping Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-11.1.1: Get Entity Mappings[0m
+Description: Should return mappings
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/qms/mappings'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-11.1.2: Get Sync Jobs[0m
+Description: Should return sync jobs
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/qms/sync-jobs'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 12: CROSS-MODULE COMMUNICATION
+======================================================================
+
+
+----------------------------------------------------------------------
+  12.1 Cross-Module Events
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-12.1.1: Get Module Dependencies[0m
+Description: Should return dependencies
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/modules/dependencies'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 13: SECURITY & FDA PART 11 COMPLIANCE
+======================================================================
+
+
+----------------------------------------------------------------------
+  13.1 Electronic Signatures
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-13.1.1: Create E-Signature with Valid Data[0m
+Description: Should create signature
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "entityType": "document",
+    "entityId": "00000000-0000-0000-0000-000000000001",
+    "signatureType": "approval",
+    "meaning": "I approve this document",
+    "password": "Admin123!"
+}' 'http://localhost:3000/api/v1/signatures'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-13.1.2: Create E-Signature with Wrong Password[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "entityType": "document",
+    "entityId": "00000000-0000-0000-0000-000000000001",
+    "signatureType": "approval",
+    "meaning": "I approve this document",
+    "password": "WrongPassword!"
+}' 'http://localhost:3000/api/v1/signatures'
+[0;31m❌ FAIL[0m
+Expected: 401
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-13.1.3: Create E-Signature without Meaning[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "entityType": "document",
+    "entityId": "00000000-0000-0000-0000-000000000001",
+    "signatureType": "approval",
+    "password": "Admin123!"
+}' 'http://localhost:3000/api/v1/signatures'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-13.1.4: Verify E-Signature[0m
+Description: Should verify signature
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/signatures/verify/00000000-0000-0000-0000-000000000001'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 14: AUDIT SYSTEM
+======================================================================
+
+
+----------------------------------------------------------------------
+  14.1 Audit Log Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-14.1.1: Get Audit Logs[0m
+Description: Should return audit logs
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/audit-logs'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-14.1.2: Get Audit Logs with Pagination[0m
+Description: Should return paginated results
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/audit-logs?page=1&limit=10'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-14.1.3: Get Audit Logs with Invalid Page[0m
+Description: Should handle gracefully
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/audit-logs?page=-1&limit=10'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-14.1.4: Get Audit Logs with Filter[0m
+Description: Should return filtered logs
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/audit-logs?action=LOGIN'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-14.1.5: Get Audit Logs with Date Range[0m
+Description: Should return filtered by date
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/audit-logs?startDate=2025-01-01&endDate=2025-12-31'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-14.1.6: Export Audit Logs[0m
+Description: Should export logs
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/audit-logs/export?format=json'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 15: DOCUMENT MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  15.1 Document Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-15.1.1: Get All Documents[0m
+Description: Should return list of documents
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/documents'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-15.1.2: Create Document with Valid Data[0m
+Description: Should create document
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "title": "Test Document 1767261169",
+    "documentNumber": "DOC-1767261169",
+    "categoryId": null,
+    "content": "This is test content for edge case testing."
+}' 'http://localhost:3000/api/v1/documents'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-15.1.3: Create Document with Missing Title[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "documentNumber": "DOC-NOTITLE",
+    "content": "Document without title"
+}' 'http://localhost:3000/api/v1/documents'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-15.1.4: Create Document with Duplicate Number[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "title": "Duplicate Doc",
+    "documentNumber": "DOC-001",
+    "content": "Duplicate document number"
+}' 'http://localhost:3000/api/v1/documents'
+[0;31m❌ FAIL[0m
+Expected: 409
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-15.1.5: Get Document Versions[0m
+Description: Should return version history
+
+[0;34mTEST: TC-15.1.6: Search Documents[0m
+Description: Should return search results
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/documents/search?q=test'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-15.1.7: Search Documents with Empty Query[0m
+Description: Should return all or error
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/documents/search?q='
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 16: TRAINING MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  16.1 Training Course Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-16.1.1: Get All Training Courses[0m
+Description: Should return list of courses
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/training/courses'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-16.1.2: Create Training Course[0m
+Description: Should create course
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "title": "Test Course 1767261170",
+    "description": "Test training course for edge cases",
+    "durationMinutes": 60,
+    "passingScore": 80
+}' 'http://localhost:3000/api/v1/training/courses'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-16.1.3: Create Course with Invalid Duration[0m
+Description: Should reject negative duration
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "title": "Invalid Duration Course",
+    "durationMinutes": -30
+}' 'http://localhost:3000/api/v1/training/courses'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-16.1.4: Create Course with Invalid Passing Score[0m
+Description: Should reject score > 100
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "title": "Invalid Score Course",
+    "passingScore": 150
+}' 'http://localhost:3000/api/v1/training/courses'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  16.2 Training Assignments
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-16.2.1: Get Training Assignments[0m
+Description: Should return assignments
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/training/assignments'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-16.2.2: Get Overdue Assignments[0m
+Description: Should return overdue list
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/training/assignments/overdue'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 17: CAPA MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  17.1 CAPA Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-17.1.1: Get All CAPAs[0m
+Description: Should return list of CAPAs
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/capas'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-17.1.2: Create CAPA with Valid Data[0m
+Description: Should create CAPA
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "title": "Test CAPA 1767261171",
+    "description": "Test CAPA for edge case testing",
+    "type": "corrective",
+    "priority": "high",
+    "sourceType": "complaint"
+}' 'http://localhost:3000/api/v1/capas'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-17.1.3: Create CAPA with Invalid Type[0m
+Description: Should reject invalid type
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "title": "Invalid Type CAPA",
+    "type": "invalid_type",
+    "priority": "high"
+}' 'http://localhost:3000/api/v1/capas'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-17.1.4: Create CAPA with Invalid Priority[0m
+Description: Should reject invalid priority
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "title": "Invalid Priority CAPA",
+    "type": "corrective",
+    "priority": "super_urgent"
+}' 'http://localhost:3000/api/v1/capas'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-17.1.5: Create CAPA with Missing Title[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "type": "corrective",
+    "priority": "high"
+}' 'http://localhost:3000/api/v1/capas'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  17.2 CAPA Actions
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-17.2.1: Get CAPA Actions[0m
+Description: Should return actions
+
+[0;34mTEST: TC-17.2.2: Get Overdue CAPAs[0m
+Description: Should return overdue list
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/capas/overdue'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-17.2.3: Get CAPA Statistics[0m
+Description: Should return stats
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/capas/statistics'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 18: SUPPLIER QUALITY MANAGEMENT
+======================================================================
+
+
+----------------------------------------------------------------------
+  18.1 Supplier Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-18.1.1: Get All Suppliers[0m
+Description: Should return list of suppliers
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/suppliers'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-18.1.2: Create Supplier with Valid Data[0m
+Description: Should create supplier
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Test Supplier 1767261172",
+    "code": "SUP-1767261172",
+    "category": "raw_materials",
+    "contactEmail": "supplier@test.com"
+}' 'http://localhost:3000/api/v1/suppliers'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-18.1.3: Create Supplier with Invalid Email[0m
+Description: Should reject invalid email
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Invalid Email Supplier",
+    "code": "SUP-INVALID",
+    "contactEmail": "invalid-email"
+}' 'http://localhost:3000/api/v1/suppliers'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-18.1.4: Create Supplier with Duplicate Code[0m
+Description: Should reject duplicate
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Duplicate Supplier",
+    "code": "SUP-001"
+}' 'http://localhost:3000/api/v1/suppliers'
+[0;31m❌ FAIL[0m
+Expected: 409
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  18.2 Supplier Scorecards
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-18.2.1: Get Supplier Scorecards[0m
+Description: Should return scorecards
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/suppliers/scorecards'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-18.2.2: Create Scorecard with Invalid Score[0m
+Description: Should reject score > 100
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "qualityScore": 150,
+    "deliveryScore": 90
+}' 'http://localhost:3000/api/v1/suppliers/00000000-0000-0000-0000-000000000001/scorecards'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 19: REPORTING & ANALYTICS
+======================================================================
+
+
+----------------------------------------------------------------------
+  19.1 Dashboard Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-19.1.1: Get Dashboard Data[0m
+Description: Should return dashboard data
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/reporting/dashboard'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-19.1.2: Get KPIs[0m
+Description: Should return KPI data
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/reporting/kpis'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  19.2 Report Generation
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-19.2.1: Get Report Definitions[0m
+Description: Should return report definitions
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/reporting/reports'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-19.2.2: Generate Report with Valid Parameters[0m
+Description: Should generate report
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "reportType": "usage",
+    "format": "json",
+    "startDate": "2025-01-01",
+    "endDate": "2025-12-31"
+}' 'http://localhost:3000/api/v1/reporting/reports/generate'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-19.2.3: Generate Report with Invalid Date Range[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "reportType": "usage",
+    "startDate": "2025-12-31",
+    "endDate": "2025-01-01"
+}' 'http://localhost:3000/api/v1/reporting/reports/generate'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-19.2.4: Generate Report with Invalid Format[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "reportType": "usage",
+    "format": "invalid_format"
+}' 'http://localhost:3000/api/v1/reporting/reports/generate'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  19.3 Search Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-19.3.1: Global Search[0m
+Description: Should return search results
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/reporting/search?q=test'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-19.3.2: Search with Type Filter[0m
+Description: Should return filtered results
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/reporting/search?q=test&type=document'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 20: NOTIFICATIONS & ALERTS
+======================================================================
+
+
+----------------------------------------------------------------------
+  20.1 Notification Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-20.1.1: Get My Notifications[0m
+Description: Should return user notifications
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/notifications/me'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-20.1.2: Get Unread Notifications Count[0m
+Description: Should return count
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/notifications/me/unread-count'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-20.1.3: Mark Notification as Read[0m
+Description: Should update notification
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/notifications/00000000-0000-0000-0000-000000000001/read'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-20.1.4: Mark All as Read[0m
+Description: Should mark all as read
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/notifications/me/read-all'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  20.2 Notification Preferences
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-20.2.1: Get Notification Preferences[0m
+Description: Should return preferences
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/notifications/preferences'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-20.2.2: Update Notification Preferences[0m
+Description: Should update preferences
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{
+    "emailEnabled": true,
+    "inAppEnabled": true,
+    "digestFrequency": "daily"
+}' 'http://localhost:3000/api/v1/notifications/preferences'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-20.2.3: Update with Invalid Digest Frequency[0m
+Description: Should reject
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{
+    "digestFrequency": "invalid_frequency"
+}' 'http://localhost:3000/api/v1/notifications/preferences'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  20.3 Alert Rules
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-20.3.1: Get Alert Rules[0m
+Description: Should return alert rules
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/notifications/alert-rules'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-20.3.2: Create Alert Rule[0m
+Description: Should create rule
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Test Alert Rule 1767261174",
+    "entityType": "capa",
+    "triggerType": "threshold",
+    "condition": {"field": "priority", "operator": "eq", "value": "critical"},
+    "severity": "high"
+}' 'http://localhost:3000/api/v1/notifications/alert-rules'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 21: FILE ATTACHMENTS & STORAGE
+======================================================================
+
+
+----------------------------------------------------------------------
+  21.1 File Operations
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-21.1.1: Get Files for Entity[0m
+Description: Should return file list
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/files?entityType=document&entityId=00000000-0000-0000-0000-000000000001'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-21.1.2: Get Storage Quota[0m
+Description: Should return quota info
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/files/quota'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-21.1.3: Create File Share Link[0m
+Description: Should create share link
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "expiresInHours": 24,
+    "maxDownloads": 5
+}' 'http://localhost:3000/api/v1/files/00000000-0000-0000-0000-000000000001/share'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-21.1.4: Create Share with Invalid Expiry[0m
+Description: Should reject negative hours
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "expiresInHours": -1
+}' 'http://localhost:3000/api/v1/files/00000000-0000-0000-0000-000000000001/share'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  PHASE 22: SYSTEM CONFIGURATION
+======================================================================
+
+
+----------------------------------------------------------------------
+  22.1 System Settings
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.1.1: Get All Settings[0m
+Description: Should return settings
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/settings'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.1.2: Get Setting by Category[0m
+Description: Should return category settings
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/settings/general/platform_name'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.1.3: Update Setting[0m
+Description: Should update setting
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{
+    "value": "QAssure.ai Test Platform"
+}' 'http://localhost:3000/api/v1/config/settings/general/platform_name'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.2 Branding
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.2.1: Get Branding Config[0m
+Description: Should return branding
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/branding'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.2.2: Update Branding[0m
+Description: Should update branding
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{
+    "primaryColor": "#1976D2",
+    "secondaryColor": "#424242"
+}' 'http://localhost:3000/api/v1/config/branding'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.2.3: Update Branding with Invalid Color[0m
+Description: Should reject invalid hex
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{
+    "primaryColor": "not-a-color"
+}' 'http://localhost:3000/api/v1/config/branding'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.3 Security Policies
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.3.1: Get Security Policy[0m
+Description: Should return policy
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/security'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.3.2: Update Security Policy[0m
+Description: Should update policy
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{
+    "passwordMinLength": 10,
+    "passwordRequireUppercase": true,
+    "mfaRequired": false
+}' 'http://localhost:3000/api/v1/config/security'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.3.3: Update with Invalid Password Length[0m
+Description: Should reject < 8
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{
+    "passwordMinLength": 4
+}' 'http://localhost:3000/api/v1/config/security'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.4 Feature Flags
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.4.1: Get Feature Flags[0m
+Description: Should return flags
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/features'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.4.2: Check Feature Flag[0m
+Description: Should check if enabled
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/features/ai_assistant/check'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.4.3: Create Feature Flag[0m
+Description: Should create flag
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "flagKey": "test_feature_1767261176",
+    "flagName": "Test Feature",
+    "isEnabled": false,
+    "rolloutPercentage": 0
+}' 'http://localhost:3000/api/v1/config/features'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.4.4: Create Flag with Invalid Rollout[0m
+Description: Should reject > 100
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "flagKey": "invalid_rollout",
+    "flagName": "Invalid Rollout",
+    "rolloutPercentage": 150
+}' 'http://localhost:3000/api/v1/config/features'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.5 Webhooks
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.5.1: Get Webhooks[0m
+Description: Should return webhooks
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/webhooks'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.5.2: Create Webhook[0m
+Description: Should create webhook
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Test Webhook 1767261177",
+    "url": "https://webhook.test.com/endpoint",
+    "events": ["capa.created", "document.approved"],
+    "isActive": true
+}' 'http://localhost:3000/api/v1/config/webhooks'
+[0;31m❌ FAIL[0m
+Expected: 201
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.5.3: Create Webhook with Invalid URL[0m
+Description: Should reject invalid URL
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "Invalid URL Webhook",
+    "url": "not-a-valid-url",
+    "events": ["capa.created"]
+}' 'http://localhost:3000/api/v1/config/webhooks'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.5.4: Create Webhook with Empty Events[0m
+Description: Should reject empty events
+Command: curl -s -w '\n%{http_code}' -X POST -H 'Content-Type: application/json' -d '{
+    "name": "No Events Webhook",
+    "url": "https://webhook.test.com",
+    "events": []
+}' 'http://localhost:3000/api/v1/config/webhooks'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.5.5: Test Webhook[0m
+Description: Should send test request
+
+----------------------------------------------------------------------
+  22.6 Email Templates
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.6.1: Get Email Templates[0m
+Description: Should return templates
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/email-templates'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.6.2: Get Email Template by Code[0m
+Description: Should return template
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/email-templates/welcome'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+----------------------------------------------------------------------
+  22.7 SMTP Configuration
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-22.7.1: Get SMTP Config[0m
+Description: Should return SMTP config
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/config/smtp'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.7.2: Update SMTP Config[0m
+Description: Should update config
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{
+    "host": "smtp.test.com",
+    "port": 587,
+    "secure": true,
+    "fromEmail": "noreply@qassure.ai"
+}' 'http://localhost:3000/api/v1/config/smtp'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+[0;34mTEST: TC-22.7.3: Update SMTP with Invalid Port[0m
+Description: Should reject invalid port
+Command: curl -s -w '\n%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{
+    "host": "smtp.test.com",
+    "port": -1
+}' 'http://localhost:3000/api/v1/config/smtp'
+[0;31m❌ FAIL[0m
+Expected: 400
+Actual HTTP Status: 429
+Response:
+Too many requests from this IP, please try again later.
+
+
+======================================================================
+  ADDITIONAL EDGE CASES & SECURITY TESTS
+======================================================================
+
+
+----------------------------------------------------------------------
+  SQL Injection Prevention
+----------------------------------------------------------------------
+
+[0;34mTEST: TC-SEC-1: SQL Injection in Search[0m
+Description: Should sanitize input
+Command: curl -s -w '\n%{http_code}' -X GET -H 'Content-Type: application/json' 'http://localhost:3000/api/v1/documents/search?q='; DROP TABLE documents; --'
+[0;31m❌ FAIL[0m
+Expected: 200
+Actual HTTP Status: ./qassure_test_script.sh: eval: line 112: syntax error: unexpected end of file
+Response:
+./qassure_test_script.sh: eval: line 111: unexpected EOF while looking for matching `''
+
+
+[0;34mTEST: TC-SEC-2: SQL Injection in Login[0m
+Description: Should sanitize input

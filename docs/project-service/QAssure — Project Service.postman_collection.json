@@ -1,0 +1,469 @@
+{
+  "info": {
+    "name": "QAssure — Project Service",
+    "_postman_id": "qassure-project-v1",
+    "description": "Complete API collection for the QAssure Project Management Service. Base URL: {{baseUrl}}/api/v1/projects",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "token", "value": "YOUR_JWT_TOKEN_HERE", "type": "string" },
+    { "key": "projectId", "value": "", "type": "string" },
+    { "key": "memberId", "value": "", "type": "string" },
+    { "key": "milestoneId", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const res = pm.response.json();",
+                  "  if (res.data && res.data.access_token) {",
+                  "    pm.collectionVariables.set('token', res.data.access_token);",
+                  "    console.log('token set:', res.data.access_token);",
+                  "  }",
+                  "  if (res.data && res.data.tenant_id) {",
+                  "    pm.collectionVariables.set('tenantId', res.data.tenant_id);",
+                  "  }",
+                  "  if (res.data && res.data.user && res.data.user.id) {",
+                  "    pm.collectionVariables.set('userId', res.data.user.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@qassure.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Project CRUD",
+      "item": [
+        {
+          "name": "Create Project (Minimal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('projectId', pm.response.json().data.id);",
+                  "  console.log('projectId:', pm.response.json().data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"CER 2026 — Device X\",\n  \"code\": \"CER-2026-001\",\n  \"project_type\": \"cer_submission\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects", "host": ["{{baseUrl}}"], "path": ["api","v1","projects"] }
+          }
+        },
+        {
+          "name": "Create Project (Full)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"MDR Compliance — Device X\",\n  \"code\": \"MDR-2026-001\",\n  \"project_type\": \"regulatory_submission\",\n  \"description\": \"Full MDR compliance submission for Device X\",\n  \"status\": \"planning\",\n  \"priority\": \"high\",\n  \"start_date\": \"2026-07-01\",\n  \"target_end_date\": \"2026-12-31\",\n  \"product_name\": \"Device X\",\n  \"product_code\": \"DX-2024\",\n  \"device_class\": \"Class IIa\",\n  \"regulatory_pathway\": \"MDR\",\n  \"regulatory_body\": \"EU\",\n  \"submission_type\": \"initial\",\n  \"owner_id\": \"{{userId}}\",\n  \"modules\": [\"aice\", \"dhf\"],\n  \"milestones\": [\n    { \"name\": \"Clinical Evaluation Plan\", \"milestone_type\": \"deliverable\", \"planned_date\": \"2026-08-01\", \"sequence\": 1 },\n    { \"name\": \"Regulatory Submission\", \"milestone_type\": \"submission\", \"planned_date\": \"2026-11-01\", \"sequence\": 2 }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects", "host": ["{{baseUrl}}"], "path": ["api","v1","projects"] }
+          }
+        },
+        {
+          "name": "List All Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects", "host": ["{{baseUrl}}"], "path": ["api","v1","projects"] }
+          }
+        },
+        {
+          "name": "List My Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects?my_projects=true",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","projects"],
+              "query": [{ "key": "my_projects", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "List Projects (With Filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects?status=active&project_type=cer_submission&search=Device&sort_by=priority&sort_order=DESC&limit=10&offset=0",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","projects"],
+              "query": [
+                { "key": "status", "value": "active" },
+                { "key": "project_type", "value": "cer_submission" },
+                { "key": "search", "value": "Device" },
+                { "key": "sort_by", "value": "priority" },
+                { "key": "sort_order", "value": "DESC" },
+                { "key": "limit", "value": "10" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Project by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}"] }
+          }
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"CER 2026 — Device X (Updated)\",\n  \"status\": \"active\",\n  \"priority\": \"critical\",\n  \"target_end_date\": \"2027-03-31\",\n  \"submission_number\": \"MDR-2026-SUB-001\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}"] }
+          }
+        },
+        {
+          "name": "Archive Project (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}"] }
+          }
+        },
+        {
+          "name": "Get Project Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/stats", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","stats"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Members",
+      "item": [
+        {
+          "name": "Get Project Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/members", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","members"] }
+          }
+        },
+        {
+          "name": "Add Member (Default Role)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('memberId', pm.response.json().data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"user_id\": \"{{userId}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/members", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","members"] }
+          }
+        },
+        {
+          "name": "Add Member (Custom Role)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"role\": \"reviewer\",\n  \"permissions\": [\"read\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/members", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","members"] }
+          }
+        },
+        {
+          "name": "Update Member Role",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"lead\",\n  \"permissions\": [\"read\", \"write\", \"approve\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/members/{{memberId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","members","{{memberId}}"] }
+          }
+        },
+        {
+          "name": "Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/members/{{memberId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","members","{{memberId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Milestones",
+      "item": [
+        {
+          "name": "Get Milestones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/milestones", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","milestones"] }
+          }
+        },
+        {
+          "name": "Add Milestone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('milestoneId', pm.response.json().data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Clinical Evaluation Plan Approved\",\n  \"description\": \"CEP signed off by QA and Medical Affairs\",\n  \"milestone_type\": \"review\",\n  \"planned_date\": \"2026-08-15\",\n  \"sequence\": 1,\n  \"owner_id\": \"{{userId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/milestones", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","milestones"] }
+          }
+        },
+        {
+          "name": "Update Milestone (Mark Completed)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"actual_date\": \"2026-08-10\",\n  \"notes\": \"Completed ahead of schedule\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/milestones/{{milestoneId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","milestones","{{milestoneId}}"] }
+          }
+        },
+        {
+          "name": "Update Milestone (Reschedule)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planned_date\": \"2026-09-30\",\n  \"notes\": \"Rescheduled due to resource availability\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/milestones/{{milestoneId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","milestones","{{milestoneId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Modules",
+      "item": [
+        {
+          "name": "Get Enabled Modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/modules", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","modules"] }
+          }
+        },
+        {
+          "name": "Enable Module — aice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/modules/aice/enable", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","modules","aice","enable"] }
+          }
+        },
+        {
+          "name": "Enable Module — dhf",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/modules/dhf/enable", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","modules","dhf","enable"] }
+          }
+        },
+        {
+          "name": "Enable Module — sqm",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/modules/sqm/enable", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","modules","sqm","enable"] }
+          }
+        },
+        {
+          "name": "Disable Module — aice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/modules/aice/disable", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","modules","aice","disable"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Activity Log",
+      "item": [
+        {
+          "name": "Get Activity (All)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/activity", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","activity"] }
+          }
+        },
+        {
+          "name": "Get Activity (Filter by Type)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/activity?activity_type=member_added",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","activity"],
+              "query": [{ "key": "activity_type", "value": "member_added" }]
+            }
+          }
+        },
+        {
+          "name": "Get Activity (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/activity?limit=10&offset=0",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","activity"],
+              "query": [{ "key": "limit", "value": "10" }, { "key": "offset", "value": "0" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "item": [
+        {
+          "name": "Create Project — Duplicate Code (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Duplicate\",\n  \"code\": \"CER-2026-001\",\n  \"project_type\": \"custom\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects", "host": ["{{baseUrl}}"], "path": ["api","v1","projects"] }
+          }
+        },
+        {
+          "name": "Get Project — Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","00000000-0000-0000-0000-000000000000"] }
+          }
+        },
+        {
+          "name": "Update Member — Not Found (404)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"role\": \"lead\" }" },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/members/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","members","00000000-0000-0000-0000-000000000000"] }
+          }
+        },
+        {
+          "name": "Update Milestone — Not Found (404)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"status\": \"completed\" }" },
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}/milestones/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}","milestones","00000000-0000-0000-0000-000000000000"] }
+          }
+        },
+        {
+          "name": "No Auth Token (401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects", "host": ["{{baseUrl}}"], "path": ["api","v1","projects"] }
+          }
+        },
+        {
+          "name": "Missing projects:delete Permission (403)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","projects","{{projectId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}

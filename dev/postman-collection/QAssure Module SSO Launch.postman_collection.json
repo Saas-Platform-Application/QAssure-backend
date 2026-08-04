@@ -1,0 +1,1414 @@
+{
+	"info": {
+		"_postman_id": "b7cd8fbf-3f94-4e8d-a219-f5ae950818f7",
+		"name": "QAssure Module SSO Launch",
+		"description": "Complete API collection for QAssure Platform Module SSO Launch system.\n\n## Overview\nThis collection contains all endpoints needed for:\n1. **User Operations** - Get accessible modules, launch modules\n2. **Module Verification** - Verify launch tokens (for LTTS module developers)\n3. **Super Admin Operations** - Enable/disable modules for tenants\n4. **Tenant Admin Operations** - Assign/remove users from modules\n\n## Authentication\n- **User Endpoints**: Bearer JWT token\n- **Module Verification**: X-API-Key header\n\n## Environment Variables Required\n- `base_url`: QAssure API base URL\n- `access_token`: JWT token from login\n- `module_api_key`: Module's API key for verification\n- `tenant_id`: Target tenant UUID\n- `module_id`: Target module UUID\n- `user_id`: Target user UUID\n- `launch_token`: Token received from launch endpoint",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48835086",
+		"_collection_link": "https://interview4tech4biz-3666547.postman.co/workspace/cost_it_right~89489571-f41b-4d4d-9740-4da5ee40bf88/collection/48835086-b7cd8fbf-3f94-4e8d-a219-f5ae950818f7?action=share&source=collection_link&creator=48835086"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "1.1 Login as Tenant Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('access_token', jsonData.data.access_token);",
+									"    pm.collectionVariables.set('tenant_id', jsonData.data.tenant_id);",
+									"    console.log('✅ Token saved to collection variable');",
+									"    console.log('✅ Tenant ID:', jsonData.data.tenant_id);",
+									"}",
+									"",
+									"pm.test('Login successful', function() {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.access_token).to.exist;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@pharmacorp.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as a Tenant Admin to get JWT token.\n\n**Test Users:**\n- tenantadmin@pharmacorp.com (Tenant Admin)\n- sarah@pharmacorp.com (Regular User)\n- testadmin@ltts.com (Super Admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 Login as Super Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('super_admin_token', jsonData.data.access_token);",
+									"    console.log('✅ Super Admin token saved');",
+									"}",
+									"",
+									"pm.test('Login successful', function() {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"superadmin@ltts.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Super Admin (LTTS Platform Admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "1.3 Login as Regular User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('user_token', jsonData.data.access_token);",
+									"    console.log('✅ User token saved');",
+									"}",
+									"",
+									"pm.test('Login successful', function() {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"sarah@pharmacorp.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{local_url}}/auth/login",
+							"host": [
+								"{{local_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Regular User (Sarah - Quality Analyst)"
+					},
+					"response": []
+				}
+			],
+			"description": "Login endpoints to get JWT tokens for testing"
+		},
+		{
+			"name": "2. User Module Operations",
+			"item": [
+				{
+					"name": "2.1 Get My Accessible Modules",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Request successful', function() {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Returns array of modules', function() {",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});",
+									"",
+									"if (jsonData.data && jsonData.data.length > 0) {",
+									"    pm.collectionVariables.set('module_id', jsonData.data[0].id);",
+									"    console.log('✅ First module ID saved:', jsonData.data[0].id);",
+									"    console.log('📋 Accessible modules:', jsonData.data.map(m => m.name).join(', '));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/modules/my",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"my"
+							]
+						},
+						"description": "Get list of modules the current user can access.\n\n**Access Rules:**\n- Super Admin: All modules (any tenant)\n- Tenant Admin: All modules enabled for their tenant\n- Regular User: Only explicitly assigned modules\n\n**Response includes:**\n- Module details (id, name, description, version)\n- Module status and health\n- Tenant-specific settings"
+					},
+					"response": [
+						{
+							"name": "Success - Tenant Admin sees all tenant modules",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/modules/my",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"my"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": \"f0000000-0000-0000-0000-000000000001\",\n            \"module_id\": \"coc\",\n            \"name\": \"COC Module\",\n            \"description\": \"Certificate of Conformity Management\",\n            \"version\": \"2.1.0\",\n            \"status\": \"running\",\n            \"base_url\": \"https://coc.ltts.com\",\n            \"health_status\": null,\n            \"enabled_at\": \"2026-01-28T04:59:45.532Z\",\n            \"tenant_settings\": null\n        },\n        {\n            \"id\": \"f0000000-0000-0000-0000-000000000002\",\n            \"module_id\": \"aice\",\n            \"name\": \"AiCE Module\",\n            \"description\": \"AI Compliance Engine\",\n            \"version\": \"1.5.0\",\n            \"status\": \"running\",\n            \"base_url\": \"https://aice.ltts.com\",\n            \"health_status\": null,\n            \"enabled_at\": \"2026-01-28T04:59:45.538Z\",\n            \"tenant_settings\": null\n        }\n    ],\n    \"meta\": {\n        \"tenant_id\": \"c0000000-0000-0000-0000-000000000001\",\n        \"is_super_admin\": false,\n        \"is_tenant_admin\": true,\n        \"total\": 2\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "2.2 Launch Module (Generate SSO Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Launch successful', function() {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Returns launch URL with token', function() {",
+									"    pm.expect(jsonData.data.launch_url).to.exist;",
+									"    pm.expect(jsonData.data.launch_url).to.include('token=mlt_');",
+									"});",
+									"",
+									"pm.test('Token expires in 60 seconds', function() {",
+									"    pm.expect(jsonData.data.expires_in).to.equal(60);",
+									"});",
+									"",
+									"if (jsonData.success && jsonData.data.launch_url) {",
+									"    // Extract token from URL",
+									"    var url = jsonData.data.launch_url;",
+									"    var token = url.split('token=')[1];",
+									"    pm.collectionVariables.set('launch_token', token);",
+									"    console.log('✅ Launch token saved:', token.substring(0, 20) + '...');",
+									"    console.log('🔗 Launch URL:', url);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/{{module_id}}/launch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{module_id}}",
+								"launch"
+							]
+						},
+						"description": "Generate a one-time SSO launch token for a module.\n\n**Token Properties:**\n- Valid for 60 seconds only\n- Single-use (cannot be reused)\n- Bound to specific module\n- Contains user context (snapshotted at launch time)\n\n**Response:**\n- `launch_url`: Full URL to redirect user to (includes token)\n- `expires_in`: Token validity in seconds (60)\n- `module`: Module info\n- `tenant`: Tenant info\n\n**Flow:**\n1. Frontend receives launch_url\n2. Frontend opens launch_url in browser/new tab\n3. Module receives token and verifies it\n4. Module creates session for user"
+					},
+					"response": [
+						{
+							"name": "Success - Launch token generated",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/modules/f0000000-0000-0000-0000-000000000001/launch",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"f0000000-0000-0000-0000-000000000001",
+										"launch"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"launch_url\": \"https://coc.ltts.com/auth/sso?token=mlt_5204cfb00322677069663de9bc92624209c1de04996d139b7d75bbd150d6cea9\",\n        \"expires_in\": 60,\n        \"module\": {\n            \"id\": \"f0000000-0000-0000-0000-000000000001\",\n            \"module_id\": \"coc\",\n            \"name\": \"COC Module\"\n        },\n        \"tenant\": {\n            \"id\": \"c0000000-0000-0000-0000-000000000001\",\n            \"name\": \"Pharma Corp\"\n        }\n    }\n}"
+						},
+						{
+							"name": "Error - Access Denied",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/modules/f0000000-0000-0000-0000-000000000002/launch",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"f0000000-0000-0000-0000-000000000002",
+										"launch"
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": {\n        \"code\": \"LAUNCH_DENIED\",\n        \"message\": \"You do not have access to this module. Contact your administrator.\"\n    }\n}"
+						}
+					]
+				}
+			],
+			"description": "Endpoints for regular users to view and launch modules"
+		},
+		{
+			"name": "3. Module Token Verification (FOR LTTS DEVELOPERS)",
+			"item": [
+				{
+					"name": "3.1 Verify Launch Token ⭐ MAIN ENDPOINT",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"if (jsonData.success) {",
+									"    pm.test('Verification successful', function() {",
+									"        pm.expect(jsonData.success).to.be.true;",
+									"    });",
+									"    ",
+									"    pm.test('User info returned', function() {",
+									"        pm.expect(jsonData.data.user).to.exist;",
+									"        pm.expect(jsonData.data.user.id).to.exist;",
+									"        pm.expect(jsonData.data.user.email).to.exist;",
+									"    });",
+									"    ",
+									"    pm.test('Tenant info returned', function() {",
+									"        pm.expect(jsonData.data.tenant).to.exist;",
+									"        pm.expect(jsonData.data.tenant.id).to.exist;",
+									"        pm.expect(jsonData.data.tenant.name).to.exist;",
+									"    });",
+									"    ",
+									"    pm.test('Access flags returned', function() {",
+									"        pm.expect(jsonData.data.access).to.exist;",
+									"        pm.expect(jsonData.data.access.is_super_admin).to.be.a('boolean');",
+									"        pm.expect(jsonData.data.access.is_tenant_admin).to.be.a('boolean');",
+									"    });",
+									"    ",
+									"    console.log('✅ User:', jsonData.data.user.email);",
+									"    console.log('✅ Tenant:', jsonData.data.tenant.name);",
+									"    console.log('✅ Is Admin:', jsonData.data.access.is_tenant_admin);",
+									"} else {",
+									"    console.log('❌ Error:', jsonData.error.message);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{module_api_key}}",
+								"description": "REQUIRED: Your module's API key"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{launch_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/verify-launch-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"verify-launch-token"
+							]
+						},
+						"description": "# ⭐ MAIN ENDPOINT FOR LTTS MODULE DEVELOPERS\n\n**This is the endpoint your module (COC, AiCE, etc.) must call to verify the SSO token.**\n\n## Full URL\n```\nPOST https://backendqassure.tech4bizsolutions.com/api/v1/modules/verify-launch-token\n```\n\n## Required Headers\n| Header | Value | Required |\n|--------|-------|----------|\n| Content-Type | application/json | Yes |\n| X-API-Key | Your module's API key | **YES - REQUIRED** |\n\n## Request Body\n```json\n{\n    \"token\": \"mlt_xxxxx...\"\n}\n```\n\n## Success Response\nReturns user info, tenant info, and access level.\n\n## Error Responses\n| Code | Message | Meaning |\n|------|---------|--------|\n| TOKEN_INVALID | Token not found | Invalid or tampered token |\n| TOKEN_INVALID | Token expired | Token older than 60 seconds |\n| TOKEN_INVALID | Token already used | Single-use token was reused |\n| API_KEY_REQUIRED | Missing X-API-Key | Header not provided |\n| INVALID_API_KEY | Invalid API key | Wrong key or not linked to module |"
+					},
+					"response": [
+						{
+							"name": "Success - Token verified",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "qas_testkey1234567890abcdef1234567890abcdef1234567890abcdef12345678"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"mlt_84983608e8a8ab356caae82e431bd80c3713f9c84d43a82a4aff9cc2da78840f\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/modules/verify-launch-token",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"verify-launch-token"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"user\": {\n            \"id\": \"cbc0a57e-1572-4e8e-8456-f2d8492fb417\",\n            \"email\": \"tenantadmin@pharmacorp.com\",\n            \"first_name\": \"Tenant\",\n            \"last_name\": \"Admin\"\n        },\n        \"tenant\": {\n            \"id\": \"c0000000-0000-0000-0000-000000000001\",\n            \"name\": \"Pharma Corp\",\n            \"slug\": \"pharma-corp\"\n        },\n        \"access\": {\n            \"is_super_admin\": false,\n            \"is_tenant_admin\": true\n        },\n        \"module\": {\n            \"id\": \"f0000000-0000-0000-0000-000000000001\",\n            \"module_id\": \"coc\",\n            \"name\": \"COC Module\"\n        },\n        \"launched_at\": \"2026-01-28T05:08:01.148Z\"\n    }\n}"
+						},
+						{
+							"name": "Error - Token already used",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "qas_testkey1234567890abcdef1234567890abcdef1234567890abcdef12345678"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"mlt_84983608e8a8ab356caae82e431bd80c3713f9c84d43a82a4aff9cc2da78840f\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/modules/verify-launch-token",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"verify-launch-token"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": {\n        \"code\": \"TOKEN_INVALID\",\n        \"message\": \"Token has already been used\"\n    }\n}"
+						},
+						{
+							"name": "Error - Token expired",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "{{module_api_key}}",
+										"description": "REQUIRED: Your module's API key"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"{{launch_token}}\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/modules/verify-launch-token",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"verify-launch-token"
+									]
+								},
+								"description": "# ⭐ MAIN ENDPOINT FOR LTTS MODULE DEVELOPERS\n\n**This is the endpoint your module (COC, AiCE, etc.) must call to verify the SSO token.**\n\n## Full URL\n```\nPOST https://backendqassure.tech4bizsolutions.com/api/v1/modules/verify-launch-token\n```\n\n## Required Headers\n| Header | Value | Required |\n|--------|-------|----------|\n| Content-Type | application/json | Yes |\n| X-API-Key | Your module's API key | **YES - REQUIRED** |\n\n## Request Body\n```json\n{\n    \"token\": \"mlt_xxxxx...\"\n}\n```\n\n## Success Response\nReturns user info, tenant info, and access level.\n\n## Error Responses\n| Code | Message | Meaning |\n|------|---------|--------|\n| TOKEN_INVALID | Token not found | Invalid or tampered token |\n| TOKEN_INVALID | Token expired | Token older than 60 seconds |\n| TOKEN_INVALID | Token already used | Single-use token was reused |\n| API_KEY_REQUIRED | Missing X-API-Key | Header not provided |\n| INVALID_API_KEY | Invalid API key | Wrong key or not linked to module |"
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": {\n        \"code\": \"TOKEN_INVALID\",\n        \"message\": \"Token has expired\"\n    }\n}"
+						},
+						{
+							"name": "Error - Missing API Key",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "{{module_api_key}}",
+										"description": "REQUIRED: Your module's API key"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"{{launch_token}}\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/modules/verify-launch-token",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"verify-launch-token"
+									]
+								},
+								"description": "# ⭐ MAIN ENDPOINT FOR LTTS MODULE DEVELOPERS\n\n**This is the endpoint your module (COC, AiCE, etc.) must call to verify the SSO token.**\n\n## Full URL\n```\nPOST https://backendqassure.tech4bizsolutions.com/api/v1/modules/verify-launch-token\n```\n\n## Required Headers\n| Header | Value | Required |\n|--------|-------|----------|\n| Content-Type | application/json | Yes |\n| X-API-Key | Your module's API key | **YES - REQUIRED** |\n\n## Request Body\n```json\n{\n    \"token\": \"mlt_xxxxx...\"\n}\n```\n\n## Success Response\nReturns user info, tenant info, and access level.\n\n## Error Responses\n| Code | Message | Meaning |\n|------|---------|--------|\n| TOKEN_INVALID | Token not found | Invalid or tampered token |\n| TOKEN_INVALID | Token expired | Token older than 60 seconds |\n| TOKEN_INVALID | Token already used | Single-use token was reused |\n| API_KEY_REQUIRED | Missing X-API-Key | Header not provided |\n| INVALID_API_KEY | Invalid API key | Wrong key or not linked to module |"
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": {\n        \"code\": \"API_KEY_REQUIRED\",\n        \"message\": \"API key is required\"\n    }\n}"
+						}
+					]
+				}
+			],
+			"description": "**THIS IS THE ENDPOINT LTTS MODULE DEVELOPERS NEED TO CALL**\n\nWhen a user is redirected to your module with a token, call this endpoint to verify the token and get user information."
+		},
+		{
+			"name": "4. Super Admin - Tenant Module Management",
+			"item": [
+				{
+					"name": "4.1 Get Modules for Tenant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Request successful', function() {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Returns modules array', function() {",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});",
+									"",
+									"console.log('📋 Total modules:', jsonData.meta.total);",
+									"console.log('✅ Enabled:', jsonData.meta.enabled_count);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/tenants/{{tenant_id}}/modules",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tenants",
+								"{{tenant_id}}",
+								"modules"
+							]
+						},
+						"description": "Get all modules with their enabled/disabled status for a specific tenant.\n\n**Super Admin Only**\n\nReturns all registered modules showing:\n- Whether each module is enabled for this tenant\n- When it was enabled/disabled\n- Who enabled/disabled it\n- Tenant-specific settings"
+					},
+					"response": [
+						{
+							"name": "Success - Shows all modules with status",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{super_admin_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/tenants/{{tenant_id}}/modules",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tenants",
+										"{{tenant_id}}",
+										"modules"
+									]
+								},
+								"description": "Get all modules with their enabled/disabled status for a specific tenant.\n\n**Super Admin Only**\n\nReturns all registered modules showing:\n- Whether each module is enabled for this tenant\n- When it was enabled/disabled\n- Who enabled/disabled it\n- Tenant-specific settings"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": [\n        {\n            \"id\": \"f0000000-0000-0000-0000-000000000001\",\n            \"module_id\": \"coc\",\n            \"name\": \"COC Module\",\n            \"description\": \"Certificate of Conformity Management\",\n            \"enabled\": true,\n            \"enabled_at\": \"2026-01-28T04:59:45.532Z\",\n            \"enabled_by\": \"88e05384-30ec-4566-adf3-d5258530514c\",\n            \"enabled_by_email\": \"testadmin@ltts.com\"\n        },\n        {\n            \"id\": \"f0000000-0000-0000-0000-000000000002\",\n            \"module_id\": \"aice\",\n            \"name\": \"AiCE Module\",\n            \"enabled\": false,\n            \"enabled_at\": null,\n            \"enabled_by\": null\n        }\n    ],\n    \"meta\": {\n        \"tenant_id\": \"c0000000-0000-0000-0000-000000000002\",\n        \"tenant_name\": \"BioTech Inc\",\n        \"total\": 2,\n        \"enabled_count\": 1\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "4.2 Enable Module for Tenant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Module enabled successfully', function() {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Returns access record', function() {",
+									"    pm.expect(jsonData.data.enabled).to.be.true;",
+									"    pm.expect(jsonData.data.tenant_id).to.exist;",
+									"    pm.expect(jsonData.data.module_id).to.exist;",
+									"});",
+									"",
+									"console.log('✅', jsonData.message);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"settings\": {\n        \"max_users\": 100,\n        \"features\": [\"reports\", \"exports\"]\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/tenants/{{tenant_id}}/modules/{{module_id}}/enable",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tenants",
+								"{{tenant_id}}",
+								"modules",
+								"{{module_id}}",
+								"enable"
+							]
+						},
+						"description": "Enable a module for a specific tenant.\n\n**Super Admin Only**\n\nOptionally include tenant-specific settings in the request body."
+					},
+					"response": [
+						{
+							"name": "Success - Module enabled",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{super_admin_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"settings\": {\n        \"max_users\": 100,\n        \"features\": [\"reports\", \"exports\"]\n    }\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/tenants/{{tenant_id}}/modules/{{module_id}}/enable",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tenants",
+										"{{tenant_id}}",
+										"modules",
+										"{{module_id}}",
+										"enable"
+									]
+								},
+								"description": "Enable a module for a specific tenant.\n\n**Super Admin Only**\n\nOptionally include tenant-specific settings in the request body."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"e4057904-9ed0-4113-a092-3b1bff3d3d82\",\n        \"tenant_id\": \"c0000000-0000-0000-0000-000000000002\",\n        \"module_id\": \"f0000000-0000-0000-0000-000000000001\",\n        \"enabled\": true,\n        \"enabled_by\": \"88e05384-30ec-4566-adf3-d5258530514c\",\n        \"enabled_at\": \"2026-01-28T05:13:22.622Z\",\n        \"settings\": null\n    },\n    \"message\": \"Module \\\"COC Module\\\" enabled for tenant \\\"BioTech Inc\\\"\"\n}"
+						}
+					]
+				},
+				{
+					"name": "4.3 Disable Module for Tenant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Module disabled successfully', function() {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"console.log('✅', jsonData.message);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/tenants/{{tenant_id}}/modules/{{module_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tenants",
+								"{{tenant_id}}",
+								"modules",
+								"{{module_id}}"
+							]
+						},
+						"description": "Disable a module for a specific tenant.\n\n**Super Admin Only**\n\nThis does not delete the module, just removes tenant access."
+					},
+					"response": []
+				},
+				{
+					"name": "4.4 Get Tenants for Module",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/modules/{{module_id}}/tenants",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{module_id}}",
+								"tenants"
+							]
+						},
+						"description": "Get list of tenants that have access to a specific module.\n\n**Super Admin Only**"
+					},
+					"response": []
+				},
+				{
+					"name": "4.5 Update Tenant Module Settings",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{super_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"settings\": {\n        \"max_users\": 200,\n        \"features\": [\"reports\", \"exports\", \"audit_trail\"],\n        \"custom_branding\": true\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/tenants/{{tenant_id}}/modules/{{module_id}}/settings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tenants",
+								"{{tenant_id}}",
+								"modules",
+								"{{module_id}}",
+								"settings"
+							]
+						},
+						"description": "Update tenant-specific settings for a module.\n\n**Super Admin Only**"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for Super Admins to manage which modules are available to which tenants"
+		},
+		{
+			"name": "5. Tenant Admin - User Module Assignment",
+			"item": [
+				{
+					"name": "5.1 Assign User to Module",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('User assigned successfully', function() {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"console.log('✅', jsonData.message);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/{{module_id}}/users/{{user_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{module_id}}",
+								"users",
+								"{{user_id}}"
+							]
+						},
+						"description": "Assign a user to a module (give them access).\n\n**Tenant Admin or Super Admin Only**\n\nThe user must be a member of the same tenant."
+					},
+					"response": [
+						{
+							"name": "Success - User assigned",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{access_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{base_url}}/modules/{{module_id}}/users/{{user_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"{{module_id}}",
+										"users",
+										"{{user_id}}"
+									]
+								},
+								"description": "Assign a user to a module (give them access).\n\n**Tenant Admin or Super Admin Only**\n\nThe user must be a member of the same tenant."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"data\": {\n        \"id\": \"95ed5729-3fea-44bc-8ea0-568df7351cc3\",\n        \"user_id\": \"b0000000-0000-0000-0000-000000000003\",\n        \"module_id\": \"f0000000-0000-0000-0000-000000000002\",\n        \"tenant_id\": \"c0000000-0000-0000-0000-000000000001\",\n        \"assigned_by\": \"cbc0a57e-1572-4e8e-8456-f2d8492fb417\",\n        \"assigned_at\": \"2026-01-28T05:17:30.380Z\"\n    },\n    \"message\": \"User \\\"sarah@pharmacorp.com\\\" assigned to module \\\"AiCE Module\\\"\"\n}"
+						}
+					]
+				},
+				{
+					"name": "5.2 Remove User from Module",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/modules/{{module_id}}/users/{{user_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{module_id}}",
+								"users",
+								"{{user_id}}"
+							]
+						},
+						"description": "Remove a user's access to a module.\n\n**Tenant Admin or Super Admin Only**"
+					},
+					"response": []
+				},
+				{
+					"name": "5.3 Get Users for Module",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/modules/{{module_id}}/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{module_id}}",
+								"users"
+							]
+						},
+						"description": "Get list of users who have access to a specific module.\n\n**Tenant Admin or Super Admin Only**"
+					},
+					"response": []
+				},
+				{
+					"name": "5.4 Get Modules for User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}/modules",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"{{user_id}}",
+								"modules"
+							]
+						},
+						"description": "Get list of modules a specific user has access to.\n\n**Tenant Admin or Super Admin Only**"
+					},
+					"response": []
+				},
+				{
+					"name": "5.5 Bulk Assign Users to Module",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_ids\": [\n        \"b0000000-0000-0000-0000-000000000003\",\n        \"b0000000-0000-0000-0000-000000000004\",\n        \"b0000000-0000-0000-0000-000000000005\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/{{module_id}}/users/bulk",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{module_id}}",
+								"users",
+								"bulk"
+							]
+						},
+						"description": "Assign multiple users to a module at once.\n\n**Tenant Admin or Super Admin Only**"
+					},
+					"response": []
+				},
+				{
+					"name": "5.6 Bulk Remove Users from Module",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_ids\": [\n        \"b0000000-0000-0000-0000-000000000003\",\n        \"b0000000-0000-0000-0000-000000000004\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/{{module_id}}/users/bulk",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{module_id}}",
+								"users",
+								"bulk"
+							]
+						},
+						"description": "Remove multiple users from a module at once.\n\n**Tenant Admin or Super Admin Only**"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for Tenant Admins to assign/remove users from modules"
+		},
+		{
+			"name": "6. Test Scenarios",
+			"item": [
+				{
+					"name": "Scenario 1: Complete SSO Flow",
+					"item": [
+						{
+							"name": "Step 1: Login",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"pm.collectionVariables.set('test_token', jsonData.data.access_token);",
+											"console.log('Step 1 ✅ Logged in');"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"admin@pharmacorp.com\",\n    \"password\": \"Admin@123\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/login",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Step 2: Get My Modules",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"pm.collectionVariables.set('test_module_id', jsonData.data[0].id);",
+											"console.log('Step 2 ✅ Got modules:', jsonData.data.length);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{test_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/modules/my",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"my"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Step 3: Launch Module",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"var token = jsonData.data.launch_url.split('token=')[1];",
+											"pm.collectionVariables.set('test_launch_token', token);",
+											"console.log('Step 3 ✅ Got launch token');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{test_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/modules/{{test_module_id}}/launch",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"{{test_module_id}}",
+										"launch"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Step 4: Verify Token (Module Side)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.success) {",
+											"    console.log('Step 4 ✅ Token verified!');",
+											"    console.log('User:', jsonData.data.user.email);",
+											"    console.log('Tenant:', jsonData.data.tenant.name);",
+											"} else {",
+											"    console.log('Step 4 ❌', jsonData.error.message);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "{{module_api_key}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"{{test_launch_token}}\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/modules/verify-launch-token",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"verify-launch-token"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Step 5: Try Reuse Token (Should Fail)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"pm.test('Token reuse rejected', function() {",
+											"    pm.expect(jsonData.success).to.be.false;",
+											"    pm.expect(jsonData.error.message).to.include('already been used');",
+											"});",
+											"console.log('Step 5 ✅ Token reuse correctly rejected');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "{{module_api_key}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"{{test_launch_token}}\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/modules/verify-launch-token",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"modules",
+										"verify-launch-token"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "Pre-built test scenarios to verify the SSO flow works correctly"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://backendqaasure.tech4bizsolutions.com/api/v1"
+		},
+		{
+			"key": "local_url",
+			"value": "http://localhost:3000/api/v1"
+		},
+		{
+			"key": "super_admin_token",
+			"value": ""
+		},
+		{
+			"key": "access_token",
+			"value": ""
+		},
+		{
+			"key": "tenant-uuid-here",
+			"value": ""
+		},
+		{
+			"key": "tenant_id",
+			"value": ""
+		},
+		{
+			"key": "module_id",
+			"value": ""
+		},
+		{
+			"key": "launch_token",
+			"value": ""
+		},
+		{
+			"key": "user_token",
+			"value": ""
+		},
+		{
+			"key": "test_token",
+			"value": ""
+		},
+		{
+			"key": "test_module_id",
+			"value": ""
+		},
+		{
+			"key": "test_launch_token",
+			"value": ""
+		},
+		{
+			"key": "module_api_key",
+			"value": ""
+		}
+	]
+}

@@ -1,0 +1,174 @@
+{{- define "qassure.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "qassure.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "qassure.labels" -}}
+helm.sh/chart: {{ include "qassure.chart" . }}
+{{ include "qassure.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{- define "qassure.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "qassure.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{- define "qassure.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "qassure.fullname" . }}-api
+  labels:
+    {{- include "qassure.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  {{- if not .Values.api.autoscaling.enabled }}
+  replicas: {{ .Values.api.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "qassure.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        {{- include "qassure.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.api.service.port }}"
+        prometheus.io/path: "/api/v1/metrics"
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.api.service.port }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.api.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: JWT_SECRET
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: REDIS_URL
+            {{- if .Values.secrets.openaiApiKey }}
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: OPENAI_API_KEY
+            {{- end }}
+            {{- if .Values.secrets.anthropicApiKey }}
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: ANTHROPIC_API_KEY
+            {{- end }}
+            {{- if .Values.secrets.azureOpenaiEndpoint }}
+            - name: AZURE_OPENAI_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: AZURE_OPENAI_ENDPOINT
+            {{- end }}
+            {{- if .Values.secrets.azureOpenaiApiKey }}
+            - name: AZURE_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: AZURE_OPENAI_API_KEY
+            {{- end }}
+            {{- if .Values.secrets.azureOpenaiDeployment }}
+            - name: AZURE_OPENAI_DEPLOYMENT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: AZURE_OPENAI_DEPLOYMENT
+            {{- end }}
+            {{- if .Values.secrets.azureOpenaiApiVersion }}
+            - name: AZURE_OPENAI_API_VERSION
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: AZURE_OPENAI_API_VERSION
+            {{- end }}
+            {{- if .Values.secrets.azureAnthropicEndpoint }}
+            - name: AZURE_ANTHROPIC_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: AZURE_ANTHROPIC_ENDPOINT
+            {{- end }}
+            {{- if .Values.secrets.azureAiApiKey }}
+            - name: AZURE_AI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: AZURE_AI_API_KEY
+            {{- end }}
+            {{- if .Values.secrets.azureAnthropicDeployment }}
+            - name: AZURE_ANTHROPIC_DEPLOYMENT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qassure.fullname" . }}-secrets
+                  key: AZURE_ANTHROPIC_DEPLOYMENT
+            {{- end }}
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.api.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.api.readinessProbe | nindent 12 }}
+      {{- with .Values.api.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

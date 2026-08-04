@@ -1,0 +1,3586 @@
+{
+  "info": {
+    "name": "QAssure Platform API - 2025-12-30",
+    "description": "Complete API collection for QAssure Platform - Enterprise Quality Management System\n\nLast Updated: December 30, 2025\nPhases Completed: 1-10, 12\nTotal Endpoints: 130+",
+    "_postman_id": "qassure-platform-api-v1-2025-12-30",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenantId",
+      "value": "00000000-0000-0000-0000-000000000001",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🏥 Health & Metrics",
+      "description": "Health check and monitoring endpoints - No authentication required",
+      "item": [
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Basic health check - no authentication required"
+          }
+        },
+        {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/detailed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "detailed"
+              ]
+            },
+            "description": "Detailed health check including Database, Redis, and Kafka status"
+          }
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            },
+            "description": "Prometheus metrics endpoint for monitoring"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔐 Authentication",
+      "description": "Authentication endpoints - Login, Register, Password Management",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Test123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Register a new user account"
+          }
+        },
+        {
+          "name": "🔑 Login (Run First!)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.access_token);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.refresh_token);",
+                  "    console.log('✅ Tokens saved successfully');",
+                  "    console.log('Access Token: ' + jsonData.data.access_token.substring(0, 50) + '...');",
+                  "} else {",
+                  "    console.log('❌ Login failed');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"superadmin@qassure.ai\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login with email and password. Tokens are automatically saved to collection variables.\n\nDefault Credentials:\n- Email: superadmin@qassure.ai\n- Password: Password123!"
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"verification-token-here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
+            },
+            "description": "Verify email with token received via email"
+          }
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/resend-verification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "resend-verification"
+              ]
+            },
+            "description": "Resend email verification token"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.access_token);",
+                  "    console.log('✅ Access token refreshed');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Get new access token using refresh token"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "Request password reset email"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset-token-here\",\n  \"password\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "Reset password with token from email"
+          }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Get current authenticated user info"
+          }
+        },
+        {
+          "name": "Get My Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            },
+            "description": "List all active sessions for current user"
+          }
+        },
+        {
+          "name": "Revoke Session",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/sessions/:sessionId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "sessions",
+                ":sessionId"
+              ],
+              "variable": [
+                {
+                  "key": "sessionId",
+                  "value": "session-uuid-here"
+                }
+              ]
+            },
+            "description": "Revoke a specific session by ID"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"Password123!\",\n  \"new_password\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            },
+            "description": "Change password for authenticated user"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout current session"
+          }
+        },
+        {
+          "name": "Logout All Sessions",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout-all"
+              ]
+            },
+            "description": "Logout all sessions for current user"
+          }
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "validate"
+              ]
+            },
+            "description": "Validate current access token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Users",
+      "description": "User management endpoints",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List all users with pagination"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-uuid-here"
+                }
+              ]
+            },
+            "description": "Get user details by ID"
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Smith\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Create a new user"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-uuid-here"
+                }
+              ]
+            },
+            "description": "Update user by ID"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete user by ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏢 Tenants",
+      "description": "Multi-tenant organization management",
+      "item": [
+        {
+          "name": "List Tenants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tenants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants"
+              ]
+            },
+            "description": "List all tenants"
+          }
+        },
+        {
+          "name": "Get Tenant by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{tenantId}}"
+                }
+              ]
+            },
+            "description": "Get tenant details by ID"
+          }
+        },
+        {
+          "name": "Create Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Pharma\",\n  \"slug\": \"acme-pharma\",\n  \"status\": \"active\",\n  \"settings\": {\n    \"timezone\": \"America/New_York\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants"
+              ]
+            },
+            "description": "Create a new tenant organization"
+          }
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Pharmaceuticals\",\n  \"settings\": {\n    \"timezone\": \"America/Chicago\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenants/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{tenantId}}"
+                }
+              ]
+            },
+            "description": "Update tenant by ID"
+          }
+        },
+        {
+          "name": "Delete Tenant",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "tenant-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete tenant by ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎭 Roles",
+      "description": "Role-based access control",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            },
+            "description": "List all roles. Default roles: super_admin, tenant_admin, quality_manager, viewer"
+          }
+        },
+        {
+          "name": "Get Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/roles/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "role-uuid-here"
+                }
+              ]
+            },
+            "description": "Get role details by ID"
+          }
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Document Controller\",\n  \"code\": \"doc_controller\",\n  \"description\": \"Manages document lifecycle\",\n  \"scope\": \"tenant\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            },
+            "description": "Create a new role"
+          }
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Senior Document Controller\",\n  \"description\": \"Manages document lifecycle with approval rights\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/roles/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "role-uuid-here"
+                }
+              ]
+            },
+            "description": "Update role by ID"
+          }
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/roles/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "role-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete role by ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔒 Permissions",
+      "description": "Permission management - Format: resource:action",
+      "item": [
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions"
+              ]
+            },
+            "description": "List all permissions. Format: resource:action (e.g., users:read, users:create)"
+          }
+        },
+        {
+          "name": "Get Permission by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/permissions/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "permission-uuid-here"
+                }
+              ]
+            },
+            "description": "Get permission by ID"
+          }
+        },
+        {
+          "name": "Create Permission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_id\": \"role-uuid-here\",\n  \"resource\": \"documents\",\n  \"action\": \"approve\",\n  \"scope\": \"TENANT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions"
+              ]
+            },
+            "description": "Create a new permission"
+          }
+        },
+        {
+          "name": "Update Permission",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/permissions/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "permission-uuid-here"
+                }
+              ]
+            },
+            "description": "Update permission by ID"
+          }
+        },
+        {
+          "name": "Delete Permission",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/permissions/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "permissions",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "permission-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete permission by ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤↔️🎭 User-Roles",
+      "description": "Assign roles to users within tenants",
+      "item": [
+        {
+          "name": "List User-Role Assignments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user-roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-roles"
+              ]
+            },
+            "description": "List all user-role assignments"
+          }
+        },
+        {
+          "name": "Get User-Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user-roles/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-role-uuid-here"
+                }
+              ]
+            },
+            "description": "Get user-role assignment by ID"
+          }
+        },
+        {
+          "name": "Assign Role to User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user-uuid-here\",\n  \"role_id\": \"role-uuid-here\",\n  \"tenant_id\": \"{{tenantId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user-roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-roles"
+              ]
+            },
+            "description": "Assign a role to a user within a tenant"
+          }
+        },
+        {
+          "name": "Update User-Role Assignment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expires_at\": \"2025-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user-roles/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-role-uuid-here"
+                }
+              ]
+            },
+            "description": "Update user-role assignment"
+          }
+        },
+        {
+          "name": "Remove Role from User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user-roles/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-role-uuid-here"
+                }
+              ]
+            },
+            "description": "Remove role from user"
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤↔️🏢 User-Tenants",
+      "description": "Assign users to tenants",
+      "item": [
+        {
+          "name": "List User-Tenant Assignments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user-tenants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-tenants"
+              ]
+            },
+            "description": "List all user-tenant assignments"
+          }
+        },
+        {
+          "name": "Get User-Tenant by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user-tenants/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-tenants",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-tenant-uuid-here"
+                }
+              ]
+            },
+            "description": "Get user-tenant assignment by ID"
+          }
+        },
+        {
+          "name": "Assign User to Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user-uuid-here\",\n  \"tenant_id\": \"{{tenantId}}\",\n  \"status\": \"active\",\n  \"is_primary\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user-tenants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-tenants"
+              ]
+            },
+            "description": "Assign user to a tenant"
+          }
+        },
+        {
+          "name": "Update User-Tenant Assignment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_primary\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user-tenants/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-tenants",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-tenant-uuid-here"
+                }
+              ]
+            },
+            "description": "Update user-tenant assignment"
+          }
+        },
+        {
+          "name": "Remove User from Tenant",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user-tenants/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user-tenants",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "user-tenant-uuid-here"
+                }
+              ]
+            },
+            "description": "Remove user from tenant"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔑 API Keys",
+      "description": "API key management for integrations",
+      "item": [
+        {
+          "name": "List API Keys",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api-keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-keys"
+              ]
+            },
+            "description": "List all API keys"
+          }
+        },
+        {
+          "name": "Get API Key by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api-keys/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-keys",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "api-key-uuid-here"
+                }
+              ]
+            },
+            "description": "Get API key details"
+          }
+        },
+        {
+          "name": "Create API Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Integration Key\",\n  \"description\": \"API key for external integration\",\n  \"expires_at\": \"2026-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api-keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-keys"
+              ]
+            },
+            "description": "Create a new API key"
+          }
+        },
+        {
+          "name": "Update API Key",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Integration Key\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api-keys/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-keys",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "api-key-uuid-here"
+                }
+              ]
+            },
+            "description": "Update API key"
+          }
+        },
+        {
+          "name": "Revoke API Key",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api-keys/:id/revoke",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-keys",
+                ":id",
+                "revoke"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "api-key-uuid-here"
+                }
+              ]
+            },
+            "description": "Revoke an API key"
+          }
+        },
+        {
+          "name": "Regenerate API Key",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api-keys/:id/regenerate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-keys",
+                ":id",
+                "regenerate"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "api-key-uuid-here"
+                }
+              ]
+            },
+            "description": "Regenerate API key secret"
+          }
+        },
+        {
+          "name": "Validate API Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"qak_xxxxxxxxxxxxxxxx\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api-keys/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-keys",
+                "validate"
+              ]
+            },
+            "description": "Validate an API key"
+          }
+        },
+        {
+          "name": "Delete API Key",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api-keys/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-keys",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "api-key-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete API key"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔑 API Key Permissions",
+      "description": "Collection for managing API key permissions in QAssure.",
+      "item": [
+        {
+          "name": "Get All Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api-key-permissions?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-key-permissions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Permission by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api-key-permissions/{{permissionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-key-permissions",
+                "{{permissionId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Permission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"api_key_id\": \"{{apiKeyId}}\",\n    \"resource\": \"users\",\n    \"action\": \"read\",\n    \"scope\": \"TENANT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api-key-permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-key-permissions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Permission",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"resource\": \"users\",\n    \"action\": \"write\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api-key-permissions/{{permissionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-key-permissions",
+                "{{permissionId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Permission",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api-key-permissions/{{permissionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-key-permissions",
+                "{{permissionId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📦 Modules",
+      "description": "Module registry with 8-state lifecycle management",
+      "item": [
+        {
+          "name": "List Modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules"
+              ]
+            },
+            "description": "List all registered modules"
+          }
+        },
+        {
+          "name": "Get Module Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                "stats"
+              ]
+            },
+            "description": "Get module statistics by status"
+          }
+        },
+        {
+          "name": "Get State Diagram",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules/states",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                "states"
+              ]
+            },
+            "description": "Get module state machine diagram and transitions"
+          }
+        },
+        {
+          "name": "Get Module by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Get module details"
+          }
+        },
+        {
+          "name": "Register Module",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"module_id\": \"aice-capa\",\n  \"name\": \"AiCE CAPA Module\",\n  \"description\": \"Corrective and Preventive Action management\",\n  \"version\": \"1.0.0\",\n  \"base_url\": \"http://aice-service:3001\",\n  \"health_endpoint\": \"/health\",\n  \"capabilities\": [\"capa\", \"events\", \"workflow\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/modules",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules"
+              ]
+            },
+            "description": "Register a new module"
+          }
+        },
+        {
+          "name": "Update Module",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\",\n  \"base_url\": \"http://new-url:3001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Update module details"
+          }
+        },
+        {
+          "name": "Start Module",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id",
+                "start"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Start a module (pending → starting → running)"
+          }
+        },
+        {
+          "name": "Stop Module",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id/stop",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id",
+                "stop"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Stop a module (running → stopping → stopped)"
+          }
+        },
+        {
+          "name": "Restart Module",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id/restart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id",
+                "restart"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Restart a module"
+          }
+        },
+        {
+          "name": "Set Maintenance Mode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Scheduled maintenance\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id/maintenance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id",
+                "maintenance"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Set module to maintenance mode"
+          }
+        },
+        {
+          "name": "Deprecate Module",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Replaced by newer version\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id/deprecate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id",
+                "deprecate"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Deprecate a module"
+          }
+        },
+        {
+          "name": "Update Module Version",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"1.1.0\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id/version",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id",
+                "version"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Update module version"
+          }
+        },
+        {
+          "name": "Trigger Health Check",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id/health-check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id",
+                "health-check"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Manually trigger health check"
+          }
+        },
+        {
+          "name": "Get Health History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id/health-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id",
+                "health-history"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Get module health check history"
+          }
+        },
+        {
+          "name": "Delete Module",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/modules/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "modules",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "module-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete module"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Audit Logs",
+      "description": "FDA 21 CFR Part 11 compliant audit trail",
+      "item": [
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List audit logs with pagination"
+          }
+        },
+        {
+          "name": "Get Audit Log by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit-logs",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "audit-log-uuid-here"
+                }
+              ]
+            },
+            "description": "Get audit log entry by ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI Gateway",
+      "description": "AI provider integration - OpenAI, Anthropic, Google",
+      "item": [
+        {
+          "name": "List AI Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/providers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "providers"
+              ]
+            },
+            "description": "List available AI providers (OpenAI, Anthropic, Google)"
+          }
+        },
+        {
+          "name": "Get Provider Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/providers/:provider/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "providers",
+                ":provider",
+                "health"
+              ],
+              "variable": [
+                {
+                  "key": "provider",
+                  "value": "openai"
+                }
+              ]
+            },
+            "description": "Check AI provider health status"
+          }
+        },
+        {
+          "name": "List AI Models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/models",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "models"
+              ]
+            },
+            "description": "List available AI models"
+          }
+        },
+        {
+          "name": "Get AI Gateway Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "health"
+              ]
+            },
+            "description": "Overall AI gateway health status"
+          }
+        },
+        {
+          "name": "Create AI Completion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a quality management expert.\"},\n    {\"role\": \"user\", \"content\": \"What are the key elements of a CAPA?\"}\n  ],\n  \"provider\": \"openai\",\n  \"model\": \"gpt-4\",\n  \"temperature\": 0.7,\n  \"max_tokens\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/completions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "completions"
+              ]
+            },
+            "description": "Create an AI completion (requires AI provider API keys)"
+          }
+        },
+        {
+          "name": "List AI Completions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/completions?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "completions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List AI completion history"
+          }
+        },
+        {
+          "name": "Get AI Completion by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/completions/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "completions",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "completion-uuid-here"
+                }
+              ]
+            },
+            "description": "Get AI completion details"
+          }
+        },
+        {
+          "name": "Get Cost Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/costs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "costs"
+              ]
+            },
+            "description": "Get AI usage cost summary"
+          }
+        },
+        {
+          "name": "AI Playground",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"Hello, test message\"}\n  ],\n  \"provider\": \"openai\",\n  \"model\": \"gpt-3.5-turbo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/playground",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "playground"
+              ]
+            },
+            "description": "Test prompts without tracking in history"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Knowledge/RAG",
+      "description": "Vector database and RAG (Retrieval-Augmented Generation)",
+      "item": [
+        {
+          "name": "Create Collection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"QMS Documentation\",\n  \"description\": \"Quality Management System documents\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections"
+              ]
+            },
+            "description": "Create a knowledge collection"
+          }
+        },
+        {
+          "name": "List Collections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections"
+              ]
+            },
+            "description": "List all knowledge collections"
+          }
+        },
+        {
+          "name": "Get Collection by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "collection-uuid-here"
+                }
+              ]
+            },
+            "description": "Get collection details"
+          }
+        },
+        {
+          "name": "Update Collection",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Collection Name\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "collection-uuid-here"
+                }
+              ]
+            },
+            "description": "Update collection"
+          }
+        },
+        {
+          "name": "Delete Collection",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "collection-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete collection"
+          }
+        },
+        {
+          "name": "List Documents in Collection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/collections/:collectionId/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "collections",
+                ":collectionId",
+                "documents"
+              ],
+              "variable": [
+                {
+                  "key": "collectionId",
+                  "value": "collection-uuid-here"
+                }
+              ]
+            },
+            "description": "List documents in a collection"
+          }
+        },
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "collection_id",
+                  "value": "collection-uuid-here",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Document Title",
+                  "type": "text"
+                },
+                {
+                  "key": "metadata",
+                  "value": "{\"category\": \"SOP\"}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "documents"
+              ]
+            },
+            "description": "Upload a document to be chunked and vectorized"
+          }
+        },
+        {
+          "name": "Get Document Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/documents/:id/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "documents",
+                ":id",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "document-uuid-here"
+                }
+              ]
+            },
+            "description": "Get document processing status"
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/documents/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "documents",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "document-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete document"
+          }
+        },
+        {
+          "name": "Semantic Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"How to handle deviations?\",\n  \"limit\": 5,\n  \"collection_id\": \"collection-uuid-here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "search"
+              ]
+            },
+            "description": "Perform semantic search across knowledge base"
+          }
+        },
+        {
+          "name": "Search with Context (RAG)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What is the CAPA process?\",\n  \"limit\": 5,\n  \"include_context\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/search/context",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "search",
+                "context"
+              ]
+            },
+            "description": "Search with RAG context for AI augmentation"
+          }
+        },
+        {
+          "name": "Get Knowledge Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/knowledge/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "knowledge",
+                "stats"
+              ]
+            },
+            "description": "Get knowledge base statistics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Prompt Management",
+      "description": "Prompt template management with versioning",
+      "item": [
+        {
+          "name": "Create Prompt Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"root-cause-analysis\",\n  \"description\": \"Analyze root cause of quality issues\",\n  \"category\": \"quality\",\n  \"template\": \"Analyze the following issue using 5-Why methodology:\\n\\nIssue: {{issue}}\\nContext: {{context}}\\n\\nProvide a detailed root cause analysis.\",\n  \"variables\": [\"issue\", \"context\"],\n  \"settings\": {\n    \"provider\": \"openai\",\n    \"model\": \"gpt-4\",\n    \"temperature\": 0.3,\n    \"max_tokens\": 2000\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts"
+              ]
+            },
+            "description": "Create a new prompt template"
+          }
+        },
+        {
+          "name": "List Prompts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List all prompt templates"
+          }
+        },
+        {
+          "name": "Get Prompt by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "prompt-uuid-here"
+                }
+              ]
+            },
+            "description": "Get prompt template details"
+          }
+        },
+        {
+          "name": "Update Prompt",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\",\n  \"template\": \"Updated template content with {{variables}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "prompt-uuid-here"
+                }
+              ]
+            },
+            "description": "Update prompt template (creates new version)"
+          }
+        },
+        {
+          "name": "Delete Prompt",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "prompt-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete prompt template"
+          }
+        },
+        {
+          "name": "List Prompt Versions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts/:id/versions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                ":id",
+                "versions"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "prompt-uuid-here"
+                }
+              ]
+            },
+            "description": "List all versions of a prompt"
+          }
+        },
+        {
+          "name": "Activate Prompt Version",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts/:id/versions/:version/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                ":id",
+                "versions",
+                ":version",
+                "activate"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "prompt-uuid-here"
+                },
+                {
+                  "key": "version",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Activate a specific prompt version"
+          }
+        },
+        {
+          "name": "Test Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variables\": {\n    \"issue\": \"Batch 12345 failed dissolution testing\",\n    \"context\": \"Manufacturing date: Dec 25, Equipment: Tablet Press #3\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts/:id/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                ":id",
+                "test"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "prompt-uuid-here"
+                }
+              ]
+            },
+            "description": "Test prompt with variables (dry run)"
+          }
+        },
+        {
+          "name": "Execute Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variables\": {\n    \"issue\": \"Batch 12345 failed dissolution testing\",\n    \"context\": \"Manufacturing date: Dec 25, Equipment: Tablet Press #3\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts/:id/execute",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                ":id",
+                "execute"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "prompt-uuid-here"
+                }
+              ]
+            },
+            "description": "Execute prompt with AI provider"
+          }
+        },
+        {
+          "name": "Clone Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"root-cause-analysis-v2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/prompts/:id/clone",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "prompts",
+                ":id",
+                "clone"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "prompt-uuid-here"
+                }
+              ]
+            },
+            "description": "Clone an existing prompt"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔗 QMS Integration",
+      "description": "External QMS system integration - Veeva, MasterControl, Arena, TrackWise, ETQ",
+      "item": [
+        {
+          "name": "List Supported QMS Systems",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qms/supported",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "qms",
+                "supported"
+              ]
+            },
+            "description": "List all supported QMS systems"
+          }
+        },
+        {
+          "name": "Get QMS System Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qms/supported/:system",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "qms",
+                "supported",
+                ":system"
+              ],
+              "variable": [
+                {
+                  "key": "system",
+                  "value": "veeva"
+                }
+              ]
+            },
+            "description": "Get details about a specific QMS system"
+          }
+        },
+        {
+          "name": "Create QMS Connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"systemType\": \"veeva\",\n  \"name\": \"Veeva Vault Production\",\n  \"credentials\": {\n    \"baseUrl\": \"https://company.veevavault.com\",\n    \"username\": \"api-user\",\n    \"password\": \"api-password\"\n  },\n  \"settings\": {\n    \"syncInterval\": 3600,\n    \"autoSync\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/qms/connections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "qms",
+                "connections"
+              ]
+            },
+            "description": "Create a new QMS connection"
+          }
+        },
+        {
+          "name": "List QMS Connections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qms/connections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "qms",
+                "connections"
+              ]
+            },
+            "description": "List all QMS connections"
+          }
+        },
+        {
+          "name": "Get QMS Connection by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qms/connections/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "qms",
+                "connections",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "connection-uuid-here"
+                }
+              ]
+            },
+            "description": "Get QMS connection details"
+          }
+        },
+        {
+          "name": "Test QMS Connection",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qms/connections/:id/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "qms",
+                "connections",
+                ":id",
+                "test"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "connection-uuid-here"
+                }
+              ]
+            },
+            "description": "Test QMS connection connectivity"
+          }
+        },
+        {
+          "name": "Trigger Sync",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entityTypes\": [\"documents\", \"workflows\"],\n  \"fullSync\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/qms/connections/:id/sync",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "qms",
+                "connections",
+                ":id",
+                "sync"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "connection-uuid-here"
+                }
+              ]
+            },
+            "description": "Trigger data synchronization"
+          }
+        },
+        {
+          "name": "Get Sync Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qms/connections/:id/sync/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "qms",
+                "connections",
+                ":id",
+                "sync",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "connection-uuid-here"
+                }
+              ]
+            },
+            "description": "Get current sync status"
+          }
+        },
+        {
+          "name": "Get Sync History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/qms/connections/:id/sync/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "qms",
+                "connections",
+                ":id",
+                "sync",
+                "history"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "connection-uuid-here"
+                }
+              ]
+            },
+            "description": "Get sync job history"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📡 Event Subscriptions",
+      "description": "Cross-module event subscription management",
+      "item": [
+        {
+          "name": "Create Event Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscriberName\": \"AiCE Module\",\n  \"moduleCode\": \"aice\",\n  \"eventPattern\": \"capa.*\",\n  \"deliveryType\": \"kafka\",\n  \"kafkaTopic\": \"qassure.aice.events\",\n  \"filters\": {\"data.severity\": [\"critical\", \"high\"]},\n  \"description\": \"AiCE subscribes to all CAPA events\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "subscriptions"
+              ]
+            },
+            "description": "Create event subscription. Delivery types: kafka, http, internal"
+          }
+        },
+        {
+          "name": "List Event Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/subscriptions?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "subscriptions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List all event subscriptions"
+          }
+        },
+        {
+          "name": "Get Event Subscription by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/subscriptions/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "subscriptions",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "subscription-uuid-here"
+                }
+              ]
+            },
+            "description": "Get event subscription details"
+          }
+        },
+        {
+          "name": "Update Event Subscription",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventPattern\": \"capa.created\",\n  \"filters\": {\"data.severity\": [\"critical\"]}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/subscriptions/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "subscriptions",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "subscription-uuid-here"
+                }
+              ]
+            },
+            "description": "Update event subscription"
+          }
+        },
+        {
+          "name": "Delete Event Subscription",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/subscriptions/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "subscriptions",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "subscription-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete event subscription"
+          }
+        },
+        {
+          "name": "Pause Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/subscriptions/:id/pause",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "subscriptions",
+                ":id",
+                "pause"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "subscription-uuid-here"
+                }
+              ]
+            },
+            "description": "Pause event subscription"
+          }
+        },
+        {
+          "name": "Resume Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/subscriptions/:id/resume",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "events",
+                "subscriptions",
+                ":id",
+                "resume"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "subscription-uuid-here"
+                }
+              ]
+            },
+            "description": "Resume paused subscription"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Webhooks",
+      "description": "External webhook notifications",
+      "item": [
+        {
+          "name": "Create Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"External Audit System\",\n  \"description\": \"Notify external audit system of all events\",\n  \"url\": \"https://audit-system.example.com/webhook\",\n  \"events\": [\"audit.*\", \"capa.created\", \"change.approved\"],\n  \"authType\": \"bearer\",\n  \"authConfig\": {\"token\": \"secret-token\"},\n  \"headers\": {\"X-Custom-Header\": \"QAssure\"}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webhooks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhooks"
+              ]
+            },
+            "description": "Create a new webhook. Auth types: none, bearer, basic"
+          }
+        },
+        {
+          "name": "List Webhooks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhooks"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List all webhooks"
+          }
+        },
+        {
+          "name": "Get Webhook by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "webhook-uuid-here"
+                }
+              ]
+            },
+            "description": "Get webhook details"
+          }
+        },
+        {
+          "name": "Update Webhook",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Webhook Name\",\n  \"events\": [\"capa.*\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "webhook-uuid-here"
+                }
+              ]
+            },
+            "description": "Update webhook"
+          }
+        },
+        {
+          "name": "Delete Webhook",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "webhook-uuid-here"
+                }
+              ]
+            },
+            "description": "Delete webhook"
+          }
+        },
+        {
+          "name": "Test Webhook",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/:id/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                ":id",
+                "test"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "webhook-uuid-here"
+                }
+              ]
+            },
+            "description": "Send test event to webhook"
+          }
+        },
+        {
+          "name": "Regenerate Webhook Secret",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/:id/regenerate-secret",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                ":id",
+                "regenerate-secret"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "webhook-uuid-here"
+                }
+              ]
+            },
+            "description": "Regenerate HMAC signing secret"
+          }
+        },
+        {
+          "name": "Get Webhook Delivery History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webhooks/:id/deliveries?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "webhooks",
+                ":id",
+                "deliveries"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "webhook-uuid-here"
+                }
+              ]
+            },
+            "description": "Get webhook delivery history with status and response info"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2427 @@
+{
+	"info": {
+		"_postman_id": "60b55760-4b17-4b3e-8319-b17ed93d36d7",
+		"name": "QAssure — Document Management Service",
+		"description": "All 17 Document Service endpoints verified against live system on 28-Feb-2026.\n\nBase URL: http://localhost:3000/api/v1\n\nAuth: Supports THREE authentication modes:\n(a) JWT only — QAssure UI users via Authorization: Bearer header\n(b) JWT + API Key combined — Module on behalf of user (after SSO launch). JWT from verify-launch-token + X-API-Key. User permissions enforced. Audit trail shows real user.\n(c) API Key + X-Tenant-ID — Module system/cron operations. Full module-level access. No user context.\n\nTenant: Pharma Corp (c0000000-0000-0000-0000-000000000001)\n\nRoles with access:\n- Tenant Admin: document:read/write/delete (seeded)\n- Super Admin: bypasses permission checks\n- Custom roles: when Tenant Admin grants document permissions\n- API Key only (mode c): full module-level access\n- JWT + API Key (mode b): user's actual role-based permissions enforced",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48835086"
+	},
+	"item": [
+		{
+			"name": "🔐 Auth",
+			"item": [
+				{
+					"name": "Login — Tenant Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('Token saved');",
+									"}",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.token);",
+									"    console.log('Token saved (alt field)');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"tenant8admin@gmail.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Tenant Admin. Token is auto-saved to collection variable jwt_token.\n\nRoles tested:\n- admin@pharmacorp.com (Tenant Admin) ✅\n- testadmin@ltts.com (Super Admin) ✅\n- sarah@pharmacorp.com (Quality Analyst + Module User) ❌ No document permissions"
+					},
+					"response": []
+				},
+				{
+					"name": "Login — Super Admin (LTTS)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"}",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"polumuri.suresh@ltts.com\",\n    \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Super Admin. Bypasses permission checks — no document:read/write in DB but access works."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📋 Reference Data",
+			"item": [
+				{
+					"name": "1. GET Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"categories"
+							]
+						},
+						"description": "Returns 6 tenant-scoped categories.\nRequires: document:read\n\nExpected: Forms(FRM/24mo), Policies(POL/12mo), Quality Manual(QM/12mo), Specifications(SPEC/12mo), SOP(SOP/12mo), Work Instructions(WI/24mo)\n\nResponse: 8 fields per category: id, name, code, description, parent_id, requires_training, retention_years, review_frequency_months"
+					},
+					"response": []
+				},
+				{
+					"name": "1a. GET Categories (API Key)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "X-Tenant-ID",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"categories"
+							]
+						},
+						"description": "Same endpoint via API Key auth. Verified working."
+					},
+					"response": []
+				},
+				{
+					"name": "2. GET Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/types",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"types"
+							]
+						},
+						"description": "Returns 9 static/hardcoded types (no DB table).\nNo authorize() check — only authenticateAny.\n\nExpected: Standard Operating Procedure, Work Instruction, Policy, Form, Specification, Quality Manual, Procedure, Guideline, Reference Document"
+					},
+					"response": []
+				},
+				{
+					"name": "3. GET Statuses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/statuses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"statuses"
+							]
+						},
+						"description": "Returns 6 static/hardcoded statuses (no DB table).\nNo authorize() check — only authenticateAny.\n\nExpected: Draft, In Review, Approved, Effective, Obsolete, Archived"
+					},
+					"response": []
+				},
+				{
+					"name": "4. GET Due for Review",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/due-for-review?days_ahead=30",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"due-for-review"
+							],
+							"query": [
+								{
+									"key": "days_ahead",
+									"value": "30"
+								}
+							]
+						},
+						"description": "Returns effective documents with next_review_date within days_ahead window.\nRequires: document:read\n\nOnly returns docs with non-null next_review_date (i.e., docs linked to a category)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📄 Document CRUD",
+			"item": [
+				{
+					"name": "5. GET List Documents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents?offset=0&source_module_id=8601d785-6bfd-4a59-8977-da68e3ea9b7c",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Default 50",
+									"disabled": true
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Default 0"
+								},
+								{
+									"key": "status",
+									"value": "draft",
+									"description": "Filter by status",
+									"disabled": true
+								},
+								{
+									"key": "category_id",
+									"value": "",
+									"description": "Filter by category UUID",
+									"disabled": true
+								},
+								{
+									"key": "document_type",
+									"value": "SOP",
+									"description": "Filter by type code",
+									"disabled": true
+								},
+								{
+									"key": "owner_id",
+									"value": "4ccf68ad-485c-495a-935b-10d74b173a52",
+									"description": "Filter by owner UUID",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "Sterile",
+									"description": "ILIKE on title, document_number, description",
+									"disabled": true
+								},
+								{
+									"key": "source_module_id",
+									"value": "8601d785-6bfd-4a59-8977-da68e3ea9b7c"
+								}
+							]
+						},
+						"description": "Paginated list. Returns 10 fields per doc (summary view).\nRequires: document:read\n\nResponse fields: id, document_number, title, document_type, category (string name or null), status, current_version (string), owner (string email), next_review_date, updated_at\n\nPagination: { total, limit, offset }\n\nFilters verified: status=draft ✅, search=Sterile ✅, category_id, document_type, owner_id"
+					},
+					"response": []
+				},
+				{
+					"name": "6. GET Document by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}"
+							]
+						},
+						"description": "Full 19-field document detail.\nRequires: document:read\n\nResponse fields: id, document_number, title, description, document_type, category (object {id,name,code} or null), status, current_version, version_status, owner (object {id,email,name}), department, effective_date, next_review_date, tags, custom_fields, workflow_instance_id, created_by (email string), created_at, updated_at\n\nNOTE: Checkout status NOT in response — tracked in separate document_checkouts table."
+					},
+					"response": []
+				},
+				{
+					"name": "8. POST Create Document",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('document_id', jsonData.data.id);",
+									"    console.log('Document ID saved: ' + jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Governed Document with Sections\",\n    \"document_type\": \"SOP\",\n    \"description\": \"Demonstrating section-level review workflow\",\n    \"category_id\": \"2f612c6e-3887-40ba-8ac0-cc892202b44f\",\n    \"workflow_definition_id\": \"\",\n    \"source_record_id\": \"RECORD-001\",\n    \"sections\": [\n        {\n            \"title\": \"1. Introduction\",\n            \"content\": \"Purpose and scope of this document.\",\n            \"is_mandatory\": true\n        },\n        {\n            \"title\": \"2. Risk Assessment\",\n            \"content\": \"Detailed analysis of risks.\",\n            \"is_mandatory\": true\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "Creates document with optional structured sections and workflow initiation.\nRequires: document:write\n\nSections are created as structured objects in document_sections table for granular review."
+					},
+					"response": []
+				},
+				{
+					"name": "8a. POST Create Document (API Key)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('document_id', jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Quarterly Risk Assessment\",\n    \"document_type\": \"SOP\",\n    \"description\": \"Initiated via Report Module API\",\n    \"category_id\": \"5e0aa281-8dbf-4f33-9115-1219eb3f881b\",\n    \"department\": \"Manufacturing\",\n    \"source_record_id\": \"RISK-2024-Q1\",\n    \"workflow_definition_id\": \"\",\n    \"sections\": [\n        {\n            \"title\": \"1. Executive Summary\",\n            \"content\": \"Summary of quarterly risks...\",\n            \"is_mandatory\": true\n        },\n        {\n            \"title\": \"2. Risk Analysis\",\n            \"content\": \"Detailed analysis of findings...\",\n            \"is_mandatory\": true\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "Create document via API Key (LTTS module integration path).\nVerified working with document:read + document:write in api_key_permissions."
+					},
+					"response": []
+				},
+				{
+					"name": "8b. POST Create Document (Validation Error)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Missing Type Doc\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "Validation test — missing document_type.\nExpected: { success: false, error: { code: 'VALIDATION_ERROR', message: 'title and document_type are required' } }"
+					},
+					"response": []
+				},
+				{
+					"name": "8c. POST Create Document (Missing Module Error)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"No Module Doc\",\n    \"document_type\": \"SOP\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "Tests validation for missing source_module/source_module_id.\nExpected: 400 Bad Request { success: false, error: { code: 'VALIDATION_ERROR', message: 'Originating module is required' } }"
+					},
+					"response": []
+				},
+				{
+					"name": "9. PUT Update Document Metadata",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Sterile Manufacturing SOP - Updated\",\n    \"description\": \"Updated SOP for sterile manufacturing\",\n    \"department\": \"Quality Assurance\",\n    \"tags\": [\"sterile\", \"gmp\", \"gowning\", \"updated\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}"
+							]
+						},
+						"description": "Updates metadata only. Content changes go through versioning.\nRequires: document:write\n\nAllowed fields: title, description, category_id, owner_id, department, tags (cast text[]), custom_fields (cast jsonb)\n\nReturns full 19-field object with updated values."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🧩 Section Management",
+			"item": [
+				{
+					"name": "GET List Sections",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/sections",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"sections"
+							]
+						},
+						"description": "Returns all sections for a document.\nIncludes review_status, rework_requested_by, and rework_requested_at metadata."
+					},
+					"response": []
+				},
+				{
+					"name": "PATCH Update Section",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Updated risk analysis content.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/sections/{{section_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"sections",
+								"{{section_id}}"
+							]
+						},
+						"description": "Updates content or title of a section."
+					},
+					"response": []
+				},
+				{
+					"name": "POST Review Section (Mark Reviewed)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"reviewed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/sections/{{section_id}}/review",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"sections",
+								"{{section_id}}",
+								"review"
+							]
+						},
+						"description": "Marks a section as Reviewed. Clears any existing rework flags."
+					},
+					"response": []
+				},
+				{
+					"name": "POST Review Section (Mark for Rework)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"rework\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/sections/{{section_id}}/review",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"sections",
+								"{{section_id}}",
+								"review"
+							]
+						},
+						"description": "Marks a section for Rework. Automatically captures requesting user and workflow step for traceability."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💬 Collaboration & Comments",
+			"item": [
+				{
+					"name": "GET List Comments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/comments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"comments"
+							]
+						},
+						"description": "Lists all comments. Can filter by section_id."
+					},
+					"response": []
+				},
+				{
+					"name": "POST Add Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"comment_text\": \"Please update the risk mitigation table.\",\n    \"section_id\": \"{{section_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/comments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"comments"
+							]
+						},
+						"description": "Adds a comment. Captures the current workflow step name automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "POST Resolve Comment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/comments/{{comment_id}}/resolve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"comments",
+								"{{comment_id}}",
+								"resolve"
+							]
+						},
+						"description": "Marks a comment as resolved."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📝 Version Management",
+			"item": [
+				{
+					"name": "7. GET Document Versions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/versions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"versions"
+							]
+						},
+						"description": "Returns all versions for document. Ordered by major DESC, minor DESC.\nRequires: document:read\n\n13 fields per version: id, version_number, major_version, minor_version, status, file (null or {name,path,size,mime_type,hash}), change_summary, change_reason, approved_by (email), approved_at, signature_id, created_by (email), created_at\n\nContent NOT included in response."
+					},
+					"response": []
+				},
+				{
+					"name": "10. POST Create Version (Minor)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"1. Purpose\\nThis SOP defines the procedures for sterile manufacturing.\\n\\n2. Scope\\nApplies to all sterile manufacturing areas.\\n\\n3. Procedure\\n3.1 Gowning\\n3.2 Environmental Monitoring\\n3.3 Aseptic Processing\\n\\n4. References\\nISO 14644, EU GMP Annex 1\",\n    \"change_summary\": \"Added references section\",\n    \"change_reason\": \"minor_edit\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/versions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"versions"
+							]
+						},
+						"description": "Creates minor version: 0.1 → 0.2 → 0.3\nRequires: document:write\n\nIMPORTANT: Resets document status to 'draft' — must go through review again.\nSHA-256 hash auto-calculated from content.\n\nOptional: content, content_html, change_summary, change_reason, is_major_version, file_name, file_path, file_size, mime_type\n\nReturns 13-field version object."
+					},
+					"response": []
+				},
+				{
+					"name": "10a. POST Create Version (Major)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Complete rewrite of sterile manufacturing SOP per new regulations.\",\n    \"change_summary\": \"Major revision per EU GMP Annex 1 update\",\n    \"change_reason\": \"regulatory_update\",\n    \"is_major_version\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/versions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"versions"
+							]
+						},
+						"description": "Creates major version: 0.2 → 1.0, 1.3 → 2.0\nis_major_version=true increments major, resets minor to 0.\n\nAlso resets document status to 'draft'."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔒 Checkout / Checkin",
+			"item": [
+				{
+					"name": "11. POST Checkout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"Adding new section on environmental monitoring\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/checkout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"checkout"
+							]
+						},
+						"description": "Grants 24-hour exclusive lock.\nRequires: document:write\n\nSuccess: { checked_out: true, expires_at: '+24h' }\nSame user re-checkout: { already_checked_out: true, by_current_user: true }\nDifferent user: Error 'Document is already checked out by another user'\n\nLogs 'checkout' in document_access_log.\nCheckout NOT visible in GET /documents/:id response."
+					},
+					"response": []
+				},
+				{
+					"name": "12. POST Checkin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/checkin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"checkin"
+							]
+						},
+						"description": "Releases exclusive lock. Only the checkout user can checkin.\nRequires: document:write\n\nSuccess: { checked_in: true }\nWrong user: Error 'Document is not checked out by you'\n\nLogs 'checkin' in document_access_log."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔄 Lifecycle Workflow",
+			"item": [
+				{
+					"name": "13. POST Submit for Review",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-KEY",
+								"value": "{{api_key}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"workflow_definition_id\":\"801eccf9-6d77-427c-9efd-34520fdc1513\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/submit",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"submit"
+							]
+						},
+						"description": "draft → in_review\nRequires: document:write\n\nValidation: Only draft documents can be submitted.\nError: 'Only draft documents can be submitted for review'\n\nCreates workflow instance via workflowEngine.startWorkflow(workflowCode='document_approval').\nStores workflow_instance_id on document.\nAlso updates current version status to 'in_review'."
+					},
+					"response": []
+				},
+				{
+					"name": "14. POST Approve",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"comments\": \"Reviewed and approved per QA checklist\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"approve"
+							]
+						},
+						"description": "in_review → approved\nRequires: document:write\n\nValidation: Only in_review documents can be approved.\nError: 'Only documents in review can be approved'\n\nOptional: comments in body.\nUpdates version status to 'approved'.\nInserts workflow_history (action='approve', comments) if workflow_instance_id exists."
+					},
+					"response": []
+				},
+				{
+					"name": "15. POST Reject",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"Needs additional safety section per regulatory requirement\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/reject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"reject"
+							]
+						},
+						"description": "in_review OR approved → draft\nRequires: document:write\n\n⚠️ MANDATORY: reason field required.\nError if missing: { code: 'VALIDATION_ERROR', message: 'reason is required when rejecting a document' }\n\nUpdates version status to 'draft'.\nInserts workflow_history (action='reject', comments=reason) if workflow_instance_id exists."
+					},
+					"response": []
+				},
+				{
+					"name": "15a. POST Reject (Validation Error — no reason)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/reject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"reject"
+							]
+						},
+						"description": "Validation test — empty body.\nExpected: { success: false, error: { code: 'VALIDATION_ERROR', message: 'reason is required when rejecting a document' } }"
+					},
+					"response": []
+				},
+				{
+					"name": "16. POST Make Effective",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"effective_date\": \"2026-04-07T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/make-effective",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"make-effective"
+							]
+						},
+						"description": "approved → effective\nRequires: document:write\n\n⚠️ MANDATORY: effective_date in body.\nOptional: signature_id (UUID for e-signature)\n\nValidation: Only approved documents can be made effective.\nError: 'Only approved documents can be made effective'\n\nAuto-calculates next_review_date = effective_date + category.review_frequency_months (if category linked).\nIf no category: next_review_date = null.\n\nAlso updates version: status='approved', approved_by, approved_at, signature_id.\n⚠️ Does NOT insert workflow_history."
+					},
+					"response": []
+				},
+				{
+					"name": "17. POST Obsolete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"Superseded by new revision SOP-2026-0010\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/obsolete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"obsolete"
+							]
+						},
+						"description": "effective → obsolete\nRequires: document:write\n\n⚠️ MANDATORY: reason field required.\nError if missing: { code: 'VALIDATION_ERROR', message: 'reason is required when making a document obsolete' }\n\nSets obsolete_date=NOW().\nInserts workflow_history (action='obsolete', comments=reason) if workflow_instance_id exists."
+					},
+					"response": []
+				},
+				{
+					"name": "17a. POST Obsolete (Validation Error — no reason)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/obsolete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"obsolete"
+							]
+						},
+						"description": "Validation test — empty body.\nExpected: { success: false, error: { code: 'VALIDATION_ERROR', message: 'reason is required when making a document obsolete' } }"
+					},
+					"response": []
+				}
+			],
+			"description": "Full lifecycle: draft → in_review → approved → effective → obsolete\nAll lifecycle endpoints return full 19-field document object.\n\nRun in order: Submit → Approve → Make Effective → Obsolete\nOr: Submit → Reject (returns to draft) → Re-submit → Approve → Make Effective → Obsolete"
+		},
+		{
+			"name": "🔗 SSO Launch + Combined Auth (JWT + API Key)",
+			"item": [
+				{
+					"name": "Step 1 — Login (get user JWT for launch)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.data.access_token);",
+									"    console.log(\"✅ Login token saved\");",
+									"}",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"tenant8admin@gmail.com\",\n    \"password\": \"Password123!\"\n}\n// {\n//     \"email\": \"admin@pharmacorp.com\",\n//     \"password\": \"Admin@123\"\n// }\n\n// {\n//     \"email\": \"polumuri.suresh@ltts.com\",\n//     \"password\": \"Password123!\"\n// }"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as tenant user. This simulates the QAssure UI login before module launch.\nToken auto-saved to jwt_token variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 — Launch Module (get launch token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.launch_url) {",
+									"    var url = jsonData.data.launch_url;",
+									"    var token = url.split(\"token=\")[1];",
+									"    if (token) {",
+									"        pm.collectionVariables.set(\"launch_token\", token);",
+									"        console.log(\"✅ Launch token saved: \" + token.substring(0, 20) + \"...\");",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/{{coc_module_id}}/launch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"{{coc_module_id}}",
+								"launch"
+							]
+						},
+						"description": "Launch COC module for current user. Returns launch_url with token parameter.\nUses coc_module_id variable (not hardcoded).\n\nThe launch_token is a one-time token that the module backend exchanges for a session JWT."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3 — Verify Launch Token (get module session JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set(\"module_jwt\", jsonData.data.token);",
+									"    console.log(\"✅ Module session JWT saved\");",
+									"    console.log(\"   User: \" + jsonData.data.user.email);",
+									"    console.log(\"   Department: \" + (jsonData.data.user.department_name || \"not set\"));",
+									"    console.log(\"   Designation: \" + (jsonData.data.user.designation_name || \"not set\"));",
+									"    console.log(\"   Permissions: \" + jsonData.data.permissions.length + \" permissions\");",
+									"    console.log(\"   Expires: \" + jsonData.data.expires_at);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"token\": \"{{launch_token}}\"}"
+						},
+						"url": {
+							"raw": "{{base_url}}/modules/verify-launch-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"modules",
+								"verify-launch-token"
+							]
+						},
+						"description": "Module backend exchanges launch token for session JWT.\n⚠️ Uses coc_api_key (NOT api_key) — must match the module that was launched.\n\nResponse includes:\n- user: id, email, first_name, last_name, mobile, department_id/name/code, designation_id/name/code, user_category_id/name\n- tenant: id, name, slug, company_name, company_logo\n- access: is_super_admin, is_tenant_admin\n- permissions: array of permission strings\n- module: id, module_id, name\n- token: JWT for subsequent platform calls (24h expiry)\n- expires_in: 86400\n- expires_at: ISO timestamp"
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Get Categories",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"categories"
+							]
+						},
+						"description": "Get 6 tenant-scoped document categories via combined auth.\nRequires: document:read\n\nExpected: Forms(FRM), Policies(POL), Quality Manual(QM), Specifications(SPEC), SOP(SOP), Work Instructions(WI)\n\n8 fields per category: id, name, code, description, parent_id, requires_training, retention_years, review_frequency_months"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Category",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Standard Operating Procedures\",\n    \"code\": \"SOP\",\n    \"description\": \"General SOPs for quality management system\",\n    \"requires_training\": true,\n    \"retention_years\": 10,\n    \"review_frequency_months\": 24\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update category",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated SOP Name\",\n    \"description\": \"New description for the SOP category\",\n    \"retention_years\": 5,\n    \"requires_training\": false\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/categories/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "5e0aa281-8dbf-4f33-9115-1219eb3f881b"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/categories/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "5e0aa281-8dbf-4f33-9115-1219eb3f881b"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Get Types",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/types",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"types"
+							]
+						},
+						"description": "Get 9 static document types via combined auth.\nNo authorize() check — only authenticateAny.\n\nExpected: SOP, Work Instruction, Policy, Form, Specification, Quality Manual, Procedure, Guideline, Reference Document"
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Get Statuses",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/statuses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"statuses"
+							]
+						},
+						"description": "Get 6 static lifecycle statuses via combined auth.\nNo authorize() check — only authenticateAny.\n\nExpected: Draft, In Review, Approved, Effective, Obsolete, Archived"
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Get Due for Review",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/due-for-review?days_ahead=365",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"due-for-review"
+							],
+							"query": [
+								{
+									"key": "days_ahead",
+									"value": "365",
+									"description": "Default 30. Number of days ahead to check. Using 365 to see all upcoming reviews."
+								}
+							]
+						},
+						"description": "Get documents due for periodic review via combined auth.\nRequires: document:read\n\nReturns effective documents with next_review_date within days_ahead window.\nOnly returns docs linked to a category (others have null next_review_date)."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Create Document",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set(\"document_id\", jsonData.data.id);",
+									"    console.log(\"✅ Document created via combined auth\");",
+									"    console.log(\"   Owner: \" + jsonData.data.owner.email + \" (real user, not module)\");",
+									"    console.log(\"   Created by: \" + jsonData.data.created_by);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"COC Module Document\",\n    \"document_type\": \"SOP\",\n    \"description\": \"Created by COC module on behalf of user via combined JWT + API Key auth\",\n    \"content\": \"1. Purpose\\n2. Scope\\n3. Procedure\",\n    \"department\": \"Engineering\",\n    \"category_id\": \"5e0aa281-8dbf-4f33-9115-1219eb3f881b\",\n    \"tags\": [\n        \"coc\",\n        \"combined-auth\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "Create document using combined JWT + API Key.\nHeaders: Authorization: Bearer <module_jwt> + X-API-Key: <coc_api_key>\n\n⚠️ X-Tenant-ID is NOT needed — tenant derived from JWT.\n✅ owner and created_by = real user (from JWT), not module.\n✅ User permissions enforced — user must have document:write.\n\nNOTE: category_id links to SOP category. Replace with actual UUID from GET Categories if different."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — List Documents",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents?limit=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						},
+						"description": "List documents via combined auth. Same result as JWT-only but with module context for audit.\nUser must have document:read permission."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Get Document by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}"
+							]
+						},
+						"description": "Get single document detail via combined auth. Returns full 19-field object."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Update Metadata",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"COC Module Document \\u2014 Updated\",\n    \"department\": \"Quality Assurance\",\n    \"tags\": [\n        \"coc\",\n        \"combined-auth\",\n        \"updated\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}"
+							]
+						},
+						"description": "Update metadata via combined auth. updated_by = real user UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Checkout",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"reason\": \"Editing via COC module\"}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/checkout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"checkout"
+							]
+						},
+						"description": "Checkout via combined auth.\nchecked_out_by = real user UUID (from JWT), not module service account.\nExpected: { checked_out: true, expires_at: \"+24h\" }"
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Create Version",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"1. Purpose\\nThis SOP defines the COC process.\\n2. Scope\\nAll manufacturing units.\\n3. Procedure\\n3.1 Initial steps\",\n    \"change_summary\": \"Added purpose and scope sections via COC module\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/versions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"versions"
+							]
+						},
+						"description": "Create new version via combined auth.\ncreated_by = real user. Status resets to draft.\nExpected: version_number 0.2"
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Checkin",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/checkin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"checkin"
+							]
+						},
+						"description": "Checkin via combined auth. Only the checkout user can checkin.\nExpected: { checked_in: true }"
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Get Version History",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/versions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"versions"
+							]
+						},
+						"description": "Get version history via combined auth. All versions show created_by = real user email."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Submit for Review",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"workflow_definition_id\":\"05a392f8-8cef-48e3-b8ac-65bbda57f4c5\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/submit",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"submit"
+							]
+						},
+						"description": "Submit for review via combined auth.\nWorkflow started with real user identity.\nExpected: status=in_review, workflow_instance_id populated."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Approve",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"comments\": \"Approved via COC module\"}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"approve"
+							]
+						},
+						"description": "Approve via combined auth.\n✅ workflow_history.performed_by = real user UUID\n✅ Audit trail shows actual user, not module.\nExpected: status=approved"
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Reject (with mandatory reason)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"reason\": \"Needs additional references per regulatory requirement\"}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/reject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"reject"
+							]
+						},
+						"description": "Reject via combined auth.\n⚠️ MANDATORY: reason field required — returns VALIDATION_ERROR if missing.\nReturns document to draft. Can be re-submitted.\nExpected: status=draft\n\nNOTE: Document must be in_review or approved status to reject. If running in sequence after Approve, this will work. If document was already made effective, this will fail."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Make Effective",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"effective_date\": \"2026-02-28\"}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/make-effective",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"make-effective"
+							]
+						},
+						"description": "Make effective via combined auth.\n⚠️ MANDATORY: effective_date in body.\nnext_review_date auto-calculated if category linked (SOP = +12 months).\nExpected: status=effective\n\nNOTE: Document must be in approved status. If you ran Reject before this, re-submit and re-approve first."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Obsolete (with mandatory reason)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"reason\": \"Superseded by new COC process\"}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/obsolete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"obsolete"
+							]
+						},
+						"description": "Obsolete via combined auth.\n⚠️ MANDATORY: reason field required.\nExpected: status=obsolete\n\nNOTE: Document must be in effective status."
+					},
+					"response": []
+				},
+				{
+					"name": "Combined — Verify Final State + Audit Trail",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{module_jwt}}"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{coc_api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}"
+							]
+						},
+						"description": "Verify final state after combined-mode lifecycle.\n\nTo verify audit trail in PostgreSQL:\nSELECT wh.action, u.email as performer, wh.comments, wh.performed_at\nFROM workflow_history wh\nJOIN users u ON u.id = wh.performed_by\nORDER BY wh.performed_at DESC LIMIT 10;\n\n✅ All entries should show tenantadmin@pharmacorp.com (real user), NOT module identity."
+					},
+					"response": []
+				}
+			],
+			"description": "Complete SSO launch flow and combined auth tests for module developers (LTTS).\n\nFlow: Login → Launch Module → Verify Launch Token (gets JWT) → Use JWT + API Key for all platform calls.\n\nThis is the RECOMMENDED mode for all user-context operations.\n✅ Audit trail records real user identity\n✅ User permissions enforced\n✅ Module identity tracked for source attribution\n⚠️ Uses coc_api_key variable (NOT api_key)\n⚠️ X-Tenant-ID is NOT needed — tenant derived from JWT\n\nRun Steps 1-3 first to set up module_jwt, then run Combined requests in any order.\nFor full lifecycle in sequence: Create → Checkout → Version → Checkin → Submit → Approve → Make Effective → Obsolete"
+		},
+		{
+			"name": "🔑 API Key Only (System/Cron Mode)",
+			"item": [
+				{
+					"name": "API Key — List Documents",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "X-Tenant-ID",
+								"value": "{{tenant_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents?limit=2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "2"
+								}
+							]
+						},
+						"description": "List documents via API Key. Verified ✅"
+					},
+					"response": []
+				},
+				{
+					"name": "API Key — Missing Tenant ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"categories"
+							]
+						},
+						"description": "Missing X-Tenant-ID header.\nExpected: { error: { code: 'MISSING_TENANT' } }"
+					},
+					"response": []
+				},
+				{
+					"name": "API Key — Wrong Tenant ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "X-Tenant-ID",
+								"value": "d0000000-0000-0000-0000-000000000099"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/documents/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"categories"
+							]
+						},
+						"description": "Wrong/unassigned tenant ID.\nExpected: { error: { code: 'MODULE_NOT_ASSIGNED' } }"
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for module system operations via X-API-Key + X-Tenant-ID headers (Mode C).\nUsed for: cron jobs, background sync, system operations with no user context.\nAPI Key has full module-level access — bypasses user permission checks.\nAudit trail records module identity, not a specific user.\n\n⚠️ For user-context operations, use Combined Auth (JWT + API Key) instead — see SSO Launch folder."
+		},
+		{
+			"name": "🚀 Full Lifecycle (Run in Order)",
+			"item": [
+				{
+					"name": "Step 1 — Create Document",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('document_id', jsonData.data.id);",
+									"    console.log('✅ Document created: ' + jsonData.data.document_number);",
+									"    console.log('   ID: ' + jsonData.data.id);",
+									"    console.log('   Status: ' + jsonData.data.status);",
+									"    console.log('   Version: ' + jsonData.data.current_version);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Full Lifecycle Test Document\",\n    \"document_type\": \"SOP\",\n    \"description\": \"Testing complete document lifecycle\",\n    \"content\": \"1. Purpose\\n2. Scope\\n3. Procedure\",\n    \"department\": \"Quality Assurance\",\n    \"tags\": [\"lifecycle\", \"test\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents"
+							]
+						},
+						"description": "Expected: status=draft, version=0.1, auto-generated document_number"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 — Checkout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"Adding references section\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/checkout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"checkout"
+							]
+						},
+						"description": "Expected: { checked_out: true, expires_at: '+24h' }"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3 — Create Version 0.2",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"1. Purpose\\n2. Scope\\n3. Procedure\\n4. References\\nISO 14644, EU GMP Annex 1\",\n    \"change_summary\": \"Added references section\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/versions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"versions"
+							]
+						},
+						"description": "Expected: version_number=0.2, status=draft\nDocument status ALSO resets to draft."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 4 — Checkin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/checkin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"checkin"
+							]
+						},
+						"description": "Expected: { checked_in: true }"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 5 — Submit for Review",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/submit",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"submit"
+							]
+						},
+						"description": "Expected: status=in_review, workflow_instance_id populated"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 6 — Approve",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"comments\": \"Approved after technical review\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"approve"
+							]
+						},
+						"description": "Expected: status=approved"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 7 — Make Effective",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"effective_date\": \"2026-02-27T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/make-effective",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"make-effective"
+							]
+						},
+						"description": "Expected: status=effective, effective_date set, next_review_date calculated if category linked"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 8 — Obsolete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"Superseded by new revision\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}/obsolete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}",
+								"obsolete"
+							]
+						},
+						"description": "Expected: status=obsolete"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 9 — Verify Final State",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/documents/{{document_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"documents",
+								"{{document_id}}"
+							]
+						},
+						"description": "Verify final state: status=obsolete, all dates populated"
+					},
+					"response": []
+				}
+			],
+			"description": "Run these requests sequentially to test complete document lifecycle:\n1. Create → 2. Checkout → 3. Create Version → 4. Checkin → 5. Submit → 6. Approve → 7. Make Effective → 8. Obsolete\n\nAlternate path with reject:\n1. Create → 2. Submit → 3. Reject → 4. Re-Submit → 5. Approve → 6. Make Effective → 7. Obsolete"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1"
+		},
+		{
+			"key": "prod_url",
+			"value": "https://backendqassure.tech4bizsolutions.com/api/v1"
+		},
+		{
+			"key": "jwt_token",
+			"value": ""
+		},
+		{
+			"key": "api_key",
+			"value": "qas_c008c091d418f5c6635611ef200de9a3f7e8da02cd639dc112cc207c19daf66e",
+			"description": {
+				"content": "AiCE Test Module API Key. Used for API Key-only (system/cron) tests.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "tenant_id",
+			"value": "c0000000-0000-0000-0000-000000000001"
+		},
+		{
+			"key": "document_id",
+			"value": ""
+		},
+		{
+			"key": "version_id",
+			"value": ""
+		},
+		{
+			"key": "module_jwt",
+			"value": "",
+			"description": {
+				"content": "JWT obtained from verify-launch-token response. Used for combined JWT + API Key mode.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "launch_token",
+			"value": "",
+			"description": {
+				"content": "Module launch token from SSO redirect.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "coc_api_key",
+			"value": "qas_testkey1234567890abcdef1234567890abcdef1234567890abcdef12345678",
+			"description": {
+				"content": "COC Module API Key. Used for SSO launch + combined auth tests.",
+				"type": "text/plain"
+			}
+		},
+		{
+			"key": "coc_module_id",
+			"value": "f0000000-0000-0000-0000-000000000001",
+			"description": {
+				"content": "COC Module UUID for launch endpoint.",
+				"type": "text/plain"
+			}
+		}
+	]
+}

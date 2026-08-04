@@ -1,0 +1,2819 @@
+[
+  {
+    "name": "Basic Health Check",
+    "folder": "\ud83c\udfe5 Health & Metrics",
+    "method": "GET",
+    "path": "health",
+    "body": "",
+    "requires_auth": false,
+    "description": "Basic health check - no authentication required"
+  },
+  {
+    "name": "Detailed Health Check",
+    "folder": "\ud83c\udfe5 Health & Metrics",
+    "method": "GET",
+    "path": "health/detailed",
+    "body": "",
+    "requires_auth": false,
+    "description": "Detailed health check including Database, Redis, and Kafka status"
+  },
+  {
+    "name": "Prometheus Metrics",
+    "folder": "\ud83c\udfe5 Health & Metrics",
+    "method": "GET",
+    "path": "metrics",
+    "body": "",
+    "requires_auth": false,
+    "description": "Prometheus metrics endpoint for monitoring"
+  },
+  {
+    "name": "Register User",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/register",
+    "body": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Test123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}",
+    "requires_auth": false,
+    "description": "Register a new user account"
+  },
+  {
+    "name": "\ud83d\udd11 Login (Run First!)",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/login",
+    "body": "{\n  \"email\": \"superadmin@qassure.ai\",\n  \"password\": \"Password123!\"\n}",
+    "requires_auth": false,
+    "description": "Login with email and password. Tokens are automatically saved to collection variables.\n\nDefault Credentials:\n- Email: superadmin@qassure.ai\n- Password: Password123!"
+  },
+  {
+    "name": "Verify Email",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/verify-email",
+    "body": "{\n  \"token\": \"verification-token-here\"\n}",
+    "requires_auth": false,
+    "description": "Verify email with token received via email"
+  },
+  {
+    "name": "Resend Verification Email",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/resend-verification",
+    "body": "{\n  \"email\": \"user@example.com\"\n}",
+    "requires_auth": false,
+    "description": "Resend email verification token"
+  },
+  {
+    "name": "Refresh Token",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/refresh",
+    "body": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}",
+    "requires_auth": false,
+    "description": "Get new access token using refresh token"
+  },
+  {
+    "name": "Forgot Password",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/forgot-password",
+    "body": "{\n  \"email\": \"user@example.com\"\n}",
+    "requires_auth": false,
+    "description": "Request password reset email"
+  },
+  {
+    "name": "Reset Password",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/reset-password",
+    "body": "{\n  \"token\": \"reset-token-here\",\n  \"password\": \"NewPassword123!\"\n}",
+    "requires_auth": false,
+    "description": "Reset password with token from email"
+  },
+  {
+    "name": "Get Current User (Me)",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "GET",
+    "path": "auth/me",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get current authenticated user info"
+  },
+  {
+    "name": "Get My Sessions",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "GET",
+    "path": "auth/sessions",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all active sessions for current user"
+  },
+  {
+    "name": "Revoke Session",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "DELETE",
+    "path": "auth/sessions/:sessionId",
+    "body": "",
+    "requires_auth": false,
+    "description": "Revoke a specific session by ID"
+  },
+  {
+    "name": "Change Password",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/change-password",
+    "body": "{\n  \"current_password\": \"Password123!\",\n  \"new_password\": \"NewPassword123!\"\n}",
+    "requires_auth": false,
+    "description": "Change password for authenticated user"
+  },
+  {
+    "name": "Logout",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/logout",
+    "body": "",
+    "requires_auth": false,
+    "description": "Logout current session"
+  },
+  {
+    "name": "Logout All Sessions",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/logout-all",
+    "body": "",
+    "requires_auth": false,
+    "description": "Logout all sessions for current user"
+  },
+  {
+    "name": "Validate Token",
+    "folder": "\ud83d\udd10 Authentication",
+    "method": "POST",
+    "path": "auth/validate",
+    "body": "",
+    "requires_auth": false,
+    "description": "Validate current access token"
+  },
+  {
+    "name": "List Users",
+    "folder": "\ud83d\udc65 Users",
+    "method": "GET",
+    "path": "users?page=1&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all users with pagination"
+  },
+  {
+    "name": "Get User by ID",
+    "folder": "\ud83d\udc65 Users",
+    "method": "GET",
+    "path": "users/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get user details by ID"
+  },
+  {
+    "name": "Create User",
+    "folder": "\ud83d\udc65 Users",
+    "method": "POST",
+    "path": "users",
+    "body": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Smith\",\n  \"status\": \"active\"\n}",
+    "requires_auth": false,
+    "description": "Create a new user"
+  },
+  {
+    "name": "Update User",
+    "folder": "\ud83d\udc65 Users",
+    "method": "PUT",
+    "path": "users/:id",
+    "body": "{\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"status\": \"active\"\n}",
+    "requires_auth": false,
+    "description": "Update user by ID"
+  },
+  {
+    "name": "Delete User",
+    "folder": "\ud83d\udc65 Users",
+    "method": "DELETE",
+    "path": "users/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete user by ID"
+  },
+  {
+    "name": "List Tenants",
+    "folder": "\ud83c\udfe2 Tenants",
+    "method": "GET",
+    "path": "tenants",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all tenants"
+  },
+  {
+    "name": "Get Tenant by ID",
+    "folder": "\ud83c\udfe2 Tenants",
+    "method": "GET",
+    "path": "tenants/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get tenant details by ID"
+  },
+  {
+    "name": "Create Tenant",
+    "folder": "\ud83c\udfe2 Tenants",
+    "method": "POST",
+    "path": "tenants",
+    "body": "{\n  \"name\": \"Acme Pharma\",\n  \"slug\": \"acme-pharma\",\n  \"status\": \"active\",\n  \"settings\": {\n    \"timezone\": \"America/New_York\"\n  }\n}",
+    "requires_auth": false,
+    "description": "Create a new tenant organization"
+  },
+  {
+    "name": "Update Tenant",
+    "folder": "\ud83c\udfe2 Tenants",
+    "method": "PUT",
+    "path": "tenants/:id",
+    "body": "{\n  \"name\": \"Acme Pharmaceuticals\",\n  \"settings\": {\n    \"timezone\": \"America/Chicago\"\n  }\n}",
+    "requires_auth": false,
+    "description": "Update tenant by ID"
+  },
+  {
+    "name": "Delete Tenant",
+    "folder": "\ud83c\udfe2 Tenants",
+    "method": "DELETE",
+    "path": "tenants/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete tenant by ID"
+  },
+  {
+    "name": "List Roles",
+    "folder": "\ud83c\udfad Roles",
+    "method": "GET",
+    "path": "roles",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all roles. Default roles: super_admin, tenant_admin, quality_manager, viewer"
+  },
+  {
+    "name": "Get Role by ID",
+    "folder": "\ud83c\udfad Roles",
+    "method": "GET",
+    "path": "roles/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get role details by ID"
+  },
+  {
+    "name": "Create Role",
+    "folder": "\ud83c\udfad Roles",
+    "method": "POST",
+    "path": "roles",
+    "body": "{\n  \"name\": \"Document Controller\",\n  \"code\": \"doc_controller\",\n  \"description\": \"Manages document lifecycle\",\n  \"scope\": \"tenant\"\n}",
+    "requires_auth": false,
+    "description": "Create a new role"
+  },
+  {
+    "name": "Update Role",
+    "folder": "\ud83c\udfad Roles",
+    "method": "PUT",
+    "path": "roles/:id",
+    "body": "{\n  \"name\": \"Senior Document Controller\",\n  \"description\": \"Manages document lifecycle with approval rights\"\n}",
+    "requires_auth": false,
+    "description": "Update role by ID"
+  },
+  {
+    "name": "Delete Role",
+    "folder": "\ud83c\udfad Roles",
+    "method": "DELETE",
+    "path": "roles/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete role by ID"
+  },
+  {
+    "name": "List Permissions",
+    "folder": "\ud83d\udd12 Permissions",
+    "method": "GET",
+    "path": "permissions",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all permissions. Format: resource:action (e.g., users:read, users:create)"
+  },
+  {
+    "name": "Get Permission by ID",
+    "folder": "\ud83d\udd12 Permissions",
+    "method": "GET",
+    "path": "permissions/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get permission by ID"
+  },
+  {
+    "name": "Create Permission",
+    "folder": "\ud83d\udd12 Permissions",
+    "method": "POST",
+    "path": "permissions",
+    "body": "{\n  \"role_id\": \"role-uuid-here\",\n  \"resource\": \"documents\",\n  \"action\": \"approve\",\n  \"scope\": \"TENANT\"\n}",
+    "requires_auth": false,
+    "description": "Create a new permission"
+  },
+  {
+    "name": "Update Permission",
+    "folder": "\ud83d\udd12 Permissions",
+    "method": "PUT",
+    "path": "permissions/:id",
+    "body": "{\n  \"action\": \"*\"\n}",
+    "requires_auth": false,
+    "description": "Update permission by ID"
+  },
+  {
+    "name": "Delete Permission",
+    "folder": "\ud83d\udd12 Permissions",
+    "method": "DELETE",
+    "path": "permissions/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete permission by ID"
+  },
+  {
+    "name": "List User-Role Assignments",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfad User-Roles",
+    "method": "GET",
+    "path": "user-roles",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all user-role assignments"
+  },
+  {
+    "name": "Get User-Role by ID",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfad User-Roles",
+    "method": "GET",
+    "path": "user-roles/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get user-role assignment by ID"
+  },
+  {
+    "name": "Assign Role to User",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfad User-Roles",
+    "method": "POST",
+    "path": "user-roles",
+    "body": "{\n  \"user_id\": \"user-uuid-here\",\n  \"role_id\": \"role-uuid-here\",\n  \"tenant_id\": \"{{tenantId}}\"\n}",
+    "requires_auth": false,
+    "description": "Assign a role to a user within a tenant"
+  },
+  {
+    "name": "Update User-Role Assignment",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfad User-Roles",
+    "method": "PUT",
+    "path": "user-roles/:id",
+    "body": "{\n  \"expires_at\": \"2025-12-31T23:59:59Z\"\n}",
+    "requires_auth": false,
+    "description": "Update user-role assignment"
+  },
+  {
+    "name": "Remove Role from User",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfad User-Roles",
+    "method": "DELETE",
+    "path": "user-roles/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Remove role from user"
+  },
+  {
+    "name": "List User-Tenant Assignments",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfe2 User-Tenants",
+    "method": "GET",
+    "path": "user-tenants",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all user-tenant assignments"
+  },
+  {
+    "name": "Get User-Tenant by ID",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfe2 User-Tenants",
+    "method": "GET",
+    "path": "user-tenants/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get user-tenant assignment by ID"
+  },
+  {
+    "name": "Assign User to Tenant",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfe2 User-Tenants",
+    "method": "POST",
+    "path": "user-tenants",
+    "body": "{\n  \"user_id\": \"user-uuid-here\",\n  \"tenant_id\": \"{{tenantId}}\",\n  \"status\": \"active\",\n  \"is_primary\": false\n}",
+    "requires_auth": false,
+    "description": "Assign user to a tenant"
+  },
+  {
+    "name": "Update User-Tenant Assignment",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfe2 User-Tenants",
+    "method": "PUT",
+    "path": "user-tenants/:id",
+    "body": "{\n  \"is_primary\": true\n}",
+    "requires_auth": false,
+    "description": "Update user-tenant assignment"
+  },
+  {
+    "name": "Remove User from Tenant",
+    "folder": "\ud83d\udc64\u2194\ufe0f\ud83c\udfe2 User-Tenants",
+    "method": "DELETE",
+    "path": "user-tenants/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Remove user from tenant"
+  },
+  {
+    "name": "List API Keys",
+    "folder": "\ud83d\udd11 API Keys",
+    "method": "GET",
+    "path": "api-keys",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all API keys"
+  },
+  {
+    "name": "Get API Key by ID",
+    "folder": "\ud83d\udd11 API Keys",
+    "method": "GET",
+    "path": "api-keys/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get API key details"
+  },
+  {
+    "name": "Create API Key",
+    "folder": "\ud83d\udd11 API Keys",
+    "method": "POST",
+    "path": "api-keys",
+    "body": "{\n  \"name\": \"Integration Key\",\n  \"description\": \"API key for external integration\",\n  \"expires_at\": \"2026-12-31T23:59:59Z\"\n}",
+    "requires_auth": false,
+    "description": "Create a new API key"
+  },
+  {
+    "name": "Update API Key",
+    "folder": "\ud83d\udd11 API Keys",
+    "method": "PUT",
+    "path": "api-keys/:id",
+    "body": "{\n  \"name\": \"Updated Integration Key\",\n  \"description\": \"Updated description\"\n}",
+    "requires_auth": false,
+    "description": "Update API key"
+  },
+  {
+    "name": "Revoke API Key",
+    "folder": "\ud83d\udd11 API Keys",
+    "method": "POST",
+    "path": "api-keys/:id/revoke",
+    "body": "",
+    "requires_auth": false,
+    "description": "Revoke an API key"
+  },
+  {
+    "name": "Regenerate API Key",
+    "folder": "\ud83d\udd11 API Keys",
+    "method": "POST",
+    "path": "api-keys/:id/regenerate",
+    "body": "",
+    "requires_auth": false,
+    "description": "Regenerate API key secret"
+  },
+  {
+    "name": "Validate API Key",
+    "folder": "\ud83d\udd11 API Keys",
+    "method": "POST",
+    "path": "api-keys/validate",
+    "body": "{\n  \"key\": \"qak_xxxxxxxxxxxxxxxx\"\n}",
+    "requires_auth": false,
+    "description": "Validate an API key"
+  },
+  {
+    "name": "Delete API Key",
+    "folder": "\ud83d\udd11 API Keys",
+    "method": "DELETE",
+    "path": "api-keys/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete API key"
+  },
+  {
+    "name": "Get All Permissions",
+    "folder": "\ud83d\udd11 API Key Permissions",
+    "method": "GET",
+    "path": "api-key-permissions?page=1&limit=10",
+    "body": "",
+    "requires_auth": true,
+    "description": ""
+  },
+  {
+    "name": "Get Permission by ID",
+    "folder": "\ud83d\udd11 API Key Permissions",
+    "method": "GET",
+    "path": "api-key-permissions/{{permissionId}}",
+    "body": "",
+    "requires_auth": true,
+    "description": ""
+  },
+  {
+    "name": "Create Permission",
+    "folder": "\ud83d\udd11 API Key Permissions",
+    "method": "POST",
+    "path": "api-key-permissions",
+    "body": "{\n    \"api_key_id\": \"{{apiKeyId}}\",\n    \"resource\": \"users\",\n    \"action\": \"read\",\n    \"scope\": \"TENANT\"\n}",
+    "requires_auth": true,
+    "description": ""
+  },
+  {
+    "name": "Update Permission",
+    "folder": "\ud83d\udd11 API Key Permissions",
+    "method": "PUT",
+    "path": "api-key-permissions/{{permissionId}}",
+    "body": "{\n    \"resource\": \"users\",\n    \"action\": \"write\"\n}",
+    "requires_auth": true,
+    "description": ""
+  },
+  {
+    "name": "Delete Permission",
+    "folder": "\ud83d\udd11 API Key Permissions",
+    "method": "DELETE",
+    "path": "api-key-permissions/{{permissionId}}",
+    "body": "",
+    "requires_auth": true,
+    "description": ""
+  },
+  {
+    "name": "List Modules",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "GET",
+    "path": "modules",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all registered modules"
+  },
+  {
+    "name": "Get Module Statistics",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "GET",
+    "path": "modules/stats",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get module statistics by status"
+  },
+  {
+    "name": "Get State Diagram",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "GET",
+    "path": "modules/states",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get module state machine diagram and transitions"
+  },
+  {
+    "name": "Get Module by ID",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "GET",
+    "path": "modules/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get module details"
+  },
+  {
+    "name": "Register Module",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "POST",
+    "path": "modules",
+    "body": "{\n  \"module_id\": \"aice-capa\",\n  \"name\": \"AiCE CAPA Module\",\n  \"description\": \"Corrective and Preventive Action management\",\n  \"version\": \"1.0.0\",\n  \"base_url\": \"http://aice-service:3001\",\n  \"health_endpoint\": \"/health\",\n  \"capabilities\": [\"capa\", \"events\", \"workflow\"],\n  \"runtime_language\":\"java\"\n}",
+    "requires_auth": false,
+    "description": "Register a new module"
+  },
+  {
+    "name": "Update Module",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "PUT",
+    "path": "modules/:id",
+    "body": "{\n  \"description\": \"Updated description\",\n  \"base_url\": \"http://new-url:3001\"\n}",
+    "requires_auth": false,
+    "description": "Update module details"
+  },
+  {
+    "name": "Start Module",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "POST",
+    "path": "modules/:id/start",
+    "body": "",
+    "requires_auth": false,
+    "description": "Start a module (pending \u2192 starting \u2192 running)"
+  },
+  {
+    "name": "Stop Module",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "POST",
+    "path": "modules/:id/stop",
+    "body": "",
+    "requires_auth": false,
+    "description": "Stop a module (running \u2192 stopping \u2192 stopped)"
+  },
+  {
+    "name": "Restart Module",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "POST",
+    "path": "modules/:id/restart",
+    "body": "",
+    "requires_auth": false,
+    "description": "Restart a module"
+  },
+  {
+    "name": "Set Maintenance Mode",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "POST",
+    "path": "modules/:id/maintenance",
+    "body": "{\n  \"reason\": \"Scheduled maintenance\"\n}",
+    "requires_auth": false,
+    "description": "Set module to maintenance mode"
+  },
+  {
+    "name": "Deprecate Module",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "POST",
+    "path": "modules/:id/deprecate",
+    "body": "{\n  \"reason\": \"Replaced by newer version\"\n}",
+    "requires_auth": false,
+    "description": "Deprecate a module"
+  },
+  {
+    "name": "Update Module Version",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "PATCH",
+    "path": "modules/:id/version",
+    "body": "{\n  \"version\": \"1.1.0\"\n}",
+    "requires_auth": false,
+    "description": "Update module version"
+  },
+  {
+    "name": "Trigger Health Check",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "POST",
+    "path": "modules/:id/health-check",
+    "body": "",
+    "requires_auth": false,
+    "description": "Manually trigger health check"
+  },
+  {
+    "name": "Get Health History",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "GET",
+    "path": "modules/:id/health-history",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get module health check history"
+  },
+  {
+    "name": "Delete Module",
+    "folder": "\ud83d\udce6 Modules",
+    "method": "DELETE",
+    "path": "modules/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete module"
+  },
+  {
+    "name": "List Audit Logs",
+    "folder": "\ud83d\udccb Audit Logs",
+    "method": "GET",
+    "path": "audit-logs?page=1&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List audit logs with pagination"
+  },
+  {
+    "name": "Get Audit Log by ID",
+    "folder": "\ud83d\udccb Audit Logs",
+    "method": "GET",
+    "path": "audit-logs/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get audit log entry by ID"
+  },
+  {
+    "name": "Create New Audit Log",
+    "folder": "\ud83d\udccb Audit Logs",
+    "method": "POST",
+    "path": "audit-logs",
+    "body": "{\n  \"action\": \"LOGIN\",\n  \"resource_type\": \"User\"\n}\n",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Update Audit Log",
+    "folder": "\ud83d\udccb Audit Logs",
+    "method": "PUT",
+    "path": "audit-logs/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Delete Audit Log",
+    "folder": "\ud83d\udccb Audit Logs",
+    "method": "DELETE",
+    "path": "audit-logs/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "List Event Logs",
+    "folder": "\ud83d\udccb Event Logs",
+    "method": "GET",
+    "path": "event-logs?page=1&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Create New Event Log",
+    "folder": "\ud83d\udccb Event Logs",
+    "method": "POST",
+    "path": "event-logs",
+    "body": "{\n    \"event_id\": \"evt-1234567890\",\n    \"event_type\": \"com.qassure.user.login\",\n    \"event_source\": \"/api/v1/auth/login\",\n    \"event_time\": \"2024-01-05T10:00:00Z\",\n    \"published_at\":\"2024-01-05T10:00:00Z\",\n    \"spec_version\": \"1.0\",\n    \"kafka_topic\": \"qassure.events.user\",\n    \"producer_id\": \"auth-service\",\n    \"processing_status\": \"PUBLISHED\",\n    \"retry_count\": 0,\n    \"data\": {\n        \"userId\": \"u-123\",\n        \"status\": \"success\"\n    }\n}",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get Event Log by ID",
+    "folder": "\ud83d\udccb Event Logs",
+    "method": "GET",
+    "path": "event-logs/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Update Event Log",
+    "folder": "\ud83d\udccb Event Logs",
+    "method": "PUT",
+    "path": "event-logs/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Delete Event Log",
+    "folder": "\ud83d\udccb Event Logs",
+    "method": "DELETE",
+    "path": "event-logs/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get All Health Checks",
+    "folder": "Health Checks",
+    "method": "GET",
+    "path": "health-checks",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get Health Check by ID",
+    "folder": "Health Checks",
+    "method": "GET",
+    "path": "health-checks/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Create New Health Check",
+    "folder": "Health Checks",
+    "method": "POST",
+    "path": "health-checks",
+    "body": "{\n  \"module_id\": \"bfbe4673-a66e-4a49-aeec-e91d573d8faa\",\n  \"status\": \"HEALTHY\",\n  \"response_time_ms\": 150,\n  \"http_status\": 200,\n  \"error_message\": null,\n  \"consecutive_failures\": 0,\n  \"checked_at\": \"2024-01-05T10:00:00Z\",\n  \"components\": {\n      \"database\": \"up\",\n      \"redis\": \"up\"\n  }\n}",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Update healthcheck",
+    "folder": "Health Checks",
+    "method": "PUT",
+    "path": "health-checks/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Delete Health Check",
+    "folder": "Health Checks",
+    "method": "DELETE",
+    "path": "health-checks/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Update health history record",
+    "folder": "Health History",
+    "method": "PUT",
+    "path": "health-history/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get all health history records",
+    "folder": "Health History",
+    "method": "GET",
+    "path": "health-history",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get health history by ID",
+    "folder": "Health History",
+    "method": "GET",
+    "path": "health-history/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Create new health history record",
+    "folder": "Health History",
+    "method": "POST",
+    "path": "health-history",
+    "body": "{\n  \"module_id\": \"bfbe4673-a66e-4a49-aeec-e91d573d8faa\",\n  \"status\": \"HEALTHY\",\n  \"response_time_ms\": 120,\n  \"http_status\": 200,\n  \"error_message\": null,\n  \"consecutive_failures\": 0,\n  \"checked_at\": \"2026-01-05T12:00:00Z\",\n  \"components\": {\n      \"db\": \"up\",\n      \"cache\": \"up\"\n  }\n}",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Delete health history record",
+    "folder": "Health History",
+    "method": "DELETE",
+    "path": "health-history/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "List AI Providers",
+    "folder": "\ud83e\udd16 AI Gateway",
+    "method": "GET",
+    "path": "ai/providers",
+    "body": "",
+    "requires_auth": false,
+    "description": "List available AI providers (OpenAI, Anthropic, Google)"
+  },
+  {
+    "name": "Get Provider Health",
+    "folder": "\ud83e\udd16 AI Gateway",
+    "method": "GET",
+    "path": "ai/providers/:provider/health",
+    "body": "",
+    "requires_auth": false,
+    "description": "Check AI provider health status"
+  },
+  {
+    "name": "List AI Models",
+    "folder": "\ud83e\udd16 AI Gateway",
+    "method": "GET",
+    "path": "ai/models",
+    "body": "",
+    "requires_auth": false,
+    "description": "List available AI models"
+  },
+  {
+    "name": "Get AI Gateway Health",
+    "folder": "\ud83e\udd16 AI Gateway",
+    "method": "GET",
+    "path": "ai/health",
+    "body": "",
+    "requires_auth": false,
+    "description": "Overall AI gateway health status"
+  },
+  {
+    "name": "Create AI Completion",
+    "folder": "\ud83e\udd16 AI Gateway",
+    "method": "POST",
+    "path": "ai/completions",
+    "body": "{\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a quality management expert.\"},\n    {\"role\": \"user\", \"content\": \"What are the key elements of a CAPA?\"}\n  ],\n  \"provider\": \"openai\",\n  \"model\": \"gpt-4\",\n  \"temperature\": 0.7,\n  \"max_tokens\": 1000\n}",
+    "requires_auth": false,
+    "description": "Create an AI completion (requires AI provider API keys)"
+  },
+  {
+    "name": "List AI Completions",
+    "folder": "\ud83e\udd16 AI Gateway",
+    "method": "GET",
+    "path": "ai/completions?page=1&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List AI completion history"
+  },
+  {
+    "name": "Get AI Completion by ID",
+    "folder": "\ud83e\udd16 AI Gateway",
+    "method": "GET",
+    "path": "ai/completions/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get AI completion details"
+  },
+  {
+    "name": "Get Cost Summary",
+    "folder": "\ud83e\udd16 AI Gateway",
+    "method": "GET",
+    "path": "ai/costs",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get AI usage cost summary"
+  },
+  {
+    "name": "AI Playground",
+    "folder": "\ud83e\udd16 AI Gateway",
+    "method": "POST",
+    "path": "ai/playground",
+    "body": "{\n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"Hello, test message\"}\n  ],\n  \"provider\": \"openai\",\n  \"model\": \"gpt-3.5-turbo\"\n}",
+    "requires_auth": false,
+    "description": "Test prompts without tracking in history"
+  },
+  {
+    "name": "Create Collection",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "POST",
+    "path": "ai/knowledge/collections",
+    "body": "{\n  \"name\": \"QMS Documentation\",\n  \"description\": \"Quality Management System documents\"\n}",
+    "requires_auth": false,
+    "description": "Create a knowledge collection"
+  },
+  {
+    "name": "List Collections",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "GET",
+    "path": "ai/knowledge/collections",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all knowledge collections"
+  },
+  {
+    "name": "Get Collection by ID",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "GET",
+    "path": "ai/knowledge/collections/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get collection details"
+  },
+  {
+    "name": "Update Collection",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "PUT",
+    "path": "ai/knowledge/collections/:id",
+    "body": "{\n  \"name\": \"Updated Collection Name\",\n  \"description\": \"Updated description\"\n}",
+    "requires_auth": false,
+    "description": "Update collection"
+  },
+  {
+    "name": "Delete Collection",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "DELETE",
+    "path": "ai/knowledge/collections/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete collection"
+  },
+  {
+    "name": "List Documents in Collection",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "GET",
+    "path": "ai/knowledge/collections/:collectionId/documents",
+    "body": "",
+    "requires_auth": false,
+    "description": "List documents in a collection"
+  },
+  {
+    "name": "Upload Document",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "POST",
+    "path": "ai/knowledge/documents",
+    "body": "{}",
+    "requires_auth": false,
+    "description": "Upload a document to be chunked and vectorized"
+  },
+  {
+    "name": "Get Document Status",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "GET",
+    "path": "ai/knowledge/documents/:id/status",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get document processing status"
+  },
+  {
+    "name": "Delete Document",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "DELETE",
+    "path": "ai/knowledge/documents/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete document"
+  },
+  {
+    "name": "Semantic Search",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "POST",
+    "path": "ai/knowledge/search",
+    "body": "{\n  \"query\": \"How to handle deviations?\",\n  \"limit\": 5,\n  \"collection_id\": \"collection-uuid-here\"\n}",
+    "requires_auth": false,
+    "description": "Perform semantic search across knowledge base"
+  },
+  {
+    "name": "Search with Context (RAG)",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "POST",
+    "path": "ai/knowledge/search/context",
+    "body": "{\n  \"query\": \"What is the CAPA process?\",\n  \"limit\": 5,\n  \"include_context\": true\n}",
+    "requires_auth": false,
+    "description": "Search with RAG context for AI augmentation"
+  },
+  {
+    "name": "Get Knowledge Stats",
+    "folder": "\ud83d\udcda Knowledge/RAG",
+    "method": "GET",
+    "path": "ai/knowledge/stats",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get knowledge base statistics"
+  },
+  {
+    "name": "Create Prompt Template",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "POST",
+    "path": "ai/prompts",
+    "body": "{\n  \"name\": \"root-cause-analysis\",\n  \"description\": \"Analyze root cause of quality issues\",\n  \"category\": \"quality\",\n  \"template\": \"Analyze the following issue using 5-Why methodology:\\n\\nIssue: {{issue}}\\nContext: {{context}}\\n\\nProvide a detailed root cause analysis.\",\n  \"variables\": [\"issue\", \"context\"],\n  \"settings\": {\n    \"provider\": \"openai\",\n    \"model\": \"gpt-4\",\n    \"temperature\": 0.3,\n    \"max_tokens\": 2000\n  }\n}",
+    "requires_auth": false,
+    "description": "Create a new prompt template"
+  },
+  {
+    "name": "List Prompts",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "GET",
+    "path": "ai/prompts?page=1&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all prompt templates"
+  },
+  {
+    "name": "Get Prompt by ID",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "GET",
+    "path": "ai/prompts/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get prompt template details"
+  },
+  {
+    "name": "Update Prompt",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "PUT",
+    "path": "ai/prompts/:id",
+    "body": "{\n  \"description\": \"Updated description\",\n  \"template\": \"Updated template content with {{variables}}\"\n}",
+    "requires_auth": false,
+    "description": "Update prompt template (creates new version)"
+  },
+  {
+    "name": "Delete Prompt",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "DELETE",
+    "path": "ai/prompts/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete prompt template"
+  },
+  {
+    "name": "List Prompt Versions",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "GET",
+    "path": "ai/prompts/:id/versions",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all versions of a prompt"
+  },
+  {
+    "name": "Activate Prompt Version",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "POST",
+    "path": "ai/prompts/:id/versions/:version/activate",
+    "body": "",
+    "requires_auth": false,
+    "description": "Activate a specific prompt version"
+  },
+  {
+    "name": "Test Prompt",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "POST",
+    "path": "ai/prompts/:id/test",
+    "body": "{\n  \"variables\": {\n    \"issue\": \"Batch 12345 failed dissolution testing\",\n    \"context\": \"Manufacturing date: Dec 25, Equipment: Tablet Press #3\"\n  }\n}",
+    "requires_auth": false,
+    "description": "Test prompt with variables (dry run)"
+  },
+  {
+    "name": "Execute Prompt",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "POST",
+    "path": "ai/prompts/:id/execute",
+    "body": "{\n  \"variables\": {\n    \"issue\": \"Batch 12345 failed dissolution testing\",\n    \"context\": \"Manufacturing date: Dec 25, Equipment: Tablet Press #3\"\n  }\n}",
+    "requires_auth": false,
+    "description": "Execute prompt with AI provider"
+  },
+  {
+    "name": "Clone Prompt",
+    "folder": "\ud83d\udcdd Prompt Management",
+    "method": "POST",
+    "path": "ai/prompts/:id/clone",
+    "body": "{\n  \"name\": \"root-cause-analysis-v2\"\n}",
+    "requires_auth": false,
+    "description": "Clone an existing prompt"
+  },
+  {
+    "name": "List Supported QMS Systems",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "GET",
+    "path": "qms/supported",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all supported QMS systems"
+  },
+  {
+    "name": "Get QMS System Details",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "GET",
+    "path": "qms/supported/:system",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get details about a specific QMS system"
+  },
+  {
+    "name": "Create QMS Connection",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "POST",
+    "path": "qms/connections",
+    "body": "{\n  \"tenant_id\": \"00000000-0000-0000-0000-000000000001\",\n  \"name\": \"Production Veeva Vault\",\n  \"qms_type\": \"VEEVA_VAULT\",\n  \"base_url\": \"https://qassure-vault.veevavault.com\",\n  \"auth_type\": \"OAUTH2\",\n  \"auth_config\": {\n    \"clientId\": \"client_123\",\n    \"clientSecret\": \"secret_abc\",\n    \"tokenEndpoint\": \"/auth/token\"\n  },\n  \"sync_mode\": \"BIDIRECTIONAL\",\n  \"webhook_url\": \"https://api.qassure.com/webhooks/veeva\",\n  \"webhook_secret\": \"wh_sec_xyz123\",\n  \"status\": \"ACTIVE\"\n}",
+    "requires_auth": false,
+    "description": "Create a new QMS connection"
+  },
+  {
+    "name": "List QMS Connections",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "GET",
+    "path": "qms/connections",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all QMS connections"
+  },
+  {
+    "name": "Get QMS Connection by ID",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "GET",
+    "path": "qms/connections/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get QMS connection details"
+  },
+  {
+    "name": "Test QMS Connection",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "POST",
+    "path": "qms/connections/:id/test",
+    "body": "",
+    "requires_auth": false,
+    "description": "Test QMS connection connectivity"
+  },
+  {
+    "name": "Trigger Sync",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "POST",
+    "path": "qms/connections/:id/sync",
+    "body": "{\n  \"entityTypes\": [\"documents\", \"workflows\"],\n  \"fullSync\": false\n}",
+    "requires_auth": false,
+    "description": "Trigger data synchronization"
+  },
+  {
+    "name": "Get Sync Status",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "GET",
+    "path": "qms/connections/:id/sync/status",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get current sync status"
+  },
+  {
+    "name": "Get Sync History",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "GET",
+    "path": "qms/connections/:id/sync/history",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get sync job history"
+  },
+  {
+    "name": "Update QMS Connection",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "PUT",
+    "path": "qms/connections/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Delete QMS Connection",
+    "folder": "\ud83d\udd17 QMS Integration",
+    "method": "DELETE",
+    "path": "qms/connections/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get all sync jobs",
+    "folder": "QMS Sync Jobs",
+    "method": "GET",
+    "path": "qms/sync-jobs",
+    "body": "{\n  \"entityTypes\": [\"documents\", \"workflows\"],\n  \"fullSync\": false\n}",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get sync job by ID",
+    "folder": "QMS Sync Jobs",
+    "method": "GET",
+    "path": "qms/sync-jobs/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Create new sync job",
+    "folder": "QMS Sync Jobs",
+    "method": "POST",
+    "path": "qms/sync-jobs",
+    "body": "{\n  \"connection_id\": \"7c5a53c7-e74a-472b-b477-5deecf89ae80\",\n  \"job_type\": \"INCREMENTAL\",\n  \"direction\": \"QMS_TO_QASSURE\",\n  \"status\": \"PENDING\",\n  \"entity_type\": \"CAPA\",\n  \"metadata\": {\n      \"priority\": \"high\",\n      \"retry_count\": 0\n  }\n}",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Update sync job",
+    "folder": "QMS Sync Jobs",
+    "method": "PUT",
+    "path": "qms/sync-jobs/:id",
+    "body": "{\n    \"status\": \"CANCELLED\"\n}",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Delete sync job",
+    "folder": "QMS Sync Jobs",
+    "method": "DELETE",
+    "path": "qms/sync-jobs/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get all sync conflicts",
+    "folder": "QMS Sync Conflicts",
+    "method": "GET",
+    "path": "qms/sync-conflicts",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get sync conflict by ID",
+    "folder": "QMS Sync Conflicts",
+    "method": "GET",
+    "path": "qms/sync-conflicts/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Create new sync conflict",
+    "folder": "QMS Sync Conflicts",
+    "method": "POST",
+    "path": "qms/sync-conflicts",
+    "body": "{\n  \"sync_job_id\": \"28d435b3-1164-42f9-9adc-7e2aa8d5a290\",\n  \"qms_connection_id\": \"7c5a53c7-e74a-472b-b477-5deecf89ae80\",\n  \"entity_type\": \"CAPA\",\n  \"entity_id\": \"CAPA-1001\",\n  \"qms_record_id\": \"VEEVA-001\",\n  \"conflict_type\": \"FIELD_MISMATCH\",\n  \"conflict_field\": \"priority\",\n  \"qms_value\": \"High\",\n  \"qassure_value\": \"Medium\",\n  \"status\": \"PENDING\",\n  \"retry_count\": 0,\n  \"error_message\": \"Value mismatch for priority field\"\n}",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Update/resolve sync conflict",
+    "folder": "QMS Sync Conflicts",
+    "method": "PUT",
+    "path": "qms/sync-conflicts/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Delete sync conflict",
+    "folder": "QMS Sync Conflicts",
+    "method": "DELETE",
+    "path": "qms/sync-conflicts/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Create Event Subscription",
+    "folder": "\ud83d\udce1 Event Subscriptions",
+    "method": "POST",
+    "path": "events/subscriptions",
+    "body": "{\n  \"subscriberName\": \"AiCE Module\",\n  \"moduleCode\": \"aice\",\n  \"eventPattern\": \"capa.*\",\n  \"deliveryType\": \"kafka\",\n  \"kafkaTopic\": \"qassure.aice.events\",\n  \"filters\": {\"data.severity\": [\"critical\", \"high\"]},\n  \"description\": \"AiCE subscribes to all CAPA events\"\n}",
+    "requires_auth": false,
+    "description": "Create event subscription. Delivery types: kafka, http, internal"
+  },
+  {
+    "name": "List Event Subscriptions",
+    "folder": "\ud83d\udce1 Event Subscriptions",
+    "method": "GET",
+    "path": "events/subscriptions?page=1&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all event subscriptions"
+  },
+  {
+    "name": "Get Event Subscription by ID",
+    "folder": "\ud83d\udce1 Event Subscriptions",
+    "method": "GET",
+    "path": "events/subscriptions/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get event subscription details"
+  },
+  {
+    "name": "Update Event Subscription",
+    "folder": "\ud83d\udce1 Event Subscriptions",
+    "method": "PUT",
+    "path": "events/subscriptions/:id",
+    "body": "{\n  \"eventPattern\": \"capa.created\",\n  \"filters\": {\"data.severity\": [\"critical\"]}\n}",
+    "requires_auth": false,
+    "description": "Update event subscription"
+  },
+  {
+    "name": "Delete Event Subscription",
+    "folder": "\ud83d\udce1 Event Subscriptions",
+    "method": "DELETE",
+    "path": "events/subscriptions/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete event subscription"
+  },
+  {
+    "name": "Pause Subscription",
+    "folder": "\ud83d\udce1 Event Subscriptions",
+    "method": "POST",
+    "path": "events/subscriptions/:id/pause",
+    "body": "",
+    "requires_auth": false,
+    "description": "Pause event subscription"
+  },
+  {
+    "name": "Resume Subscription",
+    "folder": "\ud83d\udce1 Event Subscriptions",
+    "method": "POST",
+    "path": "events/subscriptions/:id/resume",
+    "body": "",
+    "requires_auth": false,
+    "description": "Resume paused subscription"
+  },
+  {
+    "name": "Create Webhook",
+    "folder": "\ud83d\udd14 Webhooks",
+    "method": "POST",
+    "path": "webhooks",
+    "body": "{\n  \"name\": \"External Audit System\",\n  \"description\": \"Notify external audit system of all events\",\n  \"url\": \"https://audit-system.example.com/webhook\",\n  \"events\": [\"audit.*\", \"capa.created\", \"change.approved\"],\n  \"authType\": \"bearer\",\n  \"authConfig\": {\"token\": \"secret-token\"},\n  \"headers\": {\"X-Custom-Header\": \"QAssure\"}\n}",
+    "requires_auth": false,
+    "description": "Create a new webhook. Auth types: none, bearer, basic"
+  },
+  {
+    "name": "List Webhooks",
+    "folder": "\ud83d\udd14 Webhooks",
+    "method": "GET",
+    "path": "webhooks?page=1&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all webhooks"
+  },
+  {
+    "name": "Get Webhook by ID",
+    "folder": "\ud83d\udd14 Webhooks",
+    "method": "GET",
+    "path": "webhooks/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get webhook details"
+  },
+  {
+    "name": "Update Webhook",
+    "folder": "\ud83d\udd14 Webhooks",
+    "method": "PUT",
+    "path": "webhooks/:id",
+    "body": "{\n  \"name\": \"Updated Webhook Name\",\n  \"events\": [\"capa.*\"]\n}",
+    "requires_auth": false,
+    "description": "Update webhook"
+  },
+  {
+    "name": "Delete Webhook",
+    "folder": "\ud83d\udd14 Webhooks",
+    "method": "DELETE",
+    "path": "webhooks/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete webhook"
+  },
+  {
+    "name": "Test Webhook",
+    "folder": "\ud83d\udd14 Webhooks",
+    "method": "POST",
+    "path": "webhooks/:id/test",
+    "body": "",
+    "requires_auth": false,
+    "description": "Send test event to webhook"
+  },
+  {
+    "name": "Regenerate Webhook Secret",
+    "folder": "\ud83d\udd14 Webhooks",
+    "method": "POST",
+    "path": "webhooks/:id/regenerate-secret",
+    "body": "",
+    "requires_auth": false,
+    "description": "Regenerate HMAC signing secret"
+  },
+  {
+    "name": "Get Webhook Delivery History",
+    "folder": "\ud83d\udd14 Webhooks",
+    "method": "GET",
+    "path": "webhooks/:id/deliveries?page=1&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get webhook delivery history with status and response info"
+  },
+  {
+    "name": "Get all entity mappings",
+    "folder": "QMS Entity Mappings",
+    "method": "GET",
+    "path": "qms/entity-mappings",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get entity mapping by ID",
+    "folder": "QMS Entity Mappings",
+    "method": "GET",
+    "path": "qms/entity-mappings/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Create new entity mapping",
+    "folder": "QMS Entity Mappings",
+    "method": "POST",
+    "path": "qms/entity-mappings",
+    "body": "{\n  \"qms_connection_id\": \"7c5a53c7-e74a-472b-b477-5deecf89ae80\",\n  \"qms_entity_type\": \"QMS_CAPAa\",\n  \"qassure_entity_type\": \"QualityEvent\",\n  \"mapping_direction\": \"BIDIRECTIONAL\",\n  \"field_mappings\": {\n    \"title\": \"short_description\",\n    \"status\": \"state\",\n    \"priority\": \"severity\"\n  },\n  \"conflict_resolution_strategy\": \"MANUAL\",\n  \"sync_enabled\": true,\n  \"records_synced\": 0\n}",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Update entity mapping",
+    "folder": "QMS Entity Mappings",
+    "method": "PUT",
+    "path": "qms/entity-mappings/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Delete entity mapping",
+    "folder": "QMS Entity Mappings",
+    "method": "DELETE",
+    "path": "qms/entity-mappings/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": ""
+  },
+  {
+    "name": "Get CAPA Types",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas/types",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available CAPA types"
+  },
+  {
+    "name": "Get CAPA Sources",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas/sources",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available CAPA sources"
+  },
+  {
+    "name": "Get CAPA Priorities",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas/priorities",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available CAPA priorities"
+  },
+  {
+    "name": "Get CAPA Statuses",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas/statuses",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available CAPA statuses"
+  },
+  {
+    "name": "Get Root Cause Methods",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas/root-cause-methods",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available root cause analysis methods"
+  },
+  {
+    "name": "Get CAPA Dashboard",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas/dashboard",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get CAPA dashboard statistics"
+  },
+  {
+    "name": "Create CAPA",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "POST",
+    "path": "capas",
+    "body": "{\n  \"title\": \"Batch 12345 Failed Dissolution Test\",\n  \"capa_type\": \"corrective\",\n  \"description\": \"Root cause analysis required for batch failure\",\n  \"source\": \"internal_audit\",\n  \"priority\": \"high\",\n  \"risk_level\": \"medium\",\n  \"problem_statement\": \"Batch 12345 failed dissolution testing with 65% release at 45 minutes\",\n  \"immediate_action\": \"Quarantine batch and investigate manufacturing process\",\n  \"department\": \"Quality Assurance\",\n  \"identified_date\": \"2025-01-06\",\n  \"target_date\": \"2025-02-15\",\n  \"use_8d\": true\n}",
+    "requires_auth": false,
+    "description": "Create a new CAPA"
+  },
+  {
+    "name": "List CAPAs",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas?status=draft&limit=20&offset=0",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all CAPAs with filters"
+  },
+  {
+    "name": "Get CAPA by ID",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get CAPA details by ID"
+  },
+  {
+    "name": "Update CAPA",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "PUT",
+    "path": "capas/:id",
+    "body": "{\n  \"title\": \"Updated CAPA Title\",\n  \"priority\": \"critical\",\n  \"target_date\": \"2025-03-01\"\n}",
+    "requires_auth": false,
+    "description": "Update CAPA"
+  },
+  {
+    "name": "Submit CAPA",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "POST",
+    "path": "capas/:id/submit",
+    "body": "",
+    "requires_auth": false,
+    "description": "Submit CAPA for workflow"
+  },
+  {
+    "name": "Update CAPA Status",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "PATCH",
+    "path": "capas/:id/status",
+    "body": "{\n  \"status\": \"closed\",\n  \"comments\": \"Status updated to closed\"\n}",
+    "requires_auth": false,
+    "description": "Update CAPA status"
+  },
+  {
+    "name": "Get CAPA Actions",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas/:id/actions",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get all actions for a CAPA"
+  },
+  {
+    "name": "Add CAPA Action",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "POST",
+    "path": "capas/:id/actions",
+    "body": "{\n  \"description\": \"Review manufacturing batch records\",\n  \"action_type\": \"investigation\",\n  \"assigned_to\": \"7f95e3f2-a1b3-4eea-b566-39894d9f8184\",\n  \"due_date\": \"2025-01-20\"\n}",
+    "requires_auth": false,
+    "description": "Add action item to CAPA"
+  },
+  {
+    "name": "Update CAPA Action",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "PUT",
+    "path": "capas/:id/actions/:actionId",
+    "body": "{\n  \"description\": \"Updated action description\",\n  \"status\": \"completed\",\n  \"completed_date\": \"2025-01-20\",\n  \"comments\": \"Action completed successfully\"\n}",
+    "requires_auth": false,
+    "description": "Update CAPA action"
+  },
+  {
+    "name": "Get 8D Report",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "GET",
+    "path": "capas/:id/8d",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get 8D report for CAPA"
+  },
+  {
+    "name": "Update 8D Report Section",
+    "folder": "\ud83d\udd27 CAPA Management",
+    "method": "PUT",
+    "path": "capas/:id/8d/:section",
+    "body": "{\n  \"content\": \"D1: Team established with members from Quality, Manufacturing, and Engineering departments.\",\n  \"completed_by\": \"user-uuid-here\",\n  \"completed_date\": \"2025-01-06\"\n}",
+    "requires_auth": false,
+    "description": "Update a specific 8D report section (d1-d8)"
+  },
+  {
+    "name": "Get Supplier Types",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/types",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available supplier types"
+  },
+  {
+    "name": "Get Supplier Categories",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/categories",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available supplier categories"
+  },
+  {
+    "name": "Get Supplier Statuses",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/statuses",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available supplier statuses"
+  },
+  {
+    "name": "Get Audit Types",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/audit-types",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available audit types"
+  },
+  {
+    "name": "Get Supplier Dashboard",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/dashboard",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get supplier quality dashboard"
+  },
+  {
+    "name": "Get Approved Supplier List",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/asl",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get approved supplier list"
+  },
+  {
+    "name": "Create Supplier",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "POST",
+    "path": "suppliers",
+    "body": "{\n  \"name\": \"Acme Materials Inc.\",\n  \"supplier_type\": \"raw_material\",\n  \"category\": \"chemical\",\n  \"status\": \"pending_qualification\",\n  \"contact_email\": \"contact@acme.com\",\n  \"contact_phone\": \"+1-555-0123\",\n  \"address\": \"123 Industrial Blvd, City, State 12345\",\n  \"country\": \"USA\",\n  \"regulatory_certifications\": [\"ISO 9001\", \"FDA Registered\"],\n  \"description\": \"Raw material supplier for pharmaceutical manufacturing\"\n}",
+    "requires_auth": false,
+    "description": "Create a new supplier"
+  },
+  {
+    "name": "List Suppliers",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers?status=approved&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List suppliers with filters"
+  },
+  {
+    "name": "Get Supplier by ID",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get supplier details"
+  },
+  {
+    "name": "Update Supplier",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "PUT",
+    "path": "suppliers/:id",
+    "body": "{\n  \"name\": \"Updated Supplier Name\",\n  \"status\": \"approved\",\n  \"contact_email\": \"updated@acme.com\"\n}",
+    "requires_auth": false,
+    "description": "Update supplier details"
+  },
+  {
+    "name": "Submit Supplier",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "POST",
+    "path": "suppliers/:id/submit",
+    "body": "",
+    "requires_auth": false,
+    "description": "Submit supplier for workflow"
+  },
+  {
+    "name": "Update Supplier Status",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "PATCH",
+    "path": "suppliers/:id/status",
+    "body": "{\n  \"status\": \"approved\",\n  \"comments\": \"Supplier approved after qualification review\"\n}",
+    "requires_auth": false,
+    "description": "Update supplier status"
+  },
+  {
+    "name": "Get Supplier Contacts",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/:id/contacts",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get all contacts for a supplier"
+  },
+  {
+    "name": "Add Supplier Contact",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "POST",
+    "path": "suppliers/:id/contacts",
+    "body": "{\n  \"name\": \"John Doe\",\n  \"title\": \"Quality Manager\",\n  \"email\": \"john.doe@acme.com\",\n  \"phone\": \"+1-555-0124\",\n  \"is_primary\": true\n}",
+    "requires_auth": false,
+    "description": "Add contact to supplier"
+  },
+  {
+    "name": "Get Supplier Audits",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/:id/audits",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get all audits for a supplier"
+  },
+  {
+    "name": "Create Supplier Audit",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "POST",
+    "path": "suppliers/:id/audits",
+    "body": "{\n  \"audit_type\": \"on_site\",\n  \"scheduled_date\": \"2025-02-15\",\n  \"auditor_id\": \"user-uuid-here\",\n  \"scope\": \"Quality Management System review\",\n  \"checklist_items\": []\n}",
+    "requires_auth": false,
+    "description": "Create supplier audit"
+  },
+  {
+    "name": "Complete Supplier Audit",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "PUT",
+    "path": "suppliers/:id/audits/:auditId/complete",
+    "body": "{\n  \"completion_date\": \"2025-02-20\",\n  \"findings\": \"No major findings. Minor observations documented.\",\n  \"overall_rating\": \"satisfactory\",\n  \"recommendations\": \"Continue monitoring\"\n}",
+    "requires_auth": false,
+    "description": "Complete a supplier audit"
+  },
+  {
+    "name": "Get Supplier Scorecards",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "GET",
+    "path": "suppliers/:id/scorecards",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get all scorecards for a supplier"
+  },
+  {
+    "name": "Create Supplier Scorecard",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "POST",
+    "path": "suppliers/:id/scorecards",
+    "body": "{\n  \"period_start\": \"2025-01-01\",\n  \"period_end\": \"2025-03-31\",\n  \"quality_score\": 95,\n  \"delivery_score\": 92,\n  \"service_score\": 88,\n  \"overall_score\": 91.67,\n  \"metrics\": {\n    \"on_time_delivery\": 98,\n    \"defect_rate\": 0.5,\n    \"response_time_hours\": 4\n  },\n  \"comments\": \"Excellent performance this quarter\"\n}",
+    "requires_auth": false,
+    "description": "Create supplier scorecard"
+  },
+  {
+    "name": "Add Supplier to ASL",
+    "folder": "\ud83c\udfed Supplier Quality",
+    "method": "POST",
+    "path": "suppliers/:id/asl",
+    "body": "{\n  \"material_code\": \"MAT-001\",\n  \"material_name\": \"Active Pharmaceutical Ingredient\",\n  \"approved_date\": \"2025-01-06\",\n  \"material_category\": \"Critical\"\n}",
+    "requires_auth": false,
+    "description": "Add supplier to Approved Supplier List"
+  },
+  {
+    "name": "Get Executive Dashboard",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/dashboard",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get executive dashboard data"
+  },
+  {
+    "name": "Get KPIs",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/kpis",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get key performance indicators"
+  },
+  {
+    "name": "Get Trends",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/trends?period=30d",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get trend analysis data"
+  },
+  {
+    "name": "List Reports",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/reports",
+    "body": "",
+    "requires_auth": false,
+    "description": "List available reports"
+  },
+  {
+    "name": "Get Report by ID",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/reports/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get report details by ID"
+  },
+  {
+    "name": "Execute Report",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "POST",
+    "path": "reporting/reports/:id/execute",
+    "body": "{\n  \"filters\": {\n    \"start_date\": \"2025-01-01\",\n    \"end_date\": \"2025-01-31\",\n    \"status\": \"active\"\n  },\n  \"format\": \"json\"\n}",
+    "requires_auth": false,
+    "description": "Execute a report with filters"
+  },
+  {
+    "name": "Global Search",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/search?q=CAPA&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "Global search across all modules"
+  },
+  {
+    "name": "Get Search Health",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/search/health",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get Elasticsearch health status"
+  },
+  {
+    "name": "Reindex Module",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "POST",
+    "path": "reporting/search/reindex/:module",
+    "body": "",
+    "requires_auth": false,
+    "description": "Reindex a specific module in Elasticsearch"
+  },
+  {
+    "name": "Get Audit Logs",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/audit-logs?page=1&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get audit logs with pagination"
+  },
+  {
+    "name": "List Scheduled Reports",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/scheduled",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all scheduled reports"
+  },
+  {
+    "name": "Create Scheduled Report",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "POST",
+    "path": "reporting/scheduled",
+    "body": "{\n  \"report_id\": \"report-uuid-here\",\n  \"name\": \"Monthly CAPA Summary\",\n  \"schedule\": \"monthly\",\n  \"schedule_config\": {\n    \"day\": 1,\n    \"time\": \"09:00\"\n  },\n  \"recipients\": [\"user@example.com\"],\n  \"format\": \"pdf\",\n  \"enabled\": true,\n  \"report_definition_id\":\"748fccd2-cd79-490a-8cd9-3c794742af0a\",\n  \"schedule_type\":\"email\"\n}",
+    "requires_auth": false,
+    "description": "Create a scheduled report"
+  },
+  {
+    "name": "Get Scheduled Report by ID",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/scheduled/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get scheduled report details"
+  },
+  {
+    "name": "Update Scheduled Report",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "PUT",
+    "path": "reporting/scheduled/:id",
+    "body": "{\n  \"name\": \"Updated Monthly CAPA Summary\",\n  \"enabled\": false,\n  \"recipients\": [\"updated@example.com\"]\n}",
+    "requires_auth": false,
+    "description": "Update scheduled report"
+  },
+  {
+    "name": "Delete Scheduled Report",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "DELETE",
+    "path": "reporting/scheduled/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete scheduled report"
+  },
+  {
+    "name": "Run Scheduled Report Now",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "POST",
+    "path": "reporting/scheduled/:id/run",
+    "body": "",
+    "requires_auth": false,
+    "description": "Manually trigger scheduled report execution"
+  },
+  {
+    "name": "Export Report to PDF",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "POST",
+    "path": "reporting/reports/:id/export/pdf",
+    "body": "{\n  \"filters\": {\n    \"start_date\": \"2025-01-01\",\n    \"end_date\": \"2025-01-31\"\n  }\n}",
+    "requires_auth": false,
+    "description": "Export report to PDF"
+  },
+  {
+    "name": "Export Report to Excel",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "POST",
+    "path": "reporting/reports/:id/export/excel",
+    "body": "{\n  \"filters\": {\n    \"start_date\": \"2025-01-01\",\n    \"end_date\": \"2025-01-31\"\n  }\n}",
+    "requires_auth": false,
+    "description": "Export report to Excel"
+  },
+  {
+    "name": "Export Dashboard to PDF",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/dashboard/export/pdf",
+    "body": "",
+    "requires_auth": false,
+    "description": "Export dashboard to PDF"
+  },
+  {
+    "name": "Export Dashboard to Excel",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/dashboard/export/excel",
+    "body": "",
+    "requires_auth": false,
+    "description": "Export dashboard to Excel"
+  },
+  {
+    "name": "List Exports",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/exports?limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all export files"
+  },
+  {
+    "name": "Download Export",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "GET",
+    "path": "reporting/exports/download/:filename",
+    "body": "",
+    "requires_auth": false,
+    "description": "Download export file"
+  },
+  {
+    "name": "Delete Export",
+    "folder": "\ud83d\udcca Reporting & Analytics",
+    "method": "DELETE",
+    "path": "reporting/exports/:filename",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete export file"
+  },
+  {
+    "name": "Get My Notifications",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "GET",
+    "path": "notifications/me?limit=20&offset=0",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get current user's notifications"
+  },
+  {
+    "name": "Get Unread Count",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "GET",
+    "path": "notifications/me/unread-count",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get unread notification count"
+  },
+  {
+    "name": "Mark All as Read",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "PUT",
+    "path": "notifications/me/read-all",
+    "body": "",
+    "requires_auth": false,
+    "description": "Mark all notifications as read"
+  },
+  {
+    "name": "Dismiss All Notifications",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "PUT",
+    "path": "notifications/me/dismiss-all",
+    "body": "",
+    "requires_auth": false,
+    "description": "Dismiss all notifications"
+  },
+  {
+    "name": "Mark Notification as Read",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "PUT",
+    "path": "notifications/:id/read",
+    "body": "",
+    "requires_auth": false,
+    "description": "Mark specific notification as read"
+  },
+  {
+    "name": "Dismiss Notification",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "PUT",
+    "path": "notifications/:id/dismiss",
+    "body": "",
+    "requires_auth": false,
+    "description": "Dismiss specific notification"
+  },
+  {
+    "name": "Get Notification Preferences",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "GET",
+    "path": "notifications/preferences",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get user notification preferences"
+  },
+  {
+    "name": "Update Notification Preferences",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "PUT",
+    "path": "notifications/preferences",
+    "body": "{\n  \"email_enabled\": true,\n  \"push_enabled\": true,\n  \"channels\": {\n    \"capa\": [\"email\", \"in_app\"],\n    \"workflow\": [\"email\", \"push\"]\n  }\n}",
+    "requires_auth": false,
+    "description": "Update notification preferences"
+  },
+  {
+    "name": "Get Notification Templates",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "GET",
+    "path": "notifications/templates",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all notification templates (admin)"
+  },
+  {
+    "name": "Create Notification Template",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "POST",
+    "path": "notifications/templates",
+    "body": "{\n  \"name\": \"CAPA Assigned\",\n  \"event_type\": \"capa.assigned\",\n  \"subject\": \"CAPA {{capa_number}} Assigned to You\",\n  \"body\": \"You have been assigned to CAPA {{capa_number}}: {{title}}\",\n  \"channels\": [\"email\", \"in_app\"],\n  \"code\":\"capa_assigned\",\n  \"title_template\":\"CAPA Assigned: {{capa_number}}\",\n  \"message_template\":\"You have been assigned to CAPA {{capa_number}}: {{title}}\",\n  \"category\":\"capa\"\n}",
+    "requires_auth": false,
+    "description": "Create notification template (admin)"
+  },
+  {
+    "name": "Get Alert Rules",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "GET",
+    "path": "notifications/alert-rules",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all alert rules (admin)"
+  },
+  {
+    "name": "Create Alert Rule",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "POST",
+    "path": "notifications/alert-rules",
+    "body": "{\n  \"name\": \"High Priority CAPA Alert\",\n  \"event_type\": \"capa.created\",\n  \"conditions\": {\n    \"priority\": \"high\"\n  },\n  \"recipients\": [\"quality-manager@example.com\"],\n  \"channels\": [\"email\", \"in_app\"],\n  \"enabled\": true,\n  \"trigger_event\":\"capa.created\"\n}",
+    "requires_auth": false,
+    "description": "Create alert rule (admin)"
+  },
+  {
+    "name": "Get Escalation Rules",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "GET",
+    "path": "notifications/escalation-rules",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all escalation rules (admin)"
+  },
+  {
+    "name": "Create Escalation Rule",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "POST",
+    "path": "notifications/escalation-rules",
+    "body": "{\n  \"name\": \"CAPA Overdue Escalation\",\n  \"event_type\": \"capa.overdue\",\n  \"escalation_steps\": [\n    {\n      \"delay_hours\": 24,\n      \"recipients\": [\"supervisor@example.com\"],\n      \"priority\": \"high\"\n    },\n    {\n      \"delay_hours\": 72,\n      \"recipients\": [\"manager@example.com\"],\n      \"priority\": \"critical\"\n    }\n  ],\n  \"enabled\": true,\n  \"entity_type\":\"capa\",\n  \"condition_type\": \"overdue\"\n}",
+    "requires_auth": false,
+    "description": "Create escalation rule (admin)"
+  },
+  {
+    "name": "Process Escalations",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "POST",
+    "path": "notifications/escalation-rules/process",
+    "body": "",
+    "requires_auth": false,
+    "description": "Manually trigger escalation processing (admin)"
+  },
+  {
+    "name": "Send Notification",
+    "folder": "\ud83d\udd14 Notifications",
+    "method": "POST",
+    "path": "notifications/send",
+    "body": "{\n  \"user_id\": \"7f95e3f2-a1b3-4eea-b566-39894d9f8184\",\n  \"title\": \"Action Required\",\n  \"message\": \"Please review CAPA-2025-001\",\n  \"type\": \"workflow\",\n  \"priority\": \"high\",\n  \"action_url\": \"/capas/CAPA-2025-001\"\n}",
+    "requires_auth": false,
+    "description": "Send notification manually (admin)"
+  },
+  {
+    "name": "Upload File",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "POST",
+    "path": "files/upload",
+    "body": "{}",
+    "requires_auth": false,
+    "description": "Upload a single file (max 100MB)"
+  },
+  {
+    "name": "Upload Multiple Files",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "POST",
+    "path": "files/upload/multiple",
+    "body": "{}",
+    "requires_auth": false,
+    "description": "Upload multiple files (max 10 files)"
+  },
+  {
+    "name": "List Files",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "GET",
+    "path": "files?entity_type=capa&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List files with filters"
+  },
+  {
+    "name": "Get File by ID",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "GET",
+    "path": "files/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get file metadata"
+  },
+  {
+    "name": "Download File",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "GET",
+    "path": "files/:id/download",
+    "body": "",
+    "requires_auth": false,
+    "description": "Download file"
+  },
+  {
+    "name": "Get Files by Entity",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "GET",
+    "path": "files/entity/:entity_type/:entity_id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get all files for an entity"
+  },
+  {
+    "name": "Preview File",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "GET",
+    "path": "files/:id/preview",
+    "body": "",
+    "requires_auth": false,
+    "description": "Preview file (for images, PDFs, etc.)"
+  },
+  {
+    "name": "Delete File",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "DELETE",
+    "path": "files/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete file"
+  },
+  {
+    "name": "Share File",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "POST",
+    "path": "files/:id/share",
+    "body": "{\n  \"expires_at\": \"2025-02-06T23:59:59Z\",\n  \"max_downloads\": 5,\n  \"password\": \"optional-password\"\n}",
+    "requires_auth": false,
+    "description": "Create shareable link for file"
+  },
+  {
+    "name": "Get Storage Stats",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "GET",
+    "path": "files/stats",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get storage statistics"
+  },
+  {
+    "name": "Get Storage Quota",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "GET",
+    "path": "files/quota",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get storage quota information"
+  },
+  {
+    "name": "Update Storage Quota",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "PUT",
+    "path": "files/quota",
+    "body": "{\n  \"max_storage_gb\": 100,\n  \"max_files\": 10000\n}",
+    "requires_auth": false,
+    "description": "Update storage quota (admin)"
+  },
+  {
+    "name": "Revoke File Share",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "DELETE",
+    "path": "files/shares/:shareId",
+    "body": "",
+    "requires_auth": false,
+    "description": "Revoke file share link"
+  },
+  {
+    "name": "Access Shared File (Public)",
+    "folder": "\ud83d\udcce File Attachments",
+    "method": "GET",
+    "path": "files/shared/:token",
+    "body": "",
+    "requires_auth": false,
+    "description": "Access shared file using share token (no authentication required)"
+  },
+  {
+    "name": "Get All Settings",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/settings",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get all system settings"
+  },
+  {
+    "name": "Get Setting",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/settings/:category/:key",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get specific setting"
+  },
+  {
+    "name": "Update Setting",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "PUT",
+    "path": "config/settings/:category/:key",
+    "body": "{\n  \"value\": \"new-value\"\n}",
+    "requires_auth": false,
+    "description": "Update specific setting"
+  },
+  {
+    "name": "Update Settings Bulk",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "PUT",
+    "path": "config/settings",
+    "body": "{\n  \"email\": {\n    \"smtp_host\": \"smtp.example.com\",\n    \"smtp_port\": 587\n  },\n  \"system\": {\n    \"timezone\": \"America/New_York\"\n  },\n  \"settings\":[]\n}",
+    "requires_auth": false,
+    "description": "Update multiple settings at once"
+  },
+  {
+    "name": "Get Branding",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/branding",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get branding configuration"
+  },
+  {
+    "name": "Update Branding",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "PUT",
+    "path": "config/branding",
+    "body": "{\n  \"logo_url\": \"https://example.com/logo.png\",\n  \"primary_color\": \"#0066CC\",\n  \"secondary_color\": \"#003366\",\n  \"company_name\": \"QAssure Platform\"\n}",
+    "requires_auth": false,
+    "description": "Update branding"
+  },
+  {
+    "name": "Get Security Policy",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/security",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get security policy settings"
+  },
+  {
+    "name": "Update Security Policy",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "PUT",
+    "path": "config/security",
+    "body": "{\n  \"password_min_length\": 12,\n  \"password_require_uppercase\": true,\n  \"password_require_lowercase\": true,\n  \"password_require_numbers\": true,\n  \"password_require_special\": true,\n  \"session_timeout_minutes\": 30,\n  \"mfa_required\": false,\n  \"ip_whitelist\": []\n}",
+    "requires_auth": false,
+    "description": "Update security policy (admin)"
+  },
+  {
+    "name": "Get Feature Flags",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/features",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get all feature flags"
+  },
+  {
+    "name": "Get Feature Flag by Key",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/features/:flagKey",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get feature flag by key"
+  },
+  {
+    "name": "Check Feature Flag",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/features/:flagKey/check",
+    "body": "",
+    "requires_auth": false,
+    "description": "Check if feature flag is enabled (no special permission needed)"
+  },
+  {
+    "name": "Create Feature Flag",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "POST",
+    "path": "config/features",
+    "body": "{\n  \"flag_key\": \"ai_completion_enabled\",\n  \"flag_name\":\"AI Completion Enable\",\n  \"name\": \"AI Completion\",\n  \"description\": \"Enable AI-powered completion features\",\n  \"enabled\": true,\n  \"scope\": \"tenant\",\n  \"target_tenants\": []\n}",
+    "requires_auth": false,
+    "description": "Create feature flag"
+  },
+  {
+    "name": "Update Feature Flag",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "PUT",
+    "path": "config/features/:id",
+    "body": "{\n  \"enabled\": false,\n  \"description\": \"Updated description\"\n}",
+    "requires_auth": false,
+    "description": "Update feature flag"
+  },
+  {
+    "name": "Delete Feature Flag",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "DELETE",
+    "path": "config/features/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete feature flag"
+  },
+  {
+    "name": "Get Webhooks",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/webhooks",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all webhooks"
+  },
+  {
+    "name": "Get Webhook by ID",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/webhooks/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get webhook details"
+  },
+  {
+    "name": "Create Webhook",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "POST",
+    "path": "config/webhooks",
+    "body": "{\n  \"name\": \"External System Integration\",\n  \"url\": \"https://external-system.com/webhook\",\n  \"events\": [\"capa.created\", \"workflow.completed\"],\n  \"auth_type\": \"bearer\",\n  \"auth_config\": {\n    \"token\": \"secret-token\"\n  },\n  \"enabled\": true\n}",
+    "requires_auth": false,
+    "description": "Create webhook"
+  },
+  {
+    "name": "Update Webhook",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "PUT",
+    "path": "config/webhooks/:id",
+    "body": "{\n  \"name\": \"Updated Webhook Name\",\n  \"enabled\": false\n}",
+    "requires_auth": false,
+    "description": "Update webhook"
+  },
+  {
+    "name": "Delete Webhook",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "DELETE",
+    "path": "config/webhooks/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Delete webhook"
+  },
+  {
+    "name": "Test Webhook",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "POST",
+    "path": "config/webhooks/:id/test",
+    "body": "",
+    "requires_auth": false,
+    "description": "Test webhook by sending a test event"
+  },
+  {
+    "name": "Get Email Templates",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/email-templates",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all email templates"
+  },
+  {
+    "name": "Get Email Template by Code",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/email-templates/:templateCode",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get email template by code"
+  },
+  {
+    "name": "Create Email Template",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "POST",
+    "path": "config/email-templates",
+    "body": "{\n  \"template_code\": \"capa_assigned1\",\n  \"name\": \"CAPA Assigned Notification\",\n  \"subject_template\":\"CAPA {{capa_number}} Assigned to You\",\n  \"body_html\": \"<p>You have been assigned to CAPA {{capa_number}}: {{title}}</p>\",\n  \"body_text\": \"You have been assigned to CAPA {{capa_number}}: {{title}}\"\n}",
+    "requires_auth": false,
+    "description": "Create email template"
+  },
+  {
+    "name": "Update Email Template",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "PUT",
+    "path": "config/email-templates/:id",
+    "body": "{\n  \"subject_template\": \"Updated Subject\",\n  \"body_html\": \"<p>Updated content</p>\",\n  \"category\":\"update category\"\n}",
+    "requires_auth": false,
+    "description": "Update email template"
+  },
+  {
+    "name": "Get SMTP Config",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "GET",
+    "path": "config/smtp",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get SMTP configuration (admin)"
+  },
+  {
+    "name": "Update SMTP Config",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "PUT",
+    "path": "config/smtp",
+    "body": "{\n  \"host\": \"smtp.example.com\",\n  \"port\": 587,\n  \"secure\": false,\n  \"username\": \"noreply@example.com\",\n  \"password\": \"password\",\n  \"from_email\": \"noreply@example.com\",\n  \"from_name\": \"QAssure Platform\"\n}",
+    "requires_auth": false,
+    "description": "Update SMTP configuration (admin)"
+  },
+  {
+    "name": "Test SMTP Config",
+    "folder": "\u2699\ufe0f System Configuration",
+    "method": "POST",
+    "path": "config/smtp/test",
+    "body": "{\n    \"test_email\":\"test@gmail.com\"\n}",
+    "requires_auth": false,
+    "description": "Test SMTP configuration by sending a test email (admin)"
+  },
+  {
+    "name": "Get License Types",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "GET",
+    "path": "licenses/types",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available license types"
+  },
+  {
+    "name": "Get License Tiers",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "GET",
+    "path": "licenses/tiers",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get available license tiers"
+  },
+  {
+    "name": "Get Licensable Applications",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "GET",
+    "path": "licenses/applications",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get list of licensable applications"
+  },
+  {
+    "name": "Get My Licenses",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "GET",
+    "path": "licenses/my",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get current tenant's licenses"
+  },
+  {
+    "name": "Create License",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "POST",
+    "path": "licenses",
+    "body": "{\n  \"tenant_id\": \"{{tenantId}}\",\n  \"license_type\": \"enterprise\",\n  \"tier\": \"professional\",\n  \"applications\": [\"capa\", \"document_management\", \"workflow\"],\n  \"max_users\": 100,\n  \"expires_at\": \"2026-01-06T23:59:59Z\",\n  \"features\": {\n    \"ai_enabled\": true,\n    \"advanced_reporting\": true\n  }\n}",
+    "requires_auth": false,
+    "description": "Create license (super admin)"
+  },
+  {
+    "name": "List All Licenses",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "GET",
+    "path": "licenses",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all licenses (super admin)"
+  },
+  {
+    "name": "Get Licenses by Tenant",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "GET",
+    "path": "licenses/tenant/:tenantId",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get all licenses for a tenant (super admin)"
+  },
+  {
+    "name": "Get License by ID",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "GET",
+    "path": "licenses/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get license details"
+  },
+  {
+    "name": "Update License",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "PUT",
+    "path": "licenses/:id",
+    "body": "{\n  \"max_users\": 150,\n  \"expires_at\": \"2027-01-06T23:59:59Z\",\n  \"features\": {\n    \"ai_enabled\": true,\n    \"advanced_reporting\": true,\n    \"custom_integrations\": true\n  }\n}",
+    "requires_auth": false,
+    "description": "Update license (super admin)"
+  },
+  {
+    "name": "Revoke License",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "POST",
+    "path": "licenses/:id/revoke",
+    "body": "{\n  \"reason\": \"Violation of terms of service\"\n}",
+    "requires_auth": false,
+    "description": "Revoke license (super admin)"
+  },
+  {
+    "name": "Activate License",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "POST",
+    "path": "licenses/activate",
+    "body": "{\n  \"license_key\": \"LIC-XXXX-XXXX-XXXX\"\n}",
+    "requires_auth": false,
+    "description": "Activate license with license key"
+  },
+  {
+    "name": "Validate License",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "POST",
+    "path": "licenses/validate",
+    "body": "{\n  \"license_key\": \"LIC-XXXX-XXXX-XXXX\"\n}",
+    "requires_auth": false,
+    "description": "Validate license key"
+  },
+  {
+    "name": "Check Feature Access",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "POST",
+    "path": "licenses/check-feature",
+    "body": "{\n  \"feature\": \"ai_completion\"\n}",
+    "requires_auth": false,
+    "description": "Check if feature is available"
+  },
+  {
+    "name": "Get License Usage",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "GET",
+    "path": "licenses/:id/usage",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get license usage statistics"
+  },
+  {
+    "name": "Get License Audit Log",
+    "folder": "\ud83d\udcdc License Management",
+    "method": "GET",
+    "path": "licenses/:id/audit",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get license audit log (super admin)"
+  },
+  {
+    "name": "Get Pricing Plans",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "GET",
+    "path": "billing/pricing-plans",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get all pricing plans"
+  },
+  {
+    "name": "Get Pricing Plan by ID",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "GET",
+    "path": "billing/pricing-plans/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get pricing plan details by ID"
+  },
+  {
+    "name": "Create Pricing Plan",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "POST",
+    "path": "billing/pricing-plans",
+    "body": "{\n  \"name\": \"Professional Plan\",\n  \"code\": \"professional\",\n  \"description\": \"Professional tier with advanced features\",\n  \"price_monthly\": 999.00,\n  \"price_yearly\": 9990.00,\n  \"features\": {\n    \"max_users\": 100,\n    \"ai_enabled\": true,\n    \"advanced_reporting\": true\n  },\n  \"applications\": [\"capa\", \"document_management\", \"workflow\"]\n}",
+    "requires_auth": false,
+    "description": "Create pricing plan (super admin)"
+  },
+  {
+    "name": "Update Pricing Plan",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "PUT",
+    "path": "billing/pricing-plans/:id",
+    "body": "{\n  \"name\": \"Updated Professional Plan\",\n  \"price_monthly\": 1099.00,\n  \"price_yearly\": 10990.00,\n  \"features\": {\n    \"max_users\": 150\n  }\n}",
+    "requires_auth": false,
+    "description": "Update pricing plan (super admin)"
+  },
+  {
+    "name": "List Invoices",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "GET",
+    "path": "billing/invoices?status=paid&limit=20",
+    "body": "",
+    "requires_auth": false,
+    "description": "List invoices"
+  },
+  {
+    "name": "Create Invoice",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "POST",
+    "path": "billing/invoices",
+    "body": "{\n  \"tenant_id\": \"{{tenantId}}\",\n  \"invoice_number\": \"INV-2025-001\",\n  \"due_date\": \"2025-02-06\",\n  \"items\": [\n    {\n      \"description\": \"Professional Plan - Monthly\",\n      \"quantity\": 1,\n      \"unit_price\": 999.00,\n      \"total\": 999.00\n    }\n  ],\n  \"subtotal\": 999.00,\n  \"tax\": 0.00,\n  \"total\": 999.00\n}",
+    "requires_auth": false,
+    "description": "Create invoice (super admin)"
+  },
+  {
+    "name": "Get Invoice by ID",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "GET",
+    "path": "billing/invoices/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get invoice details"
+  },
+  {
+    "name": "Send Invoice",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "POST",
+    "path": "billing/invoices/:id/send",
+    "body": "",
+    "requires_auth": false,
+    "description": "Send invoice to customer (super admin)"
+  },
+  {
+    "name": "Void Invoice",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "POST",
+    "path": "billing/invoices/:id/void",
+    "body": "{\n  \"reason\": \"Invoice cancelled by customer request\"\n}",
+    "requires_auth": false,
+    "description": "Void invoice (super admin)"
+  },
+  {
+    "name": "List Payments",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "GET",
+    "path": "billing/payments?limit=20&offset=0",
+    "body": "",
+    "requires_auth": false,
+    "description": "List all payments"
+  },
+  {
+    "name": "Record Payment",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "POST",
+    "path": "billing/payments",
+    "body": "{\n  \"invoice_id\": \"invoice-uuid-here\",\n  \"amount\": 999.00,\n  \"payment_method\": \"credit_card\",\n  \"payment_date\": \"2025-01-06\",\n  \"transaction_id\": \"TXN-123456\",\n  \"notes\": \"Payment received via Stripe\"\n}",
+    "requires_auth": false,
+    "description": "Record payment (super admin)"
+  },
+  {
+    "name": "Get Payment by ID",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "GET",
+    "path": "billing/payments/:id",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get payment details"
+  },
+  {
+    "name": "Get Billing Summary",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "GET",
+    "path": "billing/summary",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get billing summary for tenant"
+  },
+  {
+    "name": "Get Revenue Summary",
+    "folder": "\ud83d\udcb3 Billing",
+    "method": "GET",
+    "path": "billing/revenue?period=monthly",
+    "body": "",
+    "requires_auth": false,
+    "description": "Get revenue summary (super admin)"
+  }
+]
