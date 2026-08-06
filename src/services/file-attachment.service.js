@@ -1723,13 +1723,16 @@ class FileAttachmentService {
       const textResult = await mammoth.extractRawText({ buffer });
       text = textResult.value || "";
     } else if (mimeType === "application/pdf") {
-      // Polyfill browser globals for pdf-parse
-      this._polyfillPdfParser();
-      const { PDFParse } = require("pdf-parse");
-      const parser = new PDFParse({ data: buffer });
-      const result = await parser.getText();
-      text = result.text || "";
-      await parser.destroy();
+      const pdfParse = require("pdf-parse");
+      if (typeof pdfParse === "function") {
+        const result = await pdfParse(buffer);
+        text = result.text || "";
+      } else if (pdfParse.PDFParse) {
+        const parser = new pdfParse.PDFParse({ data: buffer });
+        const result = await parser.getText();
+        text = result.text || "";
+        await parser.destroy();
+      }
       html = text
         .split("\n")
         .filter((l) => l.trim())
@@ -1762,84 +1765,6 @@ class FileAttachmentService {
     }
 
     return result;
-  }
-
-  _polyfillPdfParser() {
-    if (typeof globalThis.DOMMatrix === "undefined") {
-      globalThis.DOMMatrix = class DOMMatrix {
-        constructor(init) {
-          const m = new Float64Array(16);
-          m[0] = m[5] = m[10] = m[15] = 1;
-          if (Array.isArray(init)) init.forEach((v, i) => (m[i] = v));
-          this._m = m;
-        }
-        get a() {
-          return this._m[0];
-        }
-        set a(v) {
-          this._m[0] = v;
-        }
-        get b() {
-          return this._m[1];
-        }
-        set b(v) {
-          this._m[1] = v;
-        }
-        get c() {
-          return this._m[4];
-        }
-        set c(v) {
-          this._m[4] = v;
-        }
-        get d() {
-          return this._m[5];
-        }
-        set d(v) {
-          this._m[5] = v;
-        }
-        get e() {
-          return this._m[12];
-        }
-        set e(v) {
-          this._m[12] = v;
-        }
-        get f() {
-          return this._m[13];
-        }
-        set f(v) {
-          this._m[13] = v;
-        }
-        get is2D() {
-          return true;
-        }
-        inverse() {
-          return new DOMMatrix();
-        }
-        multiply() {
-          return new DOMMatrix();
-        }
-        transformPoint(p) {
-          return { x: p?.x || 0, y: p?.y || 0, z: p?.z || 0, w: p?.w || 1 };
-        }
-        toString() {
-          return `matrix(${this.a}, ${this.b}, ${this.c}, ${this.d}, ${this.e}, ${this.f})`;
-        }
-      };
-    }
-    if (typeof globalThis.Path2D === "undefined") {
-      globalThis.Path2D = class Path2D {
-        constructor() {}
-        addPath() {}
-        closePath() {}
-        moveTo() {}
-        lineTo() {}
-        bezierCurveTo() {}
-        quadraticCurveTo() {}
-        arc() {}
-        arcTo() {}
-        rect() {}
-      };
-    }
   }
 
   // ============================================================================

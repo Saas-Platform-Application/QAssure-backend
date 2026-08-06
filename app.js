@@ -68,6 +68,8 @@ try {
 // Create Express application
 const app = express();
 
+// Trust proxy for rate limiting behind reverse proxies/Docker
+app.set('trust proxy', 1);
 
 // Security middleware - configure to allow cross-origin images
 app.use(helmet({
