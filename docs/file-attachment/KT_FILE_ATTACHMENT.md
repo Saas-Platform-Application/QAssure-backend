@@ -347,7 +347,7 @@ const uploadedFile = await fileAttachmentService.upload(
 );
 ```
 
-### B. How are Cloud Storage Providers (AWS S3 and GCS) configured?
+### B. How are Cloud Storage Providers (AWS S3, GCS and E2E EOS) configured?
 
 Cloud storage providers are defined in the `tenant_storage_buckets` table and resolved dynamically using the tenant's bucket assignments.
 
@@ -360,6 +360,12 @@ Cloud storage providers are defined in the `tenant_storage_buckets` table and re
    - Class: `GCSStorageProvider` (implements `save`, `delete`, `exists`, `getFullPath`, `read`, `getStream`, `getSignedUrl`).
    - Library: `@google-cloud/storage`.
    - Dynamic Resolution: Decrypts the service account credentials JSON string in `gcs_service_account_key` in-memory using AES-256-GCM, and initializes the storage client using `gcs_project_id`.
+
+3. **E2E Networks Object Storage (EOS / Vyoma)**:
+   - Class: `E2EObjectStorageProvider`, extending the shared `S3CompatibleStorageProvider` base (also used by `S3StorageProvider`), plus `testConnection` via `HeadBucketCommand`.
+   - Libraries: `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` — EOS is S3-compatible, so no extra dependency is needed.
+   - Dynamic Resolution: Decrypts `e2e_secret_key` in-memory using AES-256-GCM and initializes the S3 client with `e2e_endpoint`, `e2e_access_key`, `e2e_region` (SigV4 signing label only) and `forcePathStyle` from `e2e_force_path_style`.
+   - See [E2E_OBJECT_STORAGE.md](./E2E_OBJECT_STORAGE.md) for setup and endpoint details.
 
 ### C. How to extract text from a file and perform a search?
 

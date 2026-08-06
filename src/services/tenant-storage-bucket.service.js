@@ -1,8 +1,13 @@
 /**
  * Tenant Storage Bucket Service — QAssure Platform
  *
- * Manages per-tenant Azure Blob Storage bucket configurations.
- * SAS tokens are encrypted at rest using AES-256-GCM (shared ENCRYPTION_KEY).
+ * Manages per-tenant object storage bucket configurations across providers:
+ * Azure Blob Storage, Amazon S3, Google Cloud Storage, E2E Networks Object
+ * Storage (EOS / Vyoma) and the local filesystem.
+ *
+ * All provider secrets (Azure SAS token, S3 secret access key, GCS service
+ * account key, EOS secret key) are encrypted at rest using AES-256-GCM
+ * (shared ENCRYPTION_KEY) and are never returned in plaintext.
  *
  * Key responsibilities:
  *   - CRUD for bucket configs (superadmin / platform users with permission)
@@ -10,11 +15,19 @@
  *   - "Give my bucket" — superadmin assigns own bucket to another tenant
  *   - getActiveBucketForTenant — used by file-attachment.service to resolve upload target
  *   - getBucketForBlob — used by download/preview to resolve the correct provider for old files
+ *   - testConnection — verify credentials/endpoint reach the bucket before assigning it
  */
 
 const { pool } = require('../config/database');
 const { encrypt, decrypt, maskApiKey } = require('../utils/encryption');
 const { getAuditService } = require('./audit.service');
+const {
+  STORAGE_TYPES,
+  normalizeE2EEndpoint,
+  validateBucketName,
+  E2E_DEFAULT_ENDPOINT,
+  E2E_DEFAULT_REGION,
+} = require('../utils/object-storage');
 
 // In-memory cache: tenantId -> { bucket, expiresAt }
 const bucketCache = new Map();
@@ -40,12 +53,15 @@ class TenantStorageBucketService {
       s3_bucket, s3_region, s3_access_key_id, s3_secret_access_key,
       // GCP
       gcs_bucket, gcs_project_id, gcs_service_account_key,
+      // E2E Networks Object Storage (EOS)
+      e2e_bucket, e2e_endpoint, e2e_region, e2e_access_key, e2e_secret_key,
+      e2e_force_path_style,
     } = data;
 
     if (!name || !name.trim()) throw new Error('Bucket name is required');
     if (!storage_type) throw new Error('storage_type is required');
-    if (!['azure', 'local', 's3', 'gcp'].includes(storage_type))
-      throw new Error('storage_type must be one of: azure, local, s3, gcp');
+    if (!STORAGE_TYPES.includes(storage_type))
+      throw new Error(`storage_type must be one of: ${STORAGE_TYPES.join(', ')}`);
 
     if (storage_type === 'azure') {
       if (!azure_account) throw new Error('azure_account is required for Azure storage');
@@ -67,10 +83,20 @@ class TenantStorageBucketService {
       if (!gcs_service_account_key) throw new Error('gcs_service_account_key is required for GCP Cloud Storage');
     }
 
+    if (storage_type === 'e2e') {
+      if (!e2e_bucket) throw new Error('e2e_bucket is required for E2E Networks Object Storage');
+      if (!e2e_access_key) throw new Error('e2e_access_key is required for E2E Networks Object Storage');
+      if (!e2e_secret_key) throw new Error('e2e_secret_key is required for E2E Networks Object Storage');
+
+      const bucketNameError = validateBucketName(e2e_bucket);
+      if (bucketNameError) throw new Error(`Invalid e2e_bucket: ${bucketNameError}`);
+    }
+
     // Encrypt secrets before storing
     const encryptedSas      = azure_sas_token       ? encrypt(azure_sas_token.trim())       : null;
     const encryptedS3Secret = s3_secret_access_key   ? encrypt(s3_secret_access_key.trim())   : null;
     const encryptedGcpKey   = gcs_service_account_key ? encrypt(gcs_service_account_key.trim()) : null;
+    const encryptedE2ESecret = e2e_secret_key        ? encrypt(e2e_secret_key.trim())         : null;
 
     const result = await pool.query(`
       INSERT INTO tenant_storage_buckets (
@@ -78,8 +104,11 @@ class TenantStorageBucketService {
         azure_account, azure_container, azure_sas_token, azure_url,
         s3_bucket, s3_region, s3_access_key_id, s3_secret_access_key,
         gcs_bucket, gcs_project_id, gcs_service_account_key,
+        e2e_bucket, e2e_endpoint, e2e_region, e2e_access_key, e2e_secret_key, e2e_force_path_style,
         is_active, created_by, updated_by, created_at, updated_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,TRUE,$16,$16,NOW(),NOW())
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,
+                $16,$17,$18,$19,$20,$21,
+                TRUE,$22,$22,NOW(),NOW())
       RETURNING *
     `, [
       name.trim(),
@@ -97,6 +126,16 @@ class TenantStorageBucketService {
       gcs_bucket || null,
       gcs_project_id || null,
       encryptedGcpKey,
+      e2e_bucket || null,
+      // Default the endpoint/region only for actual E2E buckets so other
+      // storage types keep their E2E columns NULL.
+      e2e_endpoint
+        ? normalizeE2EEndpoint(e2e_endpoint)
+        : (storage_type === 'e2e' ? E2E_DEFAULT_ENDPOINT : null),
+      e2e_region || (storage_type === 'e2e' ? E2E_DEFAULT_REGION : null),
+      e2e_access_key || null,
+      encryptedE2ESecret,
+      e2e_force_path_style !== undefined ? !!e2e_force_path_style : true,
       createdBy || null,
     ]);
 
@@ -121,12 +160,15 @@ class TenantStorageBucketService {
       azure_account, azure_container, azure_sas_token, azure_url,
       s3_bucket, s3_region, s3_access_key_id, s3_secret_access_key,
       gcs_bucket, gcs_project_id, gcs_service_account_key,
+      e2e_bucket, e2e_endpoint, e2e_region, e2e_access_key, e2e_secret_key,
+      e2e_force_path_style,
     } = data;
 
     // Keep existing encrypted value if no new value supplied
-    let encryptedSas      = bucket.azure_sas_token;
-    let encryptedS3Secret = bucket.s3_secret_access_key;
-    let encryptedGcpKey   = bucket.gcs_service_account_key;
+    let encryptedSas       = bucket.azure_sas_token;
+    let encryptedS3Secret  = bucket.s3_secret_access_key;
+    let encryptedGcpKey    = bucket.gcs_service_account_key;
+    let encryptedE2ESecret = bucket.e2e_secret_key;
 
     if (azure_sas_token && azure_sas_token.trim() && !azure_sas_token.startsWith('****')) {
       encryptedSas = encrypt(azure_sas_token.trim());
@@ -136,6 +178,9 @@ class TenantStorageBucketService {
     }
     if (gcs_service_account_key && gcs_service_account_key.trim() && !gcs_service_account_key.startsWith('****')) {
       encryptedGcpKey = encrypt(gcs_service_account_key.trim());
+    }
+    if (e2e_secret_key && e2e_secret_key.trim() && !e2e_secret_key.startsWith('****')) {
+      encryptedE2ESecret = encrypt(e2e_secret_key.trim());
     }
 
     const result = await pool.query(`
@@ -154,10 +199,16 @@ class TenantStorageBucketService {
         gcs_bucket              = COALESCE($12, gcs_bucket),
         gcs_project_id          = COALESCE($13, gcs_project_id),
         gcs_service_account_key = $14,
-        is_active               = COALESCE($15, is_active),
-        updated_by              = $16,
+        e2e_bucket              = COALESCE($15, e2e_bucket),
+        e2e_endpoint            = COALESCE($16, e2e_endpoint),
+        e2e_region              = COALESCE($17, e2e_region),
+        e2e_access_key          = COALESCE($18, e2e_access_key),
+        e2e_secret_key          = $19,
+        e2e_force_path_style    = COALESCE($20, e2e_force_path_style),
+        is_active               = COALESCE($21, is_active),
+        updated_by              = $22,
         updated_at              = NOW()
-      WHERE id = $17
+      WHERE id = $23
       RETURNING *
     `, [
       name?.trim() || null,
@@ -174,6 +225,12 @@ class TenantStorageBucketService {
       gcs_bucket || null,
       gcs_project_id || null,
       encryptedGcpKey,
+      e2e_bucket || null,
+      e2e_endpoint ? normalizeE2EEndpoint(e2e_endpoint) : null,
+      e2e_region || null,
+      e2e_access_key || null,
+      encryptedE2ESecret,
+      e2e_force_path_style !== undefined ? !!e2e_force_path_style : null,
       is_active !== undefined ? is_active : null,
       updatedBy || null,
       bucketId,
@@ -432,6 +489,134 @@ class TenantStorageBucketService {
     return this._getRawById(bucketId);
   }
 
+  // ============================================================================
+  // CONNECTION TEST
+  // ============================================================================
+
+  /**
+   * Verify that a bucket config can actually reach its backing store.
+   *
+   * Two call shapes:
+   *   testConnection({ bucketId })   — test a saved config (secrets from DB)
+   *   testConnection({ config })     — test an unsaved form payload
+   *
+   * For a saved config, secrets may be omitted from `config` — the stored
+   * (encrypted) values are used instead, so the UI never has to re-send them.
+   *
+   * Resolves to { success: true, storage_type, target } or throws with the
+   * underlying provider error message.
+   */
+  async testConnection({ bucketId = null, config = null } = {}) {
+    let row;
+
+    if (bucketId) {
+      const saved = await this._getRawById(bucketId);
+      if (!saved) throw new Error('Bucket not found');
+      // Overlay any newly-typed values on top of the stored row, re-encrypting
+      // supplied secrets so _buildProviderFromBucketRow can decrypt uniformly.
+      row = { ...saved, ...this._toRawRow(config || {}, saved) };
+    } else {
+      if (!config) throw new Error('Either bucketId or config is required');
+      row = this._toRawRow(config, null);
+    }
+
+    if (!row.storage_type) throw new Error('storage_type is required');
+    if (!STORAGE_TYPES.includes(row.storage_type)) {
+      throw new Error(`storage_type must be one of: ${STORAGE_TYPES.join(', ')}`);
+    }
+
+    // Required lazily — file-attachment.service requires this service at load
+    // time, so a top-level require here would be circular.
+    const { getFileAttachmentService } = require('./file-attachment.service');
+    const provider = getFileAttachmentService()._buildProviderFromBucketRow(row);
+
+    // _buildProviderFromBucketRow falls back to the default provider when a
+    // config is unusable (e.g. a secret that will not decrypt). Without this
+    // guard the probe would silently succeed against local storage.
+    if (provider.type !== row.storage_type) {
+      throw new Error(
+        `Could not build a ${row.storage_type} client from this configuration — check that all required fields and secrets are set`
+      );
+    }
+
+    if (typeof provider.testConnection === 'function') {
+      await provider.testConnection();
+    } else if (typeof provider.exists === 'function') {
+      // Providers without an explicit probe (Azure/GCS/local): a lookup of a
+      // key that will not exist still proves credentials + reachability.
+      await provider.exists('.qassure-connection-test');
+    }
+
+    return {
+      success: true,
+      storage_type: row.storage_type,
+      target: this._describeTarget(row),
+    };
+  }
+
+  /**
+   * Map an API-shaped config payload onto raw DB column names, encrypting any
+   * secrets so the result can be fed to _buildProviderFromBucketRow.
+   * Values absent from `config` are left out so a `saved` row can fill them in.
+   */
+  _toRawRow(config, saved) {
+    const row = {};
+    const set = (key, value) => { if (value !== undefined && value !== null && value !== '') row[key] = value; };
+    const setSecret = (key, value) => {
+      if (value && String(value).trim() && !String(value).startsWith('****')) {
+        row[key] = encrypt(String(value).trim());
+      }
+    };
+
+    set('storage_type', config.storage_type);
+
+    // Azure
+    set('azure_account', config.azure_account);
+    set('azure_container', config.azure_container);
+    set('azure_url', config.azure_url);
+    setSecret('azure_sas_token', config.azure_sas_token);
+
+    // Amazon S3
+    set('s3_bucket', config.s3_bucket);
+    set('s3_region', config.s3_region);
+    set('s3_access_key_id', config.s3_access_key_id);
+    setSecret('s3_secret_access_key', config.s3_secret_access_key);
+
+    // Google Cloud Storage
+    set('gcs_bucket', config.gcs_bucket);
+    set('gcs_project_id', config.gcs_project_id);
+    setSecret('gcs_service_account_key', config.gcs_service_account_key);
+
+    // E2E Networks Object Storage
+    set('e2e_bucket', config.e2e_bucket);
+    set('e2e_region', config.e2e_region || (saved ? null : E2E_DEFAULT_REGION));
+    set('e2e_access_key', config.e2e_access_key);
+    setSecret('e2e_secret_key', config.e2e_secret_key);
+    if (config.e2e_endpoint) {
+      row.e2e_endpoint = normalizeE2EEndpoint(config.e2e_endpoint);
+    } else if (!saved && config.storage_type === 'e2e') {
+      row.e2e_endpoint = E2E_DEFAULT_ENDPOINT;
+    }
+    if (config.e2e_force_path_style !== undefined) {
+      row.e2e_force_path_style = !!config.e2e_force_path_style;
+    } else if (!saved) {
+      row.e2e_force_path_style = true;
+    }
+
+    return row;
+  }
+
+  /** Human-readable "where does this bucket point" string for API responses. */
+  _describeTarget(row) {
+    switch (row.storage_type) {
+      case 'azure': return `${row.azure_account}/${row.azure_container}`;
+      case 's3':    return `s3://${row.s3_bucket} (${row.s3_region})`;
+      case 'gcp':   return `gs://${row.gcs_bucket}`;
+      case 'e2e':   return `${normalizeE2EEndpoint(row.e2e_endpoint)}/${row.e2e_bucket}`;
+      default:      return 'local filesystem';
+    }
+  }
+
   /**
    * Decrypt the SAS token from a raw bucket row.
    */
@@ -484,6 +669,13 @@ class TenantStorageBucketService {
       catch { maskedGcpKey = '****'; }
     }
 
+    // Mask E2E Networks Object Storage secret key
+    let maskedE2ESecret = null;
+    if (row.e2e_secret_key) {
+      try { maskedE2ESecret = maskApiKey(decrypt(row.e2e_secret_key)); }
+      catch { maskedE2ESecret = '****'; }
+    }
+
     return {
       id: row.id,
       name: row.name,
@@ -504,6 +696,13 @@ class TenantStorageBucketService {
       gcs_bucket: row.gcs_bucket,
       gcs_project_id: row.gcs_project_id,
       gcs_service_account_key_masked: maskedGcpKey,
+      // E2E Networks Object Storage (EOS)
+      e2e_bucket: row.e2e_bucket,
+      e2e_endpoint: row.e2e_endpoint,
+      e2e_region: row.e2e_region,
+      e2e_access_key: row.e2e_access_key,
+      e2e_secret_key_masked: maskedE2ESecret,
+      e2e_force_path_style: row.e2e_force_path_style,
       // Common
       is_active: row.is_active,
       assigned_tenants_count: row.assigned_tenants_count !== undefined

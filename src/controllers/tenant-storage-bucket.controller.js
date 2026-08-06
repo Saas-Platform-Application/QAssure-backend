@@ -205,6 +205,41 @@ class TenantStorageBucketController {
   }
 
   // ============================================================================
+  // TEST CONNECTION
+  //
+  // POST /storage-buckets/test-connection      body: full bucket config
+  // POST /storage-buckets/:id/test-connection  body: optional field overrides
+  // ============================================================================
+
+  async testConnection(req, res) {
+    try {
+      const service = getTenantStorageBucketService();
+      const bucketId = req.params.id || null;
+
+      const result = await service.testConnection({
+        bucketId,
+        config: req.body && Object.keys(req.body).length > 0 ? req.body : null,
+      });
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      // A missing bucket row is a genuine 404; anything else means the probe
+      // itself failed, which is a configuration problem rather than a server
+      // fault — report it as 400 with the provider's own message.
+      if (/^bucket not found$/i.test(error.message)) {
+        return this._handleError(res, error, 'TEST_CONNECTION_ERROR');
+      }
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'TEST_CONNECTION_FAILED',
+          message: error.message || 'Could not connect to the storage bucket',
+        },
+      });
+    }
+  }
+
+  // ============================================================================
   // GET ASSIGNMENT HISTORY FOR A TENANT
   // ============================================================================
 

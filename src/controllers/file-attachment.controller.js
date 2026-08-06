@@ -5,6 +5,7 @@
 
 const {
   getFileAttachmentService,
+  isCloudProviderType,
 } = require("../services/file-attachment.service");
 const path = require("path");
 
@@ -580,7 +581,9 @@ class FileAttachmentController {
       );
       res.setHeader("Content-Length", attachment.file_size);
 
-      if (storageType === "azure") {
+      // For cloud providers getFilePath() returns a signed URL, not a local
+      // path — stream the object instead of handing sendFile a URL.
+      if (isCloudProviderType(storageType)) {
         const { stream } = await service.getFileStream(id, tenantId, userId, req);
         return stream.pipe(res);
       }
@@ -617,7 +620,8 @@ class FileAttachmentController {
         `inline; filename="${encodeURIComponent(attachment.original_name)}"`,
       );
 
-      if (storageType === "azure") {
+      // Signed URL rather than a local path for cloud providers — stream it.
+      if (isCloudProviderType(storageType)) {
         const { stream } = await service.getFileStream(id, tenantId, userId, req);
         return stream.pipe(res);
       }
@@ -720,8 +724,12 @@ class FileAttachmentController {
           });
       }
 
-      // Use the provider the file was actually uploaded to
-      const provider = service._getProvider(share.storage_provider);
+      // Resolve the provider from the blob's own bucket snapshot so shared
+      // files keep working after the tenant's active bucket is reassigned.
+      const provider = await service._resolveProviderForBlob(
+        share.blob_id,
+        share.storage_provider,
+      );
       const filePath = provider.getFullPath(share.file_path);
 
       res.setHeader("Content-Type", share.mime_type);
@@ -731,7 +739,9 @@ class FileAttachmentController {
       );
       res.setHeader("Content-Length", share.file_size);
 
-      if (provider.type === "azure") {
+      // Cloud providers (Azure, S3, E2E EOS, GCS) have no on-disk path — stream
+      // the object through instead of handing sendFile an object key.
+      if (isCloudProviderType(provider.type)) {
         const stream = await provider.getStream(share.file_path);
         return stream.pipe(res);
       }
