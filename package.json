@@ -38,7 +38,7 @@
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "^10.0.9",
     "openai": "^6.15.0",
     "pdf-parse": "^1.1.1",
     "pdf2pic": "^3.2.0",
