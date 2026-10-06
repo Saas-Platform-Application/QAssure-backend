@@ -24,7 +24,7 @@
     "directory": "sdk/javascript"
   },
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "^1.20.0",
     "ws": "^8.14.0"
   },
   "devDependencies": {
